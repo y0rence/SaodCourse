@@ -52,3 +52,52 @@ OD пока L < R
 - **Контрольная сумма.** Сумма элементов до и после сортировки должна совпадать: иначе элементы потерялись.
 - **Число серий.** Серия — неубывающий участок. У массива, упорядоченного по возрастанию, ровно одна серия.
 - **Счётчики `Мф` и `Сф`** сравниваются с теоретическими оценками на убывающем, случайном и возрастающем массивах.
+
+## 🧩 Как скомпилировать каждый файл
+
+Команды для каждого исходника. Имя исполняемого файла совпадает с именем исходника.
+
+### `shaker_sort.c`
+
+Библиотеки не нужны, только компилятор.
+
+**macOS** (clang):
+
+```bash
+clang -std=c11 -Wall -o shaker_sort shaker_sort.c -lm && ./shaker_sort
+```
+
+**Linux** (gcc / g++):
+
+```bash
+gcc -std=c11 -Wall -o shaker_sort shaker_sort.c -lm && ./shaker_sort
+```
+
+**Windows** (MinGW-w64, в терминале MSYS2 или PowerShell с g++ в PATH):
+
+```bash
+gcc -std=c11 -Wall -o shaker_sort.exe shaker_sort.c -lm
+```
+
+### `shaker_sort_sfml.cpp`
+
+Нужна библиотека **SFML 3** (см. [INSTALL](../../../INSTALL.html)).
+
+**macOS** (clang):
+
+```bash
+clang++ -std=c++17 -I/opt/homebrew/include -L/opt/homebrew/lib -o shaker_sort_sfml shaker_sort_sfml.cpp -lsfml-graphics -lsfml-window -lsfml-system && ./shaker_sort_sfml
+```
+
+**Linux** (gcc / g++):
+
+```bash
+g++ -std=c++17 -o shaker_sort_sfml shaker_sort_sfml.cpp -lsfml-graphics -lsfml-window -lsfml-system && ./shaker_sort_sfml
+```
+
+**Windows** (MinGW-w64, в терминале MSYS2 или PowerShell с g++ в PATH):
+
+```bash
+g++ -std=c++17 -o shaker_sort_sfml.exe shaker_sort_sfml.cpp -lsfml-graphics -lsfml-window -lsfml-system
+```
+

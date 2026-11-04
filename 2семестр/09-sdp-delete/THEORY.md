@@ -16,3 +16,34 @@
 Если `r` совпадает с левым потомком `q`, шаги переноса дали бы `r->Left = r`, то есть цикл. Поэтому программа проверяет `s != q`.
 
 Подробная пошаговая иллюстрация — в файле [delete_sdp_explained.html](delete_sdp_explained.html), он открывается в браузере.
+
+## Псевдокод (из пособия, гл. 11.3)
+Текст алгоритмов перенесён из пособия «Структуры и алгоритмы обработки данных» (Курапова, Мачикина). Ссылки на пункт и страницу — в заголовке каждого блока.
+
+### Удаление из СДП (п. 11.3, с. 50–51)
+
+```text
+Удаление из СДП (Х, *Root)
+p := @Root
+DO (*p ≠ NIL)
+    IF ((*p)→Data < X) p := @((*p)→Right)
+    ELSEIF ((*p)→Data > X) p := @((*p)→Left)
+    ELSE OD
+    FI
+OD
+IF (*p ≠ NIL)
+    q := *p
+    IF (q→Left = NIL) *p := q→Right
+    ELSEIF (q→Right = NIL) *p := q→Left
+    ELSE r := q→Left, s := q
+        DO (r→Right ≠ NIL)
+            s := r, r := r→Right
+        OD
+        s→Right := r→Left          1)
+        r→Left := q→Left           2)
+        r→Right := q→Right         3)
+        *p := r                    4)
+    FI
+    dispose(q)
+FI
+```

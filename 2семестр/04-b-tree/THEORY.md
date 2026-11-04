@@ -29,3 +29,124 @@
 - средняя высота.
 
 Чем меньше средняя высота, тем быстрее в среднем поиск. Для одного и того же набора ключей два сбалансированных дерева могут различаться по этим величинам.
+
+## Псевдокод (из пособия, гл. 13)
+Текст алгоритмов перенесён из пособия «Структуры и алгоритмы обработки данных» (Курапова, Мачикина). Ссылки на пункт и страницу — в заголовке каждого блока.
+
+### Поиск в Б-дереве (п. 13.2, с. 64)
+
+```text
+Поиск в Б-дереве (D: Данные, a: pPage)
+IF (a = NIL) (ключа D нет в дереве)
+ELSE L := 1, R := k + 1
+    DO (L < R)
+        i := [(L + R)/2]
+        IF (a→ei.data ≤ D) L := i + 1
+        ELSE R := i
+        FI
+    OD
+    R := R – 1
+    IF (R > 0 и a→eR.data = D) (ключ D есть в дереве)
+    ELSE
+        IF (R = 0) Поиск в Б-дереве (D, a→p0)
+        ELSE Поиск в Б-дереве (D, a→eR.p)
+        FI
+    FI
+FI
+```
+
+### Построение Б-дерева (п. 13.3, с. 66–67)
+
+```text
+Построение Б-дерева (D: Данные, a: pPage, Rost: Boolean, V: Item)
+IF (a = NIL) {D нет в дереве, включение}
+    V.Data := D
+    V.p := NIL
+    Rost := ИСТИНА
+ELSE Поиск в Б-дереве (D, a)
+    IF (R > 0 и a→eR.data = D) {элемент D есть в дереве}
+    ELSE
+        IF (R = 0) Построение Б-дерева (D, a→p0, Rost, u)
+        ELSE Построение Б-дерева (D, a→eR.p, Rost, u)
+        FI
+        IF (Rost = true) {включение u вправо от eR}
+            IF (k < 2m) Rost := false {есть место на странице}
+                k := k+1
+                DO (i = k, k-1, ..., R+2) ei := ei-1 OD
+                eR+1 := u
+            ELSE {переполнение страницы}
+                New(b) {создание новой страницы}
+                IF (R<= m)
+                    IF (R=m) V := u
+                    ELSE V := em
+                        DO (i = m, m-1, ..., R+2) ei := ei-1 OD
+                        eR+1 := u
+                    FI
+                    DO (i:=1, 2, ... m) b→ei := a→ei-1 OD
+                ELSE {включение в правую страницу}
+                    R := R-m
+                    V := em+1
+                    DO (i=1, 2, ... R-1) b→ei := a→ei+m+1 OD
+                    b→eR := u
+                    DO (i:=R+1, R+2, ..., m) b→ei := a→ei+m OD
+                FI
+                a→k := m
+                b→k := m
+                b→p0 := V.p
+                V.p := b
+            FI
+        FI
+    FI
+FI
+```
+
+### Разделение корневой страницы (п. 13.3, с. 67)
+
+```text
+Root := NIL
+DO <ввести D>
+    Построение Б-дерева (D, Root, Rost, u)
+    IF (Rost = true) (включение новой корневой страницы)
+        q := Root
+        new(Root)
+        Root→k := 1
+        Root→p0 := q
+        Root→e1 := u
+    FI
+OD
+```
+
+### Добавление в ДБ-дерево (п. 13.5, с. 69–70)
+
+```text
+Добавление в ДБ-дерево (D: Данные, p: pVertex)
+{VR, HR — логические переменные, в начале VR = HR = ИСТИНА}
+IF (p = NIL)
+    new(p); p→Data := D; p→Left := NIL; p→Right := NIL
+    p→Balance := 0; VR := ИСТИНА
+ELSE
+    IF (p→Data > D) Добавление в ДБ-дерево (D, p→Left)
+        IF (VR = ИСТИНА)
+            IF (p→Balance = 0)
+                q := p→Left; p→Left := q→Right
+                q→Right := p; p := q; q→Balance := 1
+                VR := ЛОЖЬ; HR := ИСТИНА
+            ELSE p→Balance := 0; HR := ИСТИНА
+            FI
+        ELSE HR := ЛОЖЬ
+        FI
+    ELSE IF (p→Data < D)
+        Добавление в ДБ-дерево (D, p→Right)
+        IF (VR = ИСТИНА) p→Balance := 1; VR := ЛОЖЬ; HR := ИСТИНА
+        ELSE IF (HR = ИСТИНА)
+            IF (p→Balance > 0)
+                q := p→Right; p→Right := q→Left
+                p→Balance := 0; q→Balance := 0
+                q→Left := p; p := q
+                VR := ИСТИНА; HR := ЛОЖЬ
+            ELSE HR := ЛОЖЬ
+            FI
+        FI FI
+    FI FI
+FI
+```

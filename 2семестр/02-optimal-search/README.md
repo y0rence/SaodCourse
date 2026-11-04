@@ -2,6 +2,8 @@
 
 📘 **Теория:** [THEORY.md](THEORY.md)
 
+📝 **Ответы и тесты:** [ответы на вопросы (QA.html)](QA.html) · [тесты с автопроверкой (tests.html)](tests.html)
+
 | Файл | Назначение |
 |---|---|
 | `optimal_search.cpp` | точный алгоритм построения ДОП: матрицы AW, AP, AR, дерево по AR, обход, таблица |
@@ -26,3 +28,30 @@ optimal_search.exe
 3. **Задание 4** — таблица: размер, контрольная сумма (сумма ключей), высота, средневзвешенная высота.
 
 Другие веса: замените `2024` в `srand(2024)` на другое число или на `time(NULL)` (добавьте `#include <time.h>`).
+
+## 🧩 Как скомпилировать каждый файл
+
+Команды для каждого исходника. Имя исполняемого файла совпадает с именем исходника.
+
+### `optimal_search.cpp`
+
+Библиотеки не нужны, только компилятор.
+
+**macOS** (clang):
+
+```bash
+clang++ -std=c++17 -Wall -o optimal_search optimal_search.cpp && ./optimal_search
+```
+
+**Linux** (gcc / g++):
+
+```bash
+g++ -std=c++17 -Wall -o optimal_search optimal_search.cpp && ./optimal_search
+```
+
+**Windows** (MinGW-w64, в терминале MSYS2 или PowerShell с g++ в PATH):
+
+```bash
+g++ -std=c++17 -Wall -o optimal_search.exe optimal_search.cpp
+```
+

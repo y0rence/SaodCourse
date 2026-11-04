@@ -54,3 +54,52 @@ OD
 - **Контрольная сумма.** Сумма элементов до и после сортировки должна совпадать: иначе элементы потерялись.
 - **Число серий.** Серия — неубывающий участок. У массива, упорядоченного по возрастанию, ровно одна серия.
 - **Счётчики `Мф` и `Сф`** сравниваются с теоретическими оценками на убывающем, случайном и возрастающем массивах.
+
+## 🧩 Как скомпилировать каждый файл
+
+Команды для каждого исходника. Имя исполняемого файла совпадает с именем исходника.
+
+### `shell_sort.c`
+
+Нужна библиотека **CSFML** (см. [INSTALL](../../../INSTALL.html)).
+
+**macOS** (clang):
+
+```bash
+clang -I/opt/homebrew/include -L/opt/homebrew/lib -o shell_sort shell_sort.c -lcsfml-graphics -lcsfml-window -lcsfml-system -lm && ./shell_sort
+```
+
+**Linux** (gcc / g++):
+
+```bash
+gcc -o shell_sort shell_sort.c -lcsfml-graphics -lcsfml-window -lcsfml-system -lm && ./shell_sort
+```
+
+**Windows** (MinGW-w64, в терминале MSYS2 или PowerShell с g++ в PATH):
+
+```bash
+gcc -o shell_sort.exe shell_sort.c -lcsfml-graphics -lcsfml-window -lcsfml-system -lm
+```
+
+### `shell_sort_v2.c`
+
+Библиотеки не нужны, только компилятор.
+
+**macOS** (clang):
+
+```bash
+clang -std=c11 -Wall -o shell_sort_v2 shell_sort_v2.c -lm && ./shell_sort_v2
+```
+
+**Linux** (gcc / g++):
+
+```bash
+gcc -std=c11 -Wall -o shell_sort_v2 shell_sort_v2.c -lm && ./shell_sort_v2
+```
+
+**Windows** (MinGW-w64, в терминале MSYS2 или PowerShell с g++ в PATH):
+
+```bash
+gcc -std=c11 -Wall -o shell_sort_v2.exe shell_sort_v2.c -lm
+```
+

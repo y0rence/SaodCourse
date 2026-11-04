@@ -19,3 +19,30 @@ g++ -std=c++17 -o substring_search substring_search.cpp && ./substring_search
 4. Выводит индекс первого вхождения (или `-1`, если слова нет) и число сравнений символов для каждого метода.
 
 Если слово пустое или длиннее текста, программа сообщает об этом и завершается.
+
+## 🧩 Как скомпилировать каждый файл
+
+Команды для каждого исходника. Имя исполняемого файла совпадает с именем исходника.
+
+### `substring_search.cpp`
+
+Библиотеки не нужны, только компилятор.
+
+**macOS** (clang):
+
+```bash
+clang++ -std=c++17 -Wall -o substring_search substring_search.cpp && ./substring_search
+```
+
+**Linux** (gcc / g++):
+
+```bash
+g++ -std=c++17 -Wall -o substring_search substring_search.cpp && ./substring_search
+```
+
+**Windows** (MinGW-w64, в терминале MSYS2 или PowerShell с g++ в PATH):
+
+```bash
+g++ -std=c++17 -Wall -o substring_search.exe substring_search.cpp
+```
+

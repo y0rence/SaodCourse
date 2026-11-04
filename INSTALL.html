@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Установка компиляторов и библиотек</title>
+  <link rel="stylesheet" href="assets/docs.css">
+  <style>
+    h3 { margin-top: 22px; }
+    ul, ol { padding-left: 22px; }
+    li { margin-bottom: 6px; }
+    code { white-space: pre-wrap; }
+    pre { margin: 10px 0 16px; }
+  </style>
+</head>
+<body>
+  <header class="doc-hero">
+    <div class="wrap">
+      <div class="crumbs"><a href="README.md">Проект</a> / Установка</div>
+      <h1>Установка компиляторов и библиотек</h1>
+      <p>Подробно для Windows, macOS и Linux: компилятор, SFML 3, CSFML, проверка и типичные ошибки.</p>
+    </div>
+  </header>
+  <main class="wrap">
+<h2 class="group">1. Что нужно установить</h2>
+<p>Программы проекта — это программы на C и C++. Для их сборки нужны два набора:</p>
+<ul>
+<li>**Компилятор** — gcc/g++ или clang. Нужен для всех работ.</li>
+<li>**Библиотеки SFML 3 и CSFML** — только для работ с графиками (см. список в README каждой папки). Остальные программы работают без них.</li>
+</ul>
+<h2 class="group">2. macOS</h2>
+<h3>2.1 Компилятор</h3>
+<p>Установите инструменты командной строки Xcode (содержат clang):</p>
+<pre><code>xcode-select --install</code></pre>
+<p>Проверка:</p>
+<pre><code>clang++ --version</code></pre>
+<h3>2.2 Библиотеки SFML 3 и CSFML</h3>
+<p>Самый простой путь — Homebrew (https://brew.sh):</p>
+<pre><code>brew install sfml csfml</code></pre>
+<p>Homebrew на Apple Silicon ставит файлы в <code>/opt/homebrew</code>, на Intel — в <code>/usr/local</code>. Команды из README используют путь <code>/opt/homebrew</code>; на Intel замените его на <code>/usr/local</code>.</p>
+<pre><code>clang++ -std=c++17 -I/opt/homebrew/include -L/opt/homebrew/lib -o quick_sort quick_sort.cpp -lsfml-graphics -lsfml-window -lsfml-system &amp;&amp; ./quick_sort</code></pre>
+<h3>2.3 Clang-format (по желанию)</h3>
+<p>Для форматирования по <code>.clang-format</code> из репозитория:</p>
+<pre><code>brew install llvm</code></pre>
+<h2 class="group">3. Linux</h2>
+<h3>3.1 Компилятор</h3>
+<p>Debian / Ubuntu:</p>
+<pre><code>sudo apt update &amp;&amp; sudo apt install build-essential</code></pre>
+<p>Fedora:</p>
+<pre><code>sudo dnf groupinstall &quot;Development Tools&quot;</code></pre>
+<p>Arch / Manjaro:</p>
+<pre><code>sudo pacman -S base-devel</code></pre>
+<p>Проверка:</p>
+<pre><code>g++ --version &amp;&amp; gcc --version</code></pre>
+<h3>3.2 Библиотеки SFML 3 и CSFML</h3>
+<div class="banner bad">Внимание: пакеты <code>libsfml-dev</code> в дистрибутивах (например, Ubuntu 24.04) часто содержат SFML 2.x. Проект написан под SFML 3 — API отличается. Проверьте версию: <code>pkg-config --modversion sfml-graphics</code>. Если версия 2.x, соберите SFML 3 из исходников (ниже).</div>
+<p>Сборка SFML 3 из исходников (нужны git, cmake и зависимости):</p>
+<pre><code>sudo apt install git cmake libx11-dev libxrandr-dev libxcursor-dev libxi-dev libudev-dev libgl-dev libfreetype-dev libflac-dev libvorbis-dev libopenal-dev
+git clone --depth 1 --branch 3.0.0 https://github.com/SFML/SFML.git
+cmake -S SFML -B SFML/build -DCMAKE_BUILD_TYPE=Release -DSFML_BUILD_TESTS=OFF
+cmake --build SFML/build -j$(nproc)
+sudo cmake --install SFML/build</code></pre>
+<p>Для CSFML (C-обёртка) — то же самое из репозитория CSFML (https://github.com/SFML/CSFML) с веткой для SFML 3. После установки библиотеки попадают в <code>/usr/local/lib</code>; при необходимости выполните <code>sudo ldconfig</code>.</p>
+<h3>3.3 Проверка</h3>
+<pre><code>pkg-config --cflags --libs sfml-graphics</code></pre>
+<h2 class="group">4. Windows</h2>
+<h3>4.1 Компилятор (MinGW-w64 через MSYS2)</h3>
+<ol><li>Скачайте и установите MSYS2 с https://www.msys2.org.</li><li>Откройте терминал «MSYS2 UCRT64» и выполните:</li><li>pacman -Syu</li><li>pacman -S mingw-w64-ucrt-x86_64-gcc</li><li>Добавьте в переменную PATH папку <code>C:\msys64\ucrt64\bin</code>.</li><li>Проверка в PowerShell: <code>g++ --version</code>.</li></ol>
+<h3>4.2 Библиотеки SFML 3 и CSFML</h3>
+<p>Вариант A — готовый SDK: скачайте SFML 3 и CSFML для вашего MinGW с https://www.sfml-dev.org/download.php. Распакуйте, например, в <code>C:\SFML</code>. В командной строке:</p>
+<pre><code>g++ -std=c++17 -IC:/SFML/include -LC:/SFML/lib -o quick_sort.exe quick_sort.cpp -lsfml-graphics -lsfml-window -lsfml-system</code></pre>
+<p>Затем скопируйте все DLL из <code>C:\SFML\bin</code> рядом с <code>quick_sort.exe</code>, иначе программа не запустится (ошибка «не найдена библиотека»).</p>
+<p>Вариант B — MSYS2: <code>pacman -S mingw-w64-ucrt-x86_64-sfml</code> (версию проверьте: в пакете может быть SFML 2.x).</p>
+<h2 class="group">5. Частые ошибки</h2>
+<ul>
+<li><code>fatal error: SFML/Graphics.hpp: No such file</code> — не указан путь <code>-I</code> к заголовкам.</li>
+<li><code>undefined reference to sf::...</code> — не подключены библиотеки или они стоят до исходного файла. Флаги <code>-l...</code> пишите после имени файла.</li>
+<li><code>dyld: Library not loaded</code> (macOS) — библиотека не найдена во время запуска; проверьте <code>brew install sfml</code>.</li>
+<li>Программа на Windows сразу закрывается — не скопированы DLL SFML из папки <code>bin</code>.</li>
+<li>Программа без графики не собирается при <code>-Werror</code> — уберите этот флаг или исправьте предупреждения.</li>
+</ul>
+<h2 class="group">6. Как проверить сборку проекта</h2>
+<p>Откройте README любой работы: в разделе «Как скомпилировать каждый файл» указана команда для каждого исходника и для каждой ОС. Пример для работы 1 семестра без графики:</p>
+<pre><code>gcc -std=c11 -Wall -o select_sort select_sort.c -lm &amp;&amp; ./select_sort</code></pre>
+  </main>
+  <footer class="doc-foot"><div class="wrap">Структуры и алгоритмы обработки данных</div></footer>
+</body>
+</html>

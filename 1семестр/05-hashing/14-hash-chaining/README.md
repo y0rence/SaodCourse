@@ -55,3 +55,30 @@ DO i = 1 … t:  h ← (h·256 + Sᵢ) mod m  OD
 - Построенные списки выводятся на экран целиком.
 - Количество коллизий `Кф` считается при вставке и сравнивается для десяти простых размеров таблицы.
 - Поиск проверяется на существующем ключе: выводится номер списка и позиция в нём.
+
+## 🧩 Как скомпилировать каждый файл
+
+Команды для каждого исходника. Имя исполняемого файла совпадает с именем исходника.
+
+### `hash_chaining.cpp`
+
+Библиотеки не нужны, только компилятор.
+
+**macOS** (clang):
+
+```bash
+clang++ -std=c++17 -Wall -o hash_chaining hash_chaining.cpp && ./hash_chaining
+```
+
+**Linux** (gcc / g++):
+
+```bash
+g++ -std=c++17 -Wall -o hash_chaining hash_chaining.cpp && ./hash_chaining
+```
+
+**Windows** (MinGW-w64, в терминале MSYS2 или PowerShell с g++ в PATH):
+
+```bash
+g++ -std=c++17 -Wall -o hash_chaining.exe hash_chaining.cpp
+```
+

@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Вопросы по теме «Удаление из СДП»</title>
+  <link rel="stylesheet" href="../../assets/docs.css">
+</head>
+<body>
+  <header class="doc-hero">
+    <div class="wrap">
+      <div class="crumbs"><a href="../README.md">2 семестр</a> / <a href="README.md">Удаление из СДП</a></div>
+      <h1>Вопросы по теме «Удаление из СДП»</h1>
+    </div>
+  </header>
+  <main class="wrap">
+    <div class="toolbar">
+      <a class="pill" href="README.md">Задания и сборка</a>
+      <a class="pill" href="THEORY.md">Теория и псевдокод</a>
+      <a class="pill" href="QA.html">Ответы на вопросы</a>
+      <a class="pill" href="tests.html">Тесты</a>
+    </div>
+    <p class="lead">Алгоритм удаления вершины из случайного дерева поиска.</p>
+    <article class="qa"><div class="q"><span class="num">1.</span> Какой первый шаг алгоритма удаления вершины из СДП?</div><div class="a"><p>Сначала нужно найти вершину с ключом, равным X.</p></div><div class="src">п. 11.3, с. 49</div></article>
+    <article class="qa"><div class="q"><span class="num">2.</span> Как удаляется вершина, не имеющая поддеревьев?</div><div class="a"><p>Вершина не имеет поддеревьев — её просто удаляем: в алгоритме *p := q→Right при q→Left = NIL (здесь q→Right = NIL), после чего dispose(q).</p></div><div class="src">п. 11.3, с. 49–50</div></article>
+    <article class="qa"><div class="q"><span class="num">3.</span> Как удаляется вершина, имеющая одно поддерево?</div><div class="a"><p>Если найденная вершина имеет не более одного поддерева, её просто удаляем: при q→Left = NIL указатель *p := q→Right, при q→Right = NIL — *p := q→Left.</p></div><div class="src">п. 11.3, с. 49–50</div></article>
+    <article class="qa"><div class="q"><span class="num">4.</span> Как удаляется вершина, имеющая два поддерева? (сформулируйте правило удаления)</div><div class="a"><p>На место удаляемой вершины ставится наибольшая вершина из левого поддерева (наименьшая из правого), то есть самая правая вершина левого поддерева, которая не имеет правого поддерева.</p></div><div class="src">п. 11.3, с. 49</div></article>
+    <article class="qa"><div class="q"><span class="num">5.</span> Как реализуется удаление, если в левом поддереве удаляемой вершины нет правого поддерева?</div><div class="a"><p>Тогда цикл поиска DO (r→Right ≠ NIL) не выполняется: r = q→Left, s = q. По пособию шаги 1) и 2) выполняются всегда; при s = q это дало бы r→Left = r. Поэтому в программе (sdp_delete.cpp) шаги 1) и 2) выполняются только при s ≠ q. Шаги 3) и 4) выполняются в обоих случаях.</p></div><div class="src">п. 11.3, с. 50</div></article>
+    <article class="qa"><div class="q"><span class="num">6.</span> Как в алгоритме удаления достигается вершина, самая правая в левом поддереве удаляемой вершины?</div><div class="a"><p>Циклом: r := q→Left, s := q; DO (r→Right ≠ NIL) s := r, r := r→Right OD — то есть идём по правым ссылкам левого поддерева, пока они есть.</p></div><div class="src">п. 11.3, с. 50</div></article>
+    <article class="qa"><div class="q"><span class="num">7.</span> Какие команды осуществляют замену удаляемой вершины?</div><div class="a"><p>1) s→Right := r→Left; 2) r→Left := q→Left; 3) r→Right := q→Right; 4) *p := r; затем dispose(q).</p></div><div class="src">п. 11.3, с. 50–51</div></article>
+    <article class="qa"><div class="q"><span class="num">8.</span> Какова трудоемкость удаления вершины из СДП?</div><div class="a"><p>Складывается из конечного числа сравнений и присваиваний на каждом шаге поиска; трудоёмкость такая же, как у добавления в СДП: O(log n) при n→∞.</p></div><div class="src">п. 11.3, с. 51</div></article>
+  </main>
+  <footer class="doc-foot"><div class="wrap">Структуры и алгоритмы обработки данных · 2 семестр</div></footer>
+</body>
+</html>

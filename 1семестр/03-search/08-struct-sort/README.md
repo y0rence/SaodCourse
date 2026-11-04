@@ -60,3 +60,52 @@ OD
 
 - Справочник печатается до и после сортировки.
 - Поиск проверяется на существующей фамилии (выводятся все однофамильцы) и на отсутствующей.
+
+## 🧩 Как скомпилировать каждый файл
+
+Команды для каждого исходника. Имя исполняемого файла совпадает с именем исходника.
+
+### `task1_fio.c`
+
+Библиотеки не нужны, только компилятор.
+
+**macOS** (clang):
+
+```bash
+clang -std=c11 -Wall -o task1_fio task1_fio.c -lm && ./task1_fio
+```
+
+**Linux** (gcc / g++):
+
+```bash
+gcc -std=c11 -Wall -o task1_fio task1_fio.c -lm && ./task1_fio
+```
+
+**Windows** (MinGW-w64, в терминале MSYS2 или PowerShell с g++ в PATH):
+
+```bash
+gcc -std=c11 -Wall -o task1_fio.exe task1_fio.c -lm
+```
+
+### `task2_phonebook.c`
+
+Библиотеки не нужны, только компилятор.
+
+**macOS** (clang):
+
+```bash
+clang -std=c11 -Wall -o task2_phonebook task2_phonebook.c -lm && ./task2_phonebook
+```
+
+**Linux** (gcc / g++):
+
+```bash
+gcc -std=c11 -Wall -o task2_phonebook task2_phonebook.c -lm && ./task2_phonebook
+```
+
+**Windows** (MinGW-w64, в терминале MSYS2 или PowerShell с g++ в PATH):
+
+```bash
+gcc -std=c11 -Wall -o task2_phonebook.exe task2_phonebook.c -lm
+```
+

@@ -63,3 +63,30 @@ OD
 - Контрольная сумма списка до и после сортировки.
 - Число серий после сортировки равно `1`.
 - Количество элементов в списке сохраняется.
+
+## 🧩 Как скомпилировать каждый файл
+
+Команды для каждого исходника. Имя исполняемого файла совпадает с именем исходника.
+
+### `digital_sort.cpp`
+
+Нужна библиотека **SFML 3** (см. [INSTALL](../../../INSTALL.html)).
+
+**macOS** (clang):
+
+```bash
+clang++ -std=c++17 -I/opt/homebrew/include -L/opt/homebrew/lib -o digital_sort digital_sort.cpp -lsfml-graphics -lsfml-window -lsfml-system && ./digital_sort
+```
+
+**Linux** (gcc / g++):
+
+```bash
+g++ -std=c++17 -o digital_sort digital_sort.cpp -lsfml-graphics -lsfml-window -lsfml-system && ./digital_sort
+```
+
+**Windows** (MinGW-w64, в терминале MSYS2 или PowerShell с g++ в PATH):
+
+```bash
+g++ -std=c++17 -o digital_sort.exe digital_sort.cpp -lsfml-graphics -lsfml-window -lsfml-system
+```
+

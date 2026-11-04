@@ -58,3 +58,30 @@ OD
 - Обе заполненные хеш-таблицы выводятся по ячейкам.
 - Количество коллизий `Кф` сравнивается для цепочек, линейных и квадратичных проб при десяти размерах таблицы.
 - Поиск печатает всю последовательность просмотренных позиций.
+
+## 🧩 Как скомпилировать каждый файл
+
+Команды для каждого исходника. Имя исполняемого файла совпадает с именем исходника.
+
+### `hash_open_addressing.cpp`
+
+Библиотеки не нужны, только компилятор.
+
+**macOS** (clang):
+
+```bash
+clang++ -std=c++17 -Wall -o hash_open_addressing hash_open_addressing.cpp && ./hash_open_addressing
+```
+
+**Linux** (gcc / g++):
+
+```bash
+g++ -std=c++17 -Wall -o hash_open_addressing hash_open_addressing.cpp && ./hash_open_addressing
+```
+
+**Windows** (MinGW-w64, в терминале MSYS2 или PowerShell с g++ в PATH):
+
+```bash
+g++ -std=c++17 -Wall -o hash_open_addressing.exe hash_open_addressing.cpp
+```
+

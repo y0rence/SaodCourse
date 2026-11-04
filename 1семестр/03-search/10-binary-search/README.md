@@ -59,3 +59,30 @@ OD
 
 - Поиск первого элемента массива, последнего и заведомо отсутствующего.
 - Фактическое число сравнений `Сф` сравнивается с оценкой `log₂ N`.
+
+## 🧩 Как скомпилировать каждый файл
+
+Команды для каждого исходника. Имя исполняемого файла совпадает с именем исходника.
+
+### `binary_search.c`
+
+Библиотеки не нужны, только компилятор.
+
+**macOS** (clang):
+
+```bash
+clang -std=c11 -Wall -o binary_search binary_search.c -lm && ./binary_search
+```
+
+**Linux** (gcc / g++):
+
+```bash
+gcc -std=c11 -Wall -o binary_search binary_search.c -lm && ./binary_search
+```
+
+**Windows** (MinGW-w64, в терминале MSYS2 или PowerShell с g++ в PATH):
+
+```bash
+gcc -std=c11 -Wall -o binary_search.exe binary_search.c -lm
+```
+

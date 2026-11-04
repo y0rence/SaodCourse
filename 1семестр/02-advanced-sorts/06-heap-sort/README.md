@@ -69,3 +69,30 @@ OD
 - **Контрольная сумма.** Сумма элементов до и после сортировки должна совпадать: иначе элементы потерялись.
 - **Число серий.** Серия — неубывающий участок. У массива, упорядоченного по возрастанию, ровно одна серия.
 - **Счётчики `Мф` и `Сф`** сравниваются с теоретическими оценками на убывающем, случайном и возрастающем массивах.
+
+## 🧩 Как скомпилировать каждый файл
+
+Команды для каждого исходника. Имя исполняемого файла совпадает с именем исходника.
+
+### `heap_sort.cpp`
+
+Нужна библиотека **SFML 3** (см. [INSTALL](../../../INSTALL.html)).
+
+**macOS** (clang):
+
+```bash
+clang++ -std=c++17 -I/opt/homebrew/include -L/opt/homebrew/lib -o heap_sort heap_sort.cpp -lsfml-graphics -lsfml-window -lsfml-system && ./heap_sort
+```
+
+**Linux** (gcc / g++):
+
+```bash
+g++ -std=c++17 -o heap_sort heap_sort.cpp -lsfml-graphics -lsfml-window -lsfml-system && ./heap_sort
+```
+
+**Windows** (MinGW-w64, в терминале MSYS2 или PowerShell с g++ в PATH):
+
+```bash
+g++ -std=c++17 -o heap_sort.exe heap_sort.cpp -lsfml-graphics -lsfml-window -lsfml-system
+```
+

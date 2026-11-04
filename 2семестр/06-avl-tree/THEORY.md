@@ -366,3 +366,80 @@ RL — то же самое зеркально.
 
 ---
 
+## Псевдокод (из пособия, гл. 12)
+Текст алгоритмов перенесён из пособия «Структуры и алгоритмы обработки данных» (Курапова, Мачикина). Ссылки на пункт и страницу — в заголовке каждого блока.
+
+### Поворот LL (п. 12.2, с. 53)
+
+```text
+LL - поворот
+q := p→Left
+q→Balance := 0
+p→Balance := 0
+p→Left := q→Right
+q→Right := p
+p := q
+```
+
+### Поворот LR (п. 12.2, с. 54)
+
+```text
+LR - поворот
+q := p→Left, r := q→Right
+IF (r→Balance < 0) p→Balance := +1 ELSE p→Balance := 0 FI
+IF (r→Balance > 0) q→Balance := –1 ELSE q→Balance := 0 FI
+r→Balance := 0
+p→Left := r→Right, q→Right := r→Left
+r→Left := q, r→Right := p, p := r
+```
+
+### Поворот RR (п. 12.2, с. 54)
+
+```text
+RR - поворот
+q := p→Right
+q→Balance := 0
+p→Balance := 0
+p→Right := q→Left
+q→Left := p
+p := q
+```
+
+### Поворот RL (п. 12.2, с. 55)
+
+```text
+RL - поворот
+q := p→Right, r := q→Left
+IF (r→Balance > 0) p→Balance := -1 ELSE p→Balance := 0 FI
+IF (r→Balance < 0) q→Balance := 1 ELSE q→Balance := 0 FI
+r→Balance := 0
+p→Right := r→Left, q→Left := r→Right
+r→Left := p, r→Right := q, p := r
+```
+
+### Добавление в АВЛ-дерево (п. 12.3, с. 56)
+
+```text
+Добавление в АВЛ – дерево (D: данные; Var p: pVertex)
+{Рост — логическая переменная: выросло дерево или нет}
+IF (p = NIL)
+    new(p), p→Data := D, p→Left := NIL, p→Right := NIL
+    p→Balance := 0, Рост := ИСТИНА
+ELSE
+    IF (p→Data > D)
+        Добавление в АВЛ – дерево (D, p→Left)
+        IF (Рост = ИСТИНА) {выросла левая ветвь}
+            IF (p→Balance > 0) p→Balance := 0, Рост := ЛОЖЬ
+            ELSE IF (p→Balance = 0) p→Balance := -1
+                ELSE
+                    IF (p→Left→Balance < 0) <LL – поворот>
+                    ELSE <LR – поворот> Рост := ЛОЖЬ
+                    FI
+            FI
+        FI
+    ELSE IF (p→Data < D)
+        <аналогичные действия для правого поддерева>
+    ELSE {p→Data = D, такая вершина уже есть}
+    FI
+FI
+```

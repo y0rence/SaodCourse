@@ -86,3 +86,96 @@ c₀.Tail→Next ← NIL;  S ← c₀.Head
 - Контрольная сумма списка до и после сортировки.
 - Число серий после сортировки равно `1`.
 - Количество элементов после расщепления и слияния совпадает с исходным.
+
+## 🧩 Как скомпилировать каждый файл
+
+Команды для каждого исходника. Имя исполняемого файла совпадает с именем исходника.
+
+### `merge_sort.cpp`
+
+Нужна библиотека **SFML 3** (см. [INSTALL](../../../INSTALL.html)).
+
+**macOS** (clang):
+
+```bash
+clang++ -std=c++17 -I/opt/homebrew/include -L/opt/homebrew/lib -o merge_sort merge_sort.cpp -lsfml-graphics -lsfml-window -lsfml-system && ./merge_sort
+```
+
+**Linux** (gcc / g++):
+
+```bash
+g++ -std=c++17 -o merge_sort merge_sort.cpp -lsfml-graphics -lsfml-window -lsfml-system && ./merge_sort
+```
+
+**Windows** (MinGW-w64, в терминале MSYS2 или PowerShell с g++ в PATH):
+
+```bash
+g++ -std=c++17 -o merge_sort.exe merge_sort.cpp -lsfml-graphics -lsfml-window -lsfml-system
+```
+
+### `merge_sort_compare_sfml.cpp`
+
+Нужна библиотека **SFML 3** (см. [INSTALL](../../../INSTALL.html)).
+
+**macOS** (clang):
+
+```bash
+clang++ -std=c++17 -I/opt/homebrew/include -L/opt/homebrew/lib -o merge_sort_compare_sfml merge_sort_compare_sfml.cpp -lsfml-graphics -lsfml-window -lsfml-system && ./merge_sort_compare_sfml
+```
+
+**Linux** (gcc / g++):
+
+```bash
+g++ -std=c++17 -o merge_sort_compare_sfml merge_sort_compare_sfml.cpp -lsfml-graphics -lsfml-window -lsfml-system && ./merge_sort_compare_sfml
+```
+
+**Windows** (MinGW-w64, в терминале MSYS2 или PowerShell с g++ в PATH):
+
+```bash
+g++ -std=c++17 -o merge_sort_compare_sfml.exe merge_sort_compare_sfml.cpp -lsfml-graphics -lsfml-window -lsfml-system
+```
+
+### `merge_sort_lists.cpp`
+
+Библиотеки не нужны, только компилятор.
+
+**macOS** (clang):
+
+```bash
+clang++ -std=c++17 -Wall -o merge_sort_lists merge_sort_lists.cpp && ./merge_sort_lists
+```
+
+**Linux** (gcc / g++):
+
+```bash
+g++ -std=c++17 -Wall -o merge_sort_lists merge_sort_lists.cpp && ./merge_sort_lists
+```
+
+**Windows** (MinGW-w64, в терминале MSYS2 или PowerShell с g++ в PATH):
+
+```bash
+g++ -std=c++17 -Wall -o merge_sort_lists.exe merge_sort_lists.cpp
+```
+
+### `merge_sort_simplified.cpp`
+
+Библиотеки не нужны, только компилятор.
+
+**macOS** (clang):
+
+```bash
+clang++ -std=c++17 -Wall -o merge_sort_simplified merge_sort_simplified.cpp && ./merge_sort_simplified
+```
+
+**Linux** (gcc / g++):
+
+```bash
+g++ -std=c++17 -Wall -o merge_sort_simplified merge_sort_simplified.cpp && ./merge_sort_simplified
+```
+
+**Windows** (MinGW-w64, в терминале MSYS2 или PowerShell с g++ в PATH):
+
+```bash
+g++ -std=c++17 -Wall -o merge_sort_simplified.exe merge_sort_simplified.cpp
+```
+

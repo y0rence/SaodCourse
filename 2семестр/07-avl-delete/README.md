@@ -2,6 +2,8 @@
 
 📘 **Теория:** [THEORY.md](THEORY.md)
 
+📝 **Ответы и тесты:** [ответы на вопросы (QA.html)](QA.html) · [тесты с автопроверкой (tests.html)](tests.html)
+
 | Файл | Назначение |
 |---|---|
 | `avl_delete.cpp` | программа: удаление по ключу (пункт 2 меню) и удаление 10 введённых вершин с выводом обхода (пункт 3) |
@@ -23,3 +25,52 @@ make clean # удалить собранный файл
 3. Удаление 10 вершин, введённых с клавиатуры, с выводом обхода слева направо после каждого удаления (пункт 3 меню).
 
 Алгоритмы написаны по псевдокоду пособия «Структуры и алгоритмы обработки данных», раздел 12 (сбалансированные по высоте деревья).
+
+## 🧩 Как скомпилировать каждый файл
+
+Команды для каждого исходника. Имя исполняемого файла совпадает с именем исходника.
+
+### `avl_delete.cpp`
+
+Библиотеки не нужны, только компилятор.
+
+**macOS** (clang):
+
+```bash
+clang++ -std=c++17 -Wall -o avl_delete avl_delete.cpp && ./avl_delete
+```
+
+**Linux** (gcc / g++):
+
+```bash
+g++ -std=c++17 -Wall -o avl_delete avl_delete.cpp && ./avl_delete
+```
+
+**Windows** (MinGW-w64, в терминале MSYS2 или PowerShell с g++ в PATH):
+
+```bash
+g++ -std=c++17 -Wall -o avl_delete.exe avl_delete.cpp
+```
+
+### `avl_delete_l36.cpp`
+
+Библиотеки не нужны, только компилятор.
+
+**macOS** (clang):
+
+```bash
+clang++ -std=c++17 -Wall -o avl_delete_l36 avl_delete_l36.cpp && ./avl_delete_l36
+```
+
+**Linux** (gcc / g++):
+
+```bash
+g++ -std=c++17 -Wall -o avl_delete_l36 avl_delete_l36.cpp && ./avl_delete_l36
+```
+
+**Windows** (MinGW-w64, в терминале MSYS2 или PowerShell с g++ в PATH):
+
+```bash
+g++ -std=c++17 -Wall -o avl_delete_l36.exe avl_delete_l36.cpp
+```
+

@@ -53,3 +53,30 @@ OD
 
 - Индексы печатаются вместе с символами, на которые они указывают.
 - Справочник выводится по каждому индексу отдельно, поиск проверяется по фамилии и по телефону (в том числе для двух записей с одинаковым номером).
+
+## 🧩 Как скомпилировать каждый файл
+
+Команды для каждого исходника. Имя исполняемого файла совпадает с именем исходника.
+
+### `index_arrays.c`
+
+Библиотеки не нужны, только компилятор.
+
+**macOS** (clang):
+
+```bash
+clang -std=c11 -Wall -o index_arrays index_arrays.c -lm && ./index_arrays
+```
+
+**Linux** (gcc / g++):
+
+```bash
+gcc -std=c11 -Wall -o index_arrays index_arrays.c -lm && ./index_arrays
+```
+
+**Windows** (MinGW-w64, в терминале MSYS2 или PowerShell с g++ в PATH):
+
+```bash
+gcc -std=c11 -Wall -o index_arrays.exe index_arrays.c -lm
+```
+
