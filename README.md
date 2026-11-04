@@ -49,27 +49,39 @@
 
 ```
 Saod_1course.sem2/
-├── 01-quadratic-sorts/          Часть I. Квадратичные сортировки
-│   ├── 01-select-sort/          select_sort.c
-│   ├── 02-bubble-sort/          bubble_sort.c
-│   ├── 03-shaker-sort/          shaker_sort.c · shaker_sort_sfml.cpp
-│   └── 04-insert-sort/          insert_sort.c
-├── 02-advanced-sorts/           Часть II. Быстрые сортировки массивов
-│   ├── 05-shell-sort/           shell_sort.c · shell_sort_v2.c
-│   ├── 06-heap-sort/            heap_sort.cpp
-│   └── 07-quick-sort/           quick_sort.cpp
-├── 03-search/                   Часть III. Поиск и записи
-│   ├── 08-struct-sort/          task1_fio.c · task2_phonebook.c
-│   ├── 09-index-arrays/         index_arrays.c
-│   └── 10-binary-search/        binary_search.c
-├── 04-lists/                    Часть IV. Линейные списки
-│   ├── 11-stack-queue/          lists.cpp
-│   ├── 12-merge-sort/           merge_sort.cpp · merge_sort_lists.cpp
-│   │                            merge_sort_simplified.cpp · merge_sort_compare_sfml.cpp
-│   └── 13-digital-sort/         digital_sort.cpp
-└── 05-hashing/                  Часть V. Хеширование
-    ├── 14-hash-chaining/        hash_chaining.cpp
-    └── 15-hash-open-addressing/ hash_open_addressing.cpp
+├── 1семестр/
+│   ├── 01-quadratic-sorts/          Часть I. Квадратичные сортировки
+│   │   ├── 01-select-sort/          select_sort.c
+│   │   ├── 02-bubble-sort/          bubble_sort.c
+│   │   ├── 03-shaker-sort/          shaker_sort.c · shaker_sort_sfml.cpp
+│   │   └── 04-insert-sort/          insert_sort.c
+│   ├── 02-advanced-sorts/           Часть II. Быстрые сортировки массивов
+│   │   ├── 05-shell-sort/           shell_sort.c · shell_sort_v2.c
+│   │   ├── 06-heap-sort/            heap_sort.cpp
+│   │   └── 07-quick-sort/           quick_sort.cpp
+│   ├── 03-search/                   Часть III. Поиск и записи
+│   │   ├── 08-struct-sort/          task1_fio.c · task2_phonebook.c
+│   │   ├── 09-index-arrays/         index_arrays.c
+│   │   └── 10-binary-search/        binary_search.c
+│   ├── 04-lists/                    Часть IV. Линейные списки
+│   │   ├── 11-stack-queue/          lists.cpp
+│   │   ├── 12-merge-sort/           merge_sort.cpp · merge_sort_lists.cpp
+│   │   │                            merge_sort_simplified.cpp · merge_sort_compare_sfml.cpp
+│   │   └── 13-digital-sort/         digital_sort.cpp
+│   └── 05-hashing/                  Часть V. Хеширование
+│       ├── 14-hash-chaining/        hash_chaining.cpp
+│       └── 15-hash-open-addressing/ hash_open_addressing.cpp
+└── 2семестр/
+    ├── 01-substring-search/     Поиск подстроки · substring_search.cpp
+    ├── 02-optimal-search/       Дерево оптимального поиска · optimal_search.cpp
+    ├── 03-isdp/                 ИСДП · isdp.c
+    ├── 04-b-tree/               Сравнение ДБД и АВЛ · b_tree.cpp
+    ├── 05-binary-tree/          Бинарное дерево · binary_tree.cpp
+    ├── 06-avl-tree/             АВЛ-дерево · avl_tree.cpp
+    ├── 07-avl-delete/           Удаление из АВЛ-дерева · avl_delete.cpp · Makefile
+    ├── 08-sdp/                  СДП и ИСДП · sdp.cpp
+    ├── 09-sdp-delete/           Удаление из СДП · sdp_delete.cpp
+    └── Пособие_СиАОД.pdf        учебное пособие
 ```
 
 ### 📑 Задание и псевдокод по каждой работе
@@ -78,21 +90,21 @@ Saod_1course.sem2/
 
 | № | Работа | Метод | Описание |
 |---|---|---|---|
-| 01 | Сортировка прямого выбора | `SelectSort` | [README](01-quadratic-sorts/01-select-sort/README.md) |
-| 02 | Пузырьковая сортировка | `BubbleSort` | [README](01-quadratic-sorts/02-bubble-sort/README.md) |
-| 03 | Шейкерная сортировка | `ShakerSort` | [README](01-quadratic-sorts/03-shaker-sort/README.md) |
-| 04 | Сортировка прямого включения | `InsertSort` | [README](01-quadratic-sorts/04-insert-sort/README.md) |
-| 05 | Метод Шелла | `ShellSort` | [README](02-advanced-sorts/05-shell-sort/README.md) |
-| 06 | Пирамидальная сортировка | `HeapSort` | [README](02-advanced-sorts/06-heap-sort/README.md) |
-| 07 | Быстрая сортировка | `QuickSort` | [README](02-advanced-sorts/07-quick-sort/README.md) |
-| 08 | Сортировка массивов структур | `StructSort` | [README](03-search/08-struct-sort/README.md) |
-| 09 | Индексация массивов | `IndexArrays` | [README](03-search/09-index-arrays/README.md) |
-| 10 | Быстрый двоичный поиск | `BinarySearch` | [README](03-search/10-binary-search/README.md) |
-| 11 | Стек и очередь | `StackQueue` | [README](04-lists/11-stack-queue/README.md) |
-| 12 | Сортировка прямого слияния | `MergeSort` | [README](04-lists/12-merge-sort/README.md) |
-| 13 | Цифровая сортировка | `DigitalSort` | [README](04-lists/13-digital-sort/README.md) |
-| 14 | Хеширование: прямое связывание | `HashChaining` | [README](05-hashing/14-hash-chaining/README.md) |
-| 15 | Хеширование: открытая адресация | `HashOpenAddressing` | [README](05-hashing/15-hash-open-addressing/README.md) |
+| 01 | Сортировка прямого выбора | `SelectSort` | [README](1семестр/01-quadratic-sorts/01-select-sort/README.md) |
+| 02 | Пузырьковая сортировка | `BubbleSort` | [README](1семестр/01-quadratic-sorts/02-bubble-sort/README.md) |
+| 03 | Шейкерная сортировка | `ShakerSort` | [README](1семестр/01-quadratic-sorts/03-shaker-sort/README.md) |
+| 04 | Сортировка прямого включения | `InsertSort` | [README](1семестр/01-quadratic-sorts/04-insert-sort/README.md) |
+| 05 | Метод Шелла | `ShellSort` | [README](1семестр/02-advanced-sorts/05-shell-sort/README.md) |
+| 06 | Пирамидальная сортировка | `HeapSort` | [README](1семестр/02-advanced-sorts/06-heap-sort/README.md) |
+| 07 | Быстрая сортировка | `QuickSort` | [README](1семестр/02-advanced-sorts/07-quick-sort/README.md) |
+| 08 | Сортировка массивов структур | `StructSort` | [README](1семестр/03-search/08-struct-sort/README.md) |
+| 09 | Индексация массивов | `IndexArrays` | [README](1семестр/03-search/09-index-arrays/README.md) |
+| 10 | Быстрый двоичный поиск | `BinarySearch` | [README](1семестр/03-search/10-binary-search/README.md) |
+| 11 | Стек и очередь | `StackQueue` | [README](1семестр/04-lists/11-stack-queue/README.md) |
+| 12 | Сортировка прямого слияния | `MergeSort` | [README](1семестр/04-lists/12-merge-sort/README.md) |
+| 13 | Цифровая сортировка | `DigitalSort` | [README](1семестр/04-lists/13-digital-sort/README.md) |
+| 14 | Хеширование: прямое связывание | `HashChaining` | [README](1семестр/05-hashing/14-hash-chaining/README.md) |
+| 15 | Хеширование: открытая адресация | `HashOpenAddressing` | [README](1семестр/05-hashing/15-hash-open-addressing/README.md) |
 
 ---
 
@@ -151,7 +163,7 @@ xychart-beta
 
 ## 01 · Метод прямого выбора (SelectSort)
 
-📄 [`select_sort.c`](01-quadratic-sorts/01-select-sort/select_sort.c)
+📄 [`select_sort.c`](1семестр/01-quadratic-sorts/01-select-sort/select_sort.c)
 
 **Идея.** Найти минимум в неотсортированной части и обменять его с первым элементом этой части. Граница отсортированной части сдвигается на один шаг вправо.
 
@@ -175,7 +187,7 @@ OD
 
 ## 02 · Пузырьковая сортировка (BubbleSort)
 
-📄 [`bubble_sort.c`](01-quadratic-sorts/02-bubble-sort/bubble_sort.c)
+📄 [`bubble_sort.c`](1семестр/01-quadratic-sorts/02-bubble-sort/bubble_sort.c)
 
 **Идея.** Идти от конца массива к началу и менять местами соседей, если правый меньше левого. За один проход минимум «всплывает» на первое место.
 
@@ -199,7 +211,7 @@ OD
 
 ## 03 · Шейкерная сортировка (ShakerSort)
 
-📄 [`shaker_sort.c`](01-quadratic-sorts/03-shaker-sort/shaker_sort.c) · [`shaker_sort_sfml.cpp`](01-quadratic-sorts/03-shaker-sort/shaker_sort_sfml.cpp)
+📄 [`shaker_sort.c`](1семестр/01-quadratic-sorts/03-shaker-sort/shaker_sort.c) · [`shaker_sort_sfml.cpp`](1семестр/01-quadratic-sorts/03-shaker-sort/shaker_sort_sfml.cpp)
 
 **Два улучшения пузырька:**
 1. Граница рабочей части ставится в **место последнего обмена**, потому что всё за ней уже отсортировано.
@@ -227,7 +239,7 @@ OD пока L < R
 
 ## 04 · Метод прямого включения (InsertSort)
 
-📄 [`insert_sort.c`](01-quadratic-sorts/04-insert-sort/insert_sort.c)
+📄 [`insert_sort.c`](1семестр/01-quadratic-sorts/04-insert-sort/insert_sort.c)
 
 **Идея.** Взять очередной `aᵢ` и вставить его на своё место среди уже упорядоченных `a₁ … aᵢ₋₁`, сдвигая большие элементы вправо.
 
@@ -256,7 +268,7 @@ OD
 
 ## 05 · Метод Шелла (ShellSort)
 
-📄 [`shell_sort.c`](02-advanced-sorts/05-shell-sort/shell_sort.c) · [`shell_sort_v2.c`](02-advanced-sorts/05-shell-sort/shell_sort_v2.c)
+📄 [`shell_sort.c`](1семестр/02-advanced-sorts/05-shell-sort/shell_sort.c) · [`shell_sort_v2.c`](1семестр/02-advanced-sorts/05-shell-sort/shell_sort_v2.c)
 
 **Идея.** Включение хорошо работает на почти упорядоченных данных. Поэтому массив сначала «грубо» упорядочивают **k-сортировками**: включением сортируются подпоследовательности `aᵢ, aᵢ₊ₖ, aᵢ₊₂ₖ, …`. Шаг `k` уменьшается, а последний шаг `h₁ = 1` гарантирует полную сортировку.
 
@@ -286,7 +298,7 @@ OD
 
 ## 06 · Пирамидальная сортировка (HeapSort)
 
-📄 [`heap_sort.cpp`](02-advanced-sorts/06-heap-sort/heap_sort.cpp)
+📄 [`heap_sort.cpp`](1семестр/02-advanced-sorts/06-heap-sort/heap_sort.cpp)
 
 **Пирамида** `(L, R)` — это последовательность, в которой `aⱼ ≤ min(a₂ⱼ, a₂ⱼ₊₁)`.
 
@@ -324,7 +336,7 @@ aᵢ ← x
 
 ## 07 · Метод Хоара (QuickSort)
 
-📄 [`quick_sort.cpp`](02-advanced-sorts/07-quick-sort/quick_sort.cpp)
+📄 [`quick_sort.cpp`](1семестр/02-advanced-sorts/07-quick-sort/quick_sort.cpp)
 
 **Идея.** Выбрать ведущий элемент `x = a_L`. Слева искать `aᵢ ≥ x`, справа искать `aⱼ ≤ x` и менять их местами, пока `i ≤ j`. Слева окажутся элементы не больше `x`, справа не меньше. Затем то же рекурсивно для каждой части.
 
@@ -368,7 +380,7 @@ OD
 
 ## 08 · Сортировка записей и поиск по ключу
 
-📄 [`task1_fio.c`](03-search/08-struct-sort/task1_fio.c) · [`task2_phonebook.c`](03-search/08-struct-sort/task2_phonebook.c)
+📄 [`task1_fio.c`](1семестр/03-search/08-struct-sort/task1_fio.c) · [`task2_phonebook.c`](1семестр/03-search/08-struct-sort/task2_phonebook.c)
 
 У записей (структур) нет встроенного `<`, поэтому **операцию сравнения задают функцией** `Less(x, y)`:
 
@@ -384,7 +396,7 @@ OD
 
 ## 09 · Индексные массивы
 
-📄 [`index_arrays.c`](03-search/09-index-arrays/index_arrays.c)
+📄 [`index_arrays.c`](1семестр/03-search/09-index-arrays/index_arrays.c)
 
 Если данные нужно быстро искать то по одному ключу, то по другому, пересортировка всего массива обходится дорого. Вместо этого строят **индексный массив** `B = (1, 2, …, n)` и сортируют **только его**, сравнивая `A[B[j]]`:
 
@@ -410,7 +422,7 @@ OD
 
 ## 10 · Двоичный поиск
 
-📄 [`binary_search.c`](03-search/10-binary-search/binary_search.c)
+📄 [`binary_search.c`](1семестр/03-search/10-binary-search/binary_search.c)
 
 Работает **только на отсортированном массиве**. Берём средний элемент: если он равен `X`, поиск окончен; если меньше, ищем справа; если больше, ищем слева.
 
@@ -454,7 +466,7 @@ OD
 
 ## 11 · Стек и очередь
 
-📄 [`lists.cpp`](04-lists/11-stack-queue/lists.cpp)
+📄 [`lists.cpp`](1семестр/04-lists/11-stack-queue/lists.cpp)
 
 **Список** — последовательность элементов `tLE`, связанных полем `Next`. Доступ к элементам только последовательный.
 
@@ -474,7 +486,7 @@ OD
 
 ## 12 · Метод прямого слияния (MergeSort)
 
-📄 [`merge_sort.cpp`](04-lists/12-merge-sort/merge_sort.cpp) · [`merge_sort_lists.cpp`](04-lists/12-merge-sort/merge_sort_lists.cpp) · [`merge_sort_simplified.cpp`](04-lists/12-merge-sort/merge_sort_simplified.cpp) · [`merge_sort_compare_sfml.cpp`](04-lists/12-merge-sort/merge_sort_compare_sfml.cpp)
+📄 [`merge_sort.cpp`](1семестр/04-lists/12-merge-sort/merge_sort.cpp) · [`merge_sort_lists.cpp`](1семестр/04-lists/12-merge-sort/merge_sort_lists.cpp) · [`merge_sort_simplified.cpp`](1семестр/04-lists/12-merge-sort/merge_sort_simplified.cpp) · [`merge_sort_compare_sfml.cpp`](1семестр/04-lists/12-merge-sort/merge_sort_compare_sfml.cpp)
 
 **Слияние серий.** Две упорядоченные серии `a` (длины q) и `b` (длины r) сливаются в очередь `c`: из двух первых элементов меньший переносится в `c`, а когда одна серия закончится, остаток другой дописывается.
 
@@ -513,7 +525,7 @@ c₀.Tail→Next ← NIL;  S ← c₀.Head
 
 ## 13 · Цифровая сортировка (DigitalSort)
 
-📄 [`digital_sort.cpp`](04-lists/13-digital-sort/digital_sort.cpp)
+📄 [`digital_sort.cpp`](1семестр/04-lists/13-digital-sort/digital_sort.cpp)
 
 **Идея.** Числа из `L` цифр в `m`-ичной системе раскладываются по `m` очередям **по последней цифре**, очереди склеиваются в список, затем то же по предпоследней цифре и так далее. Сравнений нет вообще.
 
@@ -551,7 +563,7 @@ OD
 
 ## 14 · Хеширование: метод прямого связывания
 
-📄 [`hash_chaining.cpp`](05-hashing/14-hash-chaining/hash_chaining.cpp)
+📄 [`hash_chaining.cpp`](1семестр/05-hashing/14-hash-chaining/hash_chaining.cpp)
 
 **Хеш-функция** `H: K → A` отображает большое множество ключей (`|K| ≫ |A|`) в индексы таблицы. Ситуация `H(kᵢ) = H(kⱼ)` при `kᵢ ≠ kⱼ` называется **коллизией**. Хорошая хеш-функция вычисляется быстро и распределяет ключи равномерно.
 
@@ -576,7 +588,7 @@ DO i = 1 … t:  h ← (h·256 + Sᵢ) mod m
 
 ## 15 · Хеширование: открытая адресация
 
-📄 [`hash_open_addressing.cpp`](05-hashing/15-hash-open-addressing/hash_open_addressing.cpp)
+📄 [`hash_open_addressing.cpp`](1семестр/05-hashing/15-hash-open-addressing/hash_open_addressing.cpp)
 
 Списков нет: при коллизии ключ кладётся в **другую ячейку той же таблицы** по правилу проб `hᵢ = (h(x) + g(i)) mod m`. Пробы продолжаются, пока не найдётся ключ или пустая ячейка.
 
@@ -652,19 +664,19 @@ brew install sfml csfml
 **Консольная программа на C:**
 
 ```bash
-clang 03-search/10-binary-search/binary_search.c -o binary_search -lm && ./binary_search
+clang 1семестр/03-search/10-binary-search/binary_search.c -o binary_search -lm && ./binary_search
 ```
 
 **Программа на C с графиком (CSFML):**
 
 ```bash
-clang -I/opt/homebrew/include 01-quadratic-sorts/04-insert-sort/insert_sort.c -o insert_sort -L/opt/homebrew/lib -lcsfml-graphics -lcsfml-window -lcsfml-system -lm && ./insert_sort
+clang -I/opt/homebrew/include 1семестр/01-quadratic-sorts/04-insert-sort/insert_sort.c -o insert_sort -L/opt/homebrew/lib -lcsfml-graphics -lcsfml-window -lcsfml-system -lm && ./insert_sort
 ```
 
 **Программа на C++ с графиком (SFML 3):**
 
 ```bash
-clang++ -std=c++17 -I/opt/homebrew/include 02-advanced-sorts/07-quick-sort/quick_sort.cpp -o quick_sort -L/opt/homebrew/lib -lsfml-graphics -lsfml-window -lsfml-system && ./quick_sort
+clang++ -std=c++17 -I/opt/homebrew/include 1семестр/02-advanced-sorts/07-quick-sort/quick_sort.cpp -o quick_sort -L/opt/homebrew/lib -lsfml-graphics -lsfml-window -lsfml-system && ./quick_sort
 ```
 
 | Нужен SFML 3 | Нужен CSFML | Только стандартная библиотека |

@@ -1,0 +1,308 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AVL-дерево: псевдокод и обходы</title>
+<style>
+  :root {
+    --bg: #fafaf7;
+    --fg: #1d1d1b;
+    --muted: #6b6b66;
+    --card: #ffffff;
+    --border: #e2e2dc;
+    --accent: #2f6fb3;
+    --code-bg: #f3f3ee;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #161614;
+      --fg: #ecebe6;
+      --muted: #9d9d95;
+      --card: #1f1f1c;
+      --border: #3a3a35;
+      --accent: #7fb2ea;
+      --code-bg: #262622;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #161614;
+    --fg: #ecebe6;
+    --muted: #9d9d95;
+    --card: #1f1f1c;
+    --border: #3a3a35;
+    --accent: #7fb2ea;
+    --code-bg: #262622;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--fg);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    line-height: 1.6;
+  }
+  main {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 32px 16px 64px;
+  }
+  h1 { font-size: 1.9rem; margin: 0 0 4px; }
+  .subtitle { color: var(--muted); margin: 0 0 32px; }
+  h2 {
+    font-size: 1.35rem;
+    margin: 40px 0 12px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--border);
+  }
+  h3 { font-size: 1.05rem; margin: 24px 0 8px; color: var(--accent); }
+  p, li { font-size: 1rem; }
+  ul, ol { padding-left: 22px; }
+  pre {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 16px;
+    overflow-x: auto;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.9rem;
+    line-height: 1.5;
+    margin: 12px 0 18px;
+  }
+  code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 18px;
+    margin: 12px 0;
+  }
+  .tree {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    white-space: pre;
+    background: var(--code-bg);
+    border-radius: 8px;
+    padding: 14px 16px;
+    overflow-x: auto;
+  }
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 12px 0;
+    font-size: 0.95rem;
+  }
+  th, td {
+    border: 1px solid var(--border);
+    padding: 8px 10px;
+    text-align: left;
+    vertical-align: top;
+  }
+  th { background: var(--code-bg); }
+  .check li { margin-bottom: 6px; }
+  @media (max-width: 480px) {
+    h1 { font-size: 1.5rem; }
+    main { padding: 24px 16px 48px; }
+  }
+</style>
+</head>
+<body>
+<main>
+
+<h1>AVL-дерево: псевдокод и обходы</h1>
+<p class="subtitle">Вставка, балансировка, построение из набора, обходы (рекурсивные и итеративные)</p>
+
+<h2>1. Структура узла</h2>
+<pre><code>ЗАПИСЬ Узел:
+    key      // ключ
+    left     // левый потомок (или NIL)
+    right    // правый потомок (или NIL)
+    height   // высота поддерева (лист = 1)</code></pre>
+
+<h2>2. Вспомогательные функции</h2>
+<pre><code>ФУНКЦИЯ height(node):
+    ЕСЛИ node = NIL: ВЕРНУТЬ 0
+    ВЕРНУТЬ node.height
+
+ПРОЦЕДУРА updateHeight(node):
+    node.height = 1 + max(height(node.left), height(node.right))
+
+ФУНКЦИЯ balanceFactor(node):
+    ВЕРНУТЬ height(node.left) - height(node.right)</code></pre>
+<p>Фактор балансировки должен быть в диапазоне {-1, 0, +1}. Если он выходит за него, дерево нужно перебалансировать.</p>
+
+<h2>3. Повороты</h2>
+<pre><code>ФУНКЦИЯ rotateRight(y):          // левый случай, малый правый поворот
+    x = y.left
+    T2 = x.right
+    x.right = y
+    y.left = T2
+    updateHeight(y)
+    updateHeight(x)
+    ВЕРНУТЬ x                    // новый корень поддерева
+
+ФУНКЦИЯ rotateLeft(x):           // правый случай, малый левый поворот
+    y = x.right
+    T2 = y.left
+    y.left = x
+    x.right = T2
+    updateHeight(x)
+    updateHeight(y)
+    ВЕРНУТЬ y</code></pre>
+
+<h2>4. Балансировка</h2>
+<pre><code>ФУНКЦИЯ rebalance(node):
+    updateHeight(node)
+    bf = balanceFactor(node)
+
+    // Левое поддерево тяжелее
+    ЕСЛИ bf &gt; 1:
+        // LL: вставили в левое-левое
+        ЕСЛИ balanceFactor(node.left) &gt;= 0:
+            ВЕРНУТЬ rotateRight(node)
+        // LR: вставили в левое-правое
+        ИНАЧЕ:
+            node.left = rotateLeft(node.left)
+            ВЕРНУТЬ rotateRight(node)
+
+    // Правое поддерево тяжелее
+    ЕСЛИ bf &lt; -1:
+        // RR: вставили в правое-правое
+        ЕСЛИ balanceFactor(node.right) &lt;= 0:
+            ВЕРНУТЬ rotateLeft(node)
+        // RL: вставили в правое-левое
+        ИНАЧЕ:
+            node.right = rotateRight(node.right)
+            ВЕРНУТЬ rotateLeft(node)
+
+    ВЕРНУТЬ node                 // баланс в порядке</code></pre>
+<div class="card">
+  <strong>Правило выбора поворота:</strong> смотрим на фактор балансировки узла и его тяжелого ребёнка. Если ребёнок тяжелее в ту же сторону, поворот одинарный. Если в противоположную, сначала поворачиваем ребёнка, затем сам узел.
+</div>
+
+<h2>5. Вставка</h2>
+<pre><code>ФУНКЦИЯ insert(node, key):
+    // 1. Обычная вставка в BST
+    ЕСЛИ node = NIL:
+        ВЕРНУТЬ новый Узел(key, height = 1)
+    ЕСЛИ key &lt; node.key:
+        node.left = insert(node.left, key)
+    ИНАЧЕ ЕСЛИ key &gt; node.key:
+        node.right = insert(node.right, key)
+    ИНАЧЕ:
+        ВЕРНУТЬ node            // дубликаты не вставляем
+
+    // 2. Обновление высот и балансировка при возврате из рекурсии
+    ВЕРНУТЬ rebalance(node)</code></pre>
+<p>Вызов: <code>root = insert(root, key)</code></p>
+
+<h2>6. Построение дерева из набора</h2>
+<pre><code>ФУНКЦИЯ buildAVL(keys):
+    root = NIL
+    ДЛЯ КАЖДОГО key ИЗ keys:      // порядок важен!
+        root = insert(root, key)
+    ВЕРНУТЬ root</code></pre>
+<p>Форма дерева зависит от порядка вставки, поэтому порядок элементов из условия нужно соблюдать.</p>
+
+<h2>7. Обходы (рекурсивные)</h2>
+<table>
+  <tr><th>Обход</th><th>Порядок</th><th>Название в курсе</th></tr>
+  <tr><td>inorder</td><td>левый, корень, правый</td><td>СДП (симметричный)</td></tr>
+  <tr><td>preorder</td><td>корень, левый, правый</td><td>КЛП (прямой)</td></tr>
+  <tr><td>postorder</td><td>левый, правый, корень</td><td>ЛПК (обратный)</td></tr>
+  <tr><td>level-order</td><td>по уровням, сверху вниз</td><td>обход в ширину</td></tr>
+</table>
+
+<pre><code>ПРОЦЕДУРА inorder(node):         // СДП: левый, корень, правый
+    ЕСЛИ node = NIL: ВЫЙТИ
+    inorder(node.left)
+    ВЫВЕСТИ node.key
+    inorder(node.right)
+
+ПРОЦЕДУРА preorder(node):        // корень, левый, правый
+    ЕСЛИ node = NIL: ВЫЙТИ
+    ВЫВЕСТИ node.key
+    preorder(node.left)
+    preorder(node.right)
+
+ПРОЦЕДУРА postorder(node):       // левый, правый, корень
+    ЕСЛИ node = NIL: ВЫЙТИ
+    postorder(node.left)
+    postorder(node.right)
+    ВЫВЕСТИ node.key</code></pre>
+
+<h2>8. Обход в ширину (по уровням)</h2>
+<pre><code>ПРОЦЕДУРА levelOrder(root):
+    ЕСЛИ root = NIL: ВЫЙТИ
+    очередь Q = [root]
+    ПОКА Q не пуста:
+        node = Q.dequeue()
+        ВЫВЕСТИ node.key
+        ЕСЛИ node.left ≠ NIL:  Q.enqueue(node.left)
+        ЕСЛИ node.right ≠ NIL: Q.enqueue(node.right)</code></pre>
+
+<h2>9. ИСДП: итеративный симметричный обход</h2>
+<p>Рекурсия заменяется явным стеком. Спускаемся влево до конца, складывая узлы в стек, затем извлекаем узел, выводим его и переходим в правое поддерево.</p>
+<pre><code>ПРОЦЕДУРА inorderIterative(root):
+    стек S = пустой
+    cur = root
+
+    ПОКА cur ≠ NIL ИЛИ S не пуст:
+        // Спускаемся влево, запоминая пройденные узлы
+        ПОКА cur ≠ NIL:
+            S.push(cur)
+            cur = cur.left
+
+        // Извлекаем узел, выводим его, идём вправо
+        cur = S.pop()
+        ВЫВЕСТИ cur.key
+        cur = cur.right</code></pre>
+
+<h2>10. Итеративный прямой обход (КЛП)</h2>
+<pre><code>ПРОЦЕДУРА preorderIterative(root):
+    ЕСЛИ root = NIL: ВЫЙТИ
+    стек S = [root]
+
+    ПОКА S не пуст:
+        node = S.pop()
+        ВЫВЕСТИ node.key
+        ЕСЛИ node.right ≠ NIL: S.push(node.right)
+        ЕСЛИ node.left ≠ NIL:  S.push(node.left)</code></pre>
+<p>Правый ребёнок кладётся в стек первым, поэтому левый извлекается раньше.</p>
+
+<h2>11. Пример для самопроверки</h2>
+<p><strong>Набор:</strong> 5, 3, 8, 1, 4, 7, 9, 2, 6 (вставляем по порядку). Ни один поворот не понадобится.</p>
+<div class="tree">            5
+         /     \
+        3       8
+       / \     / \
+      1   4   7   9
+       \     /
+        2   6</div>
+
+<table>
+  <tr><th>Обход</th><th>Результат</th></tr>
+  <tr><td>inorder (СДП и ИСДП)</td><td>1 2 3 4 5 6 7 8 9</td></tr>
+  <tr><td>preorder (КЛП)</td><td>5 3 1 2 4 8 7 6 9</td></tr>
+  <tr><td>postorder (ЛПК)</td><td>2 1 4 3 6 7 9 8 5</td></tr>
+  <tr><td>level-order</td><td>5 3 8 1 4 7 9 2 6</td></tr>
+</table>
+
+<div class="card">
+  <strong>Задание для поворотов:</strong> постройте AVL из наборов
+  <code>10, 20, 30</code> (RR), <code>30, 20, 10</code> (LL), <code>30, 10, 20</code> (LR) и <code>10, 30, 20</code> (RL). Для каждого случая нарисуйте дерево до и после балансировки.
+</div>
+
+<h2>12. Чек-лист для самостоятельной работы</h2>
+<ul class="check">
+  <li>Вставка начинается как в обычном BST, а балансировка выполняется при возврате из рекурсии.</li>
+  <li>Повороты проверяют ребёнка: если он тяжелее в ту же сторону, поворот одинарный, иначе двойной.</li>
+  <li>Высоты обновляются снизу вверх, поэтому <code>updateHeight</code> вызывается перед проверкой баланса.</li>
+  <li>Inorder на BST всегда даёт отсортированный список, это удобная проверка.</li>
+  <li>ИСДП: почему <code>cur = cur.right</code> после вывода, а не <code>cur = cur.left</code>.</li>
+  <li>Почему ИСДП и рекурсивный СДП дают одинаковый результат, и чем различаются по памяти (явный стек против стека вызовов).</li>
+  <li>Для preorder: почему правый ребёнок кладётся в стек раньше левого.</li>
+</ul>
+
+</main>
+</body>
+</html>

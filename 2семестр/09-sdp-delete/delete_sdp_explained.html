@@ -1,0 +1,891 @@
+<title>Удаление из СДП</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600&family=JetBrains+Mono:wght@400;600&family=Unbounded:wght@500;700&display=swap">
+<style>
+/* Layout: тетрадь в клетку — визуализатор во всю ширину, под ним код + пояснение шага, ниже разбор программы одной колонкой */
+:root{
+  --paper:#f5f7fb; --grid:rgba(36,70,200,.07); --surface:#ffffff; --ink:#1b2238; --muted:#5b6480; --line:#d6dcea;
+  --codebg:#eef1f8; --accent:#2446c8; --q:#c8372d; --r:#1d8656; --s:#8146c4; --cur:#b8720a; --on:#ffffff;
+  --hl:rgba(36,70,200,.12);
+  --f-display:"Unbounded", "Golos Text", system-ui, sans-serif;
+  --f-body:"Golos Text", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-mono:"JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#0f131d; --grid:rgba(140,160,255,.055); --surface:#161b28; --ink:#e3e7f2; --muted:#98a1bb; --line:#29314a;
+    --codebg:#121725; --accent:#86a0ff; --q:#ff6e61; --r:#4cc68c; --s:#b98dff; --cur:#f0b14a; --on:#0f131d;
+    --hl:rgba(134,160,255,.14); color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#0f131d; --grid:rgba(140,160,255,.055); --surface:#161b28; --ink:#e3e7f2; --muted:#98a1bb; --line:#29314a;
+  --codebg:#121725; --accent:#86a0ff; --q:#ff6e61; --r:#4cc68c; --s:#b98dff; --cur:#f0b14a; --on:#0f131d;
+  --hl:rgba(134,160,255,.14); color-scheme:dark;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{
+  background-color:var(--paper); color:var(--ink); font-family:var(--f-body); font-size:16px; line-height:1.55;
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:24px 24px;
+}
+.wrap{max-width:1180px;margin:0 auto;padding-inline:20px;padding-block:28px 64px}
+h1,h2{font-family:var(--f-display);font-weight:700;text-wrap:balance;letter-spacing:-.01em;margin:0}
+h1{font-size:clamp(1.6rem,4vw,2.4rem);line-height:1.15}
+h2{font-size:1.25rem;line-height:1.25}
+h3{font-size:1.05rem;margin:0}
+.lede{color:var(--muted);max-width:68ch;margin:.6rem 0 0}
+code,.mono{font-family:var(--f-mono);font-size:.9em}
+p code,li code,td code{background:var(--codebg);padding:.05em .35em;border-radius:4px}
+.eyebrow{font-family:var(--f-mono);font-size:.75rem;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+header{display:grid;gap:.4rem;margin-bottom:22px}
+
+/* ——— Визуализатор ——— */
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:10px}
+.toolbar{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;padding:12px 14px;border-bottom:1px solid var(--line)}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{border:0;border-radius:0;background:transparent}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--on)}
+button,.btn{font:500 .9rem var(--f-body);color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:.42rem .75rem;cursor:pointer}
+button:hover{border-color:var(--accent)}
+button:disabled{opacity:.45;cursor:default;border-color:var(--line)}
+button.primary{background:var(--accent);border-color:var(--accent);color:var(--on)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+input{font:500 .95rem var(--f-mono);color:var(--ink);background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:.4rem .55rem;width:5.5rem}
+label.inl{display:inline-flex;gap:8px;align-items:center;font-size:.9rem;color:var(--muted)}
+.seqline{font-family:var(--f-mono);font-size:.85rem;color:var(--muted);overflow-wrap:anywhere;min-width:0}
+.seqline b{color:var(--ink);font-weight:600}
+
+.stage{overflow-x:auto;padding:6px 8px 2px}
+.stage svg{display:block;width:100%;height:auto;margin:0 auto}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;padding:6px 14px 12px;font-size:.82rem;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.dot{width:12px;height:12px;border-radius:50%;display:inline-block}
+.ln-e{width:22px;height:0;border-top:3px solid;display:inline-block}
+
+svg .edge{stroke:var(--muted);stroke-width:1.6;fill:none}
+svg .edge.new{stroke:var(--accent);stroke-width:3}
+svg .edge.pp{stroke:var(--cur);stroke-width:3.5}
+svg .stub{stroke:var(--cur);stroke-width:2.5;stroke-dasharray:4 4;fill:none}
+svg .nulltxt{fill:var(--cur);font:600 11px var(--f-mono)}
+svg .mk-def path{fill:var(--muted)} svg .mk-new path{fill:var(--accent)} svg .mk-pp path{fill:var(--cur)}
+svg .node circle{fill:var(--surface);stroke:var(--ink);stroke-width:1.6}
+svg .node text.k{fill:var(--ink);font:600 14px var(--f-mono);text-anchor:middle;dominant-baseline:central}
+svg .node.role-q circle{fill:var(--q);stroke:var(--q)} svg .node.role-r circle{fill:var(--r);stroke:var(--r)}
+svg .node.role-s circle{fill:var(--s);stroke:var(--s)} svg .node.role-cur circle{fill:var(--cur);stroke:var(--cur)}
+svg .node[class*="role-"] text.k{fill:var(--on)}
+svg .tag{font:600 12px var(--f-mono)}
+svg .tag.q{fill:var(--q)} svg .tag.r{fill:var(--r)} svg .tag.s{fill:var(--s)} svg .tag.cur{fill:var(--cur)}
+svg .ghost circle{fill:none;stroke:var(--q);stroke-width:2;stroke-dasharray:4 3}
+svg .ghost text{fill:var(--q);font:600 14px var(--f-mono);text-anchor:middle;dominant-baseline:central;text-decoration:line-through}
+svg .rootbox{fill:var(--codebg);stroke:var(--line)}
+svg .roottxt{fill:var(--ink);font:600 12px var(--f-mono);text-anchor:middle;dominant-baseline:central}
+svg .roottxt.pp{fill:var(--cur)}
+
+.work{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);gap:16px;margin-top:16px}
+@media (max-width:860px){.work{grid-template-columns:minmax(0,1fr)}}
+.codebox{background:var(--codebg);border:1px solid var(--line);border-radius:10px;padding:10px 0;overflow-x:auto;font-family:var(--f-mono);font-size:.8rem;line-height:1.6}
+.cl{display:grid;grid-template-columns:3.2em max-content;white-space:pre;padding-right:14px;transition:background .2s}
+.cl .n{color:var(--muted);text-align:right;padding-right:1em;user-select:none;opacity:.7}
+.cl.on{background:var(--hl);box-shadow:inset 3px 0 0 var(--accent)}
+.cl.on .n{opacity:1;color:var(--accent)}
+.kw{color:var(--accent);font-weight:600}.cm{color:var(--muted);font-style:italic}.st{color:var(--r)}.nu{color:var(--s)}
+
+.side{display:grid;gap:14px;align-content:start;min-width:0}
+.stepcard{padding:14px 16px;display:grid;gap:8px}
+.stepmeta{display:flex;justify-content:space-between;gap:10px;font-family:var(--f-mono);font-size:.78rem;color:var(--muted)}
+.steptitle{font-family:var(--f-mono);font-weight:600;font-size:1.02rem;overflow-wrap:anywhere}
+.steptext{margin:0;min-height:3.2em}
+.bar{height:4px;background:var(--line);border-radius:2px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--accent);width:0;transition:width .25s}
+.controls{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.controls select{font:500 .85rem var(--f-body);color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:.38rem .5rem}
+.vars{width:100%;border-collapse:collapse;font-family:var(--f-mono);font-size:.85rem}
+.vars td{padding:5px 10px;border-top:1px solid var(--line)}
+.vars tr:first-child td{border-top:0}
+.vars td:first-child{width:3.2rem;font-weight:600}
+.vars .q{color:var(--q)}.vars .r{color:var(--r)}.vars .s{color:var(--s)}.vars .cur{color:var(--cur)}
+.varsbox{padding:4px 6px}
+
+.picker{padding:14px 16px;display:grid;gap:10px}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font:600 .85rem var(--f-mono);padding:.25rem .55rem;min-width:2.2rem}
+.chip small{font:500 .72rem var(--f-body);color:var(--muted);margin-right:.35rem}
+.hint{font-size:.85rem;color:var(--muted);margin:0}
+.err{color:var(--q)}
+.counter{font-family:var(--f-mono);font-size:.8rem;color:var(--muted)}
+
+.log{margin:16px 0 0;padding:12px 16px}
+.log ol{margin:.4rem 0 0;padding-left:1.4rem;font-family:var(--f-mono);font-size:.85rem;display:grid;gap:4px}
+.log li{overflow-wrap:anywhere}
+.log .miss{color:var(--q)}
+
+/* ——— Разбор кода ——— */
+article{margin-top:56px;display:grid;gap:40px}
+article section{display:grid;gap:12px;max-width:820px}
+article p{margin:0;max-width:70ch}
+article ul,article ol{margin:0;padding-left:1.3rem;display:grid;gap:6px;max-width:70ch}
+pre.code{margin:0;background:var(--codebg);border:1px solid var(--line);border-radius:10px;padding:12px 14px;overflow-x:auto;font:400 .82rem/1.6 var(--f-mono)}
+.tablewrap{overflow-x:auto}
+table.map{border-collapse:collapse;font-size:.88rem;min-width:560px;width:100%}
+table.map th,table.map td{border:1px solid var(--line);padding:6px 10px;text-align:left;vertical-align:top}
+table.map th{background:var(--codebg);font-weight:600}
+table.map td:nth-child(1),table.map td:nth-child(2){font-family:var(--f-mono);font-size:.82rem;white-space:nowrap}
+.note{border-left:3px solid var(--q);background:var(--surface);padding:12px 14px;border-radius:0 8px 8px 0;display:grid;gap:8px;max-width:70ch}
+.secnum{font-family:var(--f-mono);color:var(--accent);font-size:.8rem;letter-spacing:.06em}
+.cases{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+.case{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 14px;display:grid;gap:6px;align-content:start}
+.case h3{font-size:.95rem}
+.case p{font-size:.92rem}
+@media (prefers-reduced-motion: reduce){*{transition:none!important}}
+</style>
+
+<div class="wrap">
+  <header>
+    <span class="eyebrow">СиАОД · 3.4 · задания 2 и 3</span>
+    <h1>Удаление из случайного дерева поиска</h1>
+    <p class="lede">Сверху — функция <code>DeleteSDP</code> из <code>main.cpp</code>, которую можно прогнать по шагам: видно, куда смотрят указатели <code>p</code>, <code>q</code>, <code>r</code>, <code>s</code> и какие связи меняются. Ниже — подробный разбор всей программы.</p>
+  </header>
+
+  <div class="panel">
+    <div class="toolbar">
+      <div class="seg" role="group" aria-label="Режим">
+        <button id="mLetters" aria-pressed="true">Буквы ФИО</button>
+        <button id="mNumbers" aria-pressed="false">Случайные числа</button>
+      </div>
+      <span id="genBox" class="row" hidden>
+        <label class="inl" for="nCount">Сколько чисел (1..100)</label>
+        <input id="nCount" type="number" min="1" max="100" value="12">
+        <button id="genBtn">Сгенерировать</button>
+      </span>
+      <span class="seqline" id="seqLine"></span>
+    </div>
+    <div class="stage" id="stage"><svg id="tree" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Дерево поиска"></svg></div>
+    <div class="legend">
+      <span><i class="dot" style="background:var(--cur)"></i>*p — вершина, на которую смотрит p</span>
+      <span><i class="dot" style="background:var(--q)"></i>q — удаляемая</span>
+      <span><i class="dot" style="background:var(--r)"></i>r — замена</span>
+      <span><i class="dot" style="background:var(--s)"></i>s — родитель r</span>
+      <span><i class="ln-e" style="border-color:var(--cur)"></i>указатель, адрес которого хранит p</span>
+      <span><i class="ln-e" style="border-color:var(--accent)"></i>связь, изменённая на этом шаге</span>
+    </div>
+  </div>
+
+  <div class="work">
+    <div class="codebox" id="code" aria-label="Код DeleteSDP"></div>
+    <div class="side">
+      <div class="panel stepcard">
+        <div class="stepmeta"><span id="stepNo">—</span><span id="stepWhat"></span></div>
+        <div class="bar"><i id="barFill"></i></div>
+        <div class="steptitle" id="stepTitle">Выберите вершину для удаления</div>
+        <p class="steptext" id="stepText"></p>
+        <div class="controls">
+          <button id="bFirst" title="В начало">⏮</button>
+          <button id="bPrev" title="Шаг назад (←)">◀ Шаг</button>
+          <button id="bPlay" class="primary">▶ Пуск</button>
+          <button id="bNext" title="Шаг вперёд (→)">Шаг ▶</button>
+          <button id="bLast" title="В конец">⏭</button>
+          <select id="speed" aria-label="Скорость">
+            <option value="2200">медленно</option>
+            <option value="1400" selected>нормально</option>
+            <option value="700">быстро</option>
+          </select>
+        </div>
+      </div>
+      <div class="panel varsbox"><table class="vars" id="vars"></table></div>
+      <div class="panel picker">
+        <div class="row">
+          <label class="inl" for="keyIn">Удалить вершину</label>
+          <input id="keyIn" value="O" autocomplete="off">
+          <button id="delBtn" class="primary">Удалить</button>
+          <span class="counter" id="counter"></span>
+        </div>
+        <p class="hint" id="inHint">Буквы — латинские заглавные, как в программе.</p>
+        <div><p class="hint">Готовые примеры для каждого случая:</p><div class="chips" id="examples"></div></div>
+        <div><p class="hint">Или любая вершина дерева:</p><div class="chips" id="allKeys"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel log">
+    <h3>Протокол (как печатает программа после каждого удаления)</h3>
+    <ol id="log"></ol>
+    <p class="hint" id="logEmpty">Пока ничего не удалено.</p>
+  </div>
+
+  <article>
+    <section>
+      <span class="secnum">1 · ОБЩАЯ СХЕМА</span>
+      <h2>Из чего состоит программа</h2>
+      <ul>
+        <li><code>struct Vertex</code> — вершина дерева: ключ и два указателя на сыновей.</li>
+        <li><code>AddSDP</code> — добавление ключа в случайное дерево поиска (нужно, чтобы было из чего удалять).</li>
+        <li><code>DeleteSDP</code> — <b>задание 2</b>: удаление вершины с ключом <code>X</code> строго по псевдокоду пособия (стр. 50).</li>
+        <li><code>ObhodBukvy</code> и <code>Obhod</code> — обход слева направо: печатают ключи буквами или числами.</li>
+        <li><code>main</code> — <b>задание 3</b>: строит дерево (буквы ФИО или случайные числа), затем 10 раз читает ключ с клавиатуры, удаляет его и печатает обход.</li>
+      </ul>
+    </section>
+
+    <section>
+      <span class="secnum">2 · ВЕРШИНА</span>
+      <h2>struct Vertex</h2>
+<pre class="code" data-hl>struct Vertex {
+  int Data;
+  Vertex *Left;
+  Vertex *Right;
+};</pre>
+      <p><code>Data</code> — ключ. Для букв там лежит код символа (<code>'O'</code> = 79), поэтому буквы и числа сравниваются одинаково, обычным <code>&lt;</code> и <code>&gt;</code>. <code>Left</code> указывает на поддерево с меньшими ключами, <code>Right</code> — с большими. <code>NULL</code> означает «сына нет».</p>
+    </section>
+
+    <section>
+      <span class="secnum">3 · ДВОЙНАЯ КОСВЕННОСТЬ</span>
+      <h2>AddSDP и указатель на указатель</h2>
+<pre class="code" data-hl>void AddSDP(int D, Vertex **Root) {
+  Vertex **p = Root;
+  while (*p != NULL) {
+    if (D &lt; (*p)-&gt;Data)
+      p = &amp;((*p)-&gt;Left);
+    else if (D &gt; (*p)-&gt;Data)
+      p = &amp;((*p)-&gt;Right);
+    else
+      break;
+  }
+  if (*p == NULL) {
+    *p = (Vertex *)malloc(sizeof(Vertex));
+    (*p)-&gt;Data = D;
+    (*p)-&gt;Left = NULL;
+    (*p)-&gt;Right = NULL;
+  }
+}</pre>
+      <p>Главная идея, на которой держится и удаление: <code>p</code> имеет тип <code>Vertex **</code>. Он хранит не вершину, а <b>адрес поля-указателя</b>: либо адрес переменной <code>Root</code>, либо адрес поля <code>Left</code>/<code>Right</code> какой-то вершины.</p>
+      <ul>
+        <li><code>*p</code> — сам указатель, на который мы смотрим (то есть текущая вершина или <code>NULL</code>).</li>
+        <li><code>(*p)-&gt;Data</code> — ключ текущей вершины.</li>
+        <li><code>p = &amp;((*p)-&gt;Left)</code> — «перевести прицел» на левое поле текущей вершины.</li>
+        <li><code>*p = ...</code> — записать новое значение прямо в то поле родителя (или в <code>Root</code>), где мы остановились.</li>
+      </ul>
+      <p>Поэтому не нужно отдельно хранить родителя и помнить, левым или правым сыном была вершина: запись через <code>*p</code> сразу попадает куда нужно. Если ключ уже есть, срабатывает <code>break</code>, <code>*p</code> не равен <code>NULL</code>, и вершина не добавляется — повторов в дереве нет.</p>
+    </section>
+
+    <section>
+      <span class="secnum">4 · ЗАДАНИЕ 2</span>
+      <h2>DeleteSDP: поиск</h2>
+<pre class="code" data-hl>p = Root;
+while (*p != NULL) {
+  if ((*p)-&gt;Data &lt; X)
+    p = &amp;((*p)-&gt;Right);
+  else if ((*p)-&gt;Data &gt; X)
+    p = &amp;((*p)-&gt;Left);
+  else
+    break;
+}</pre>
+      <p>Поиск такой же, как в <code>AddSDP</code>: идём вправо, если ключ вершины меньше <code>X</code>, и влево, если больше. Цикл заканчивается в двух случаях:</p>
+      <ul>
+        <li>нашли вершину — <code>break</code>, и <code>*p</code> указывает на неё;</li>
+        <li>дошли до пустого места — <code>*p == NULL</code>, ключа в дереве нет, функция возвращает <code>0</code>.</li>
+      </ul>
+      <p>Важно, что после цикла <code>p</code> — это адрес того поля родителя, в котором лежит найденная вершина. Именно туда потом будет записана замена.</p>
+    </section>
+
+    <section>
+      <span class="secnum">5 · ЗАДАНИЕ 2</span>
+      <h2>DeleteSDP: три случая</h2>
+      <p>Сначала найденную вершину запоминаем: <code>q = *p</code>. Дальше смотрим, сколько у неё поддеревьев.</p>
+      <div class="cases">
+        <div class="case">
+          <h3>Нет левого поддерева</h3>
+          <p><code>*p = q-&gt;Right;</code> Родитель начинает указывать на правого сына <code>q</code>. Если <code>q</code> — лист, туда запишется <code>NULL</code>.</p>
+        </div>
+        <div class="case">
+          <h3>Нет правого поддерева</h3>
+          <p><code>*p = q-&gt;Left;</code> То же самое, только поднимается левое поддерево.</p>
+        </div>
+        <div class="case">
+          <h3>Два поддерева</h3>
+          <p>На место <code>q</code> ставим наибольшую вершину левого поддерева — самую правую. У неё нет правого сына, поэтому её легко вынуть.</p>
+        </div>
+      </div>
+<pre class="code" data-hl>r = q-&gt;Left;              // начинаем с корня левого поддерева
+s = q;                    // s — всегда родитель r
+while (r-&gt;Right != NULL) { // спускаемся вправо до упора
+  s = r;
+  r = r-&gt;Right;
+}
+if (s != q) {
+  s-&gt;Right = r-&gt;Left;     // 1) вынимаем r: его левые потомки остаются у s
+  r-&gt;Left = q-&gt;Left;      // 2) r забирает левое поддерево q
+}
+r-&gt;Right = q-&gt;Right;      // 3) r забирает правое поддерево q
+*p = r;                   // 4) родитель q теперь указывает на r
+free(q);</pre>
+      <p>Почему именно самая правая вершина левого поддерева: она больше всех остальных ключей слева и меньше всех ключей справа. Встав на место <code>q</code>, она не нарушает правило «слева меньше, справа больше», и обход слева направо остаётся отсортированным.</p>
+      <p>Шаг 1) нужен, потому что у <code>r</code> может быть левое поддерево. Его нельзя потерять, поэтому оно переходит на освободившееся правое место у <code>s</code>. Все эти ключи больше <code>s</code>, так что порядок сохраняется.</p>
+    </section>
+
+    <section>
+      <span class="secnum">6 · СВЕРКА С ПОСОБИЕМ</span>
+      <h2>Псевдокод и Си построчно</h2>
+      <div class="tablewrap">
+        <table class="map">
+          <tr><th>Псевдокод</th><th>Си</th><th>Смысл</th></tr>
+          <tr><td>p := @Root</td><td>p = Root;</td><td><code>Root</code> уже передан как <code>Vertex **</code>, то есть это и есть его адрес</td></tr>
+          <tr><td>DO (*p ≠ NIL)</td><td>while (*p != NULL)</td><td>цикл поиска</td></tr>
+          <tr><td>p := @((*p)→Right)</td><td>p = &amp;((*p)-&gt;Right);</td><td>сдвиг вправо</td></tr>
+          <tr><td>ELSE OD</td><td>else break;</td><td>нашли — выходим из цикла</td></tr>
+          <tr><td>IF (*p ≠ NIL)</td><td>if (*p != NULL)</td><td>вершина найдена</td></tr>
+          <tr><td>q := *p</td><td>q = *p;</td><td>запоминаем удаляемую</td></tr>
+          <tr><td>IF (q→Left = NIL) *p := q→Right</td><td>if (q-&gt;Left == NULL) *p = q-&gt;Right;</td><td>случай 1</td></tr>
+          <tr><td>ELSEIF (q→Right = NIL) *p := q→Left</td><td>else if (q-&gt;Right == NULL) *p = q-&gt;Left;</td><td>случай 2</td></tr>
+          <tr><td>r := q→Left, s := q</td><td>r = q-&gt;Left; s = q;</td><td>случай 3, старт поиска замены</td></tr>
+          <tr><td>DO (r→Right ≠ NIL) s := r, r := r→Right OD</td><td>while (r-&gt;Right != NULL) { s = r; r = r-&gt;Right; }</td><td>самая правая вершина слева</td></tr>
+          <tr><td>s→Right := r→Left</td><td>s-&gt;Right = r-&gt;Left;</td><td>шаг 1)</td></tr>
+          <tr><td>r→Left := q→Left</td><td>r-&gt;Left = q-&gt;Left;</td><td>шаг 2)</td></tr>
+          <tr><td>r→Right := q→Right</td><td>r-&gt;Right = q-&gt;Right;</td><td>шаг 3)</td></tr>
+          <tr><td>*p := r</td><td>*p = r;</td><td>шаг 4)</td></tr>
+          <tr><td>dispose(q)</td><td>free(q);</td><td>освобождаем память</td></tr>
+        </table>
+      </div>
+      <p>Единственное добавление — условие <code>if (s != q)</code> вокруг шагов 1) и 2), и <code>return 1</code> / <code>return 0</code>, чтобы <code>main</code> мог написать «вершины нет в дереве».</p>
+    </section>
+
+    <section>
+      <span class="secnum">7 · ЗАЧЕМ ПРОВЕРКА s != q</span>
+      <h2>Случай, когда цикл не сделал ни шага</h2>
+      <p>Если у левого сына <code>q</code> нет правого сына, цикл <code>while</code> не выполняется, и остаётся <code>r = q-&gt;Left</code>, <code>s = q</code>. Возьмём дерево из ФИО и удалим <code>B</code>: у неё левый сын <code>A</code>, правый <code>E</code>, и у <code>A</code> нет правого сына.</p>
+      <div class="note">
+        <p><b>Если выполнить псевдокод дословно:</b></p>
+        <ol>
+          <li><code>s-&gt;Right = r-&gt;Left</code> → <code>B-&gt;Right = NULL</code> (портится сама <code>q</code>, это ещё не страшно, она всё равно удаляется);</li>
+          <li><code>r-&gt;Left = q-&gt;Left</code> → <code>A-&gt;Left = A</code>: вершина указывает сама на себя;</li>
+          <li><code>r-&gt;Right = q-&gt;Right</code> → <code>A-&gt;Right = NULL</code>, потому что на шаге 1 правое поле <code>B</code> уже затёрто. Поддерево <code>E</code> потеряно.</li>
+        </ol>
+        <p>В итоге обход дерева уходит в бесконечную рекурсию по петле <code>A → A</code>.</p>
+      </div>
+      <p>При <code>s == q</code> вершина <code>r</code> и так стоит прямо под <code>q</code> со своим левым поддеревом, поэтому шаги 1) и 2) не нужны: достаточно 3) и 4). Попробуйте в визуализаторе пример «два поддерева, s = q».</p>
+    </section>
+
+    <section>
+      <span class="secnum">8 · ОБХОД</span>
+      <h2>Obhod и ObhodBukvy</h2>
+<pre class="code" data-hl>void Obhod(Vertex *p) {
+  if (p != NULL) {
+    Obhod(p-&gt;Left);
+    printf("%d ", p-&gt;Data);
+    Obhod(p-&gt;Right);
+  }
+}</pre>
+      <p>Рекурсивный обход слева направо: сначала всё левое поддерево, потом сама вершина, потом правое. В дереве поиска это даёт ключи по возрастанию. Поэтому после каждого удаления обход — удобная проверка: последовательность должна остаться отсортированной, и в ней не должно быть только удалённого ключа. <code>ObhodBukvy</code> такая же, только печатает <code>%c</code>.</p>
+    </section>
+
+    <section>
+      <span class="secnum">9 · ЗАДАНИЕ 3</span>
+      <h2>main</h2>
+      <ol>
+        <li><code>srand(time(NULL))</code> — каждый запуск даёт новые случайные числа.</li>
+        <li>Меню: <code>1</code> — буквы ФИО, <code>2</code> — случайные числа.</li>
+        <li><b>Буквы.</b> Массив <code>FIO</code> из 12 неповторяющихся символов добавляется в дерево по порядку через <code>AddSDP</code>, печатается обход.</li>
+        <li><b>Числа.</b> Программа спрашивает количество <code>n</code> (1..100), выделяет массив <code>malloc(n * sizeof(int))</code> и заполняет его: берёт <code>rand() % 100 + 1</code> и проверяет, нет ли такого числа среди уже взятых (<code>povtor</code>). Повтор отбрасывается, поэтому больше 100 чисел взять нельзя — разных чисел от 1 до 100 всего сто. Числа печатаются в порядке генерации, добавляются в дерево, печатается обход.</li>
+        <li>Цикл на <code>N = 10</code> повторений: прочитать ключ, вызвать <code>DeleteSDP</code>, при результате <code>0</code> написать «Вершины … нет в дереве», напечатать обход.</li>
+        <li>В режиме чисел цикл заканчивается раньше, если дерево опустело (<code>Root != NULL</code> в условии), и печатается «Дерево пустое».</li>
+      </ol>
+      <p>Для букв ввод читается через <code>scanf(" %c", &amp;x)</code>: пробел перед <code>%c</code> пропускает перевод строки, оставшийся от предыдущего ввода.</p>
+    </section>
+
+    <section>
+      <span class="secnum">10 · ТРУДОЁМКОСТЬ</span>
+      <h2>Сколько это стоит</h2>
+      <p>И поиск, и спуск к самой правой вершине идут по одному пути от корня вниз, а перестановка указателей — это не больше четырёх присваиваний. Значит, трудоёмкость удаления пропорциональна высоте дерева, как и при добавлении: в среднем для случайного дерева это O(log n), в худшем случае (дерево выродилось в список) — O(n).</p>
+    </section>
+  </article>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  const SX = 46, SY = 66, R = 18, TOP = 64;
+  const FIO = ['O','B','E','R','M','K','S','G','Y','V','L','A'].map(c => c.charCodeAt(0));
+  const reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  const CODE = [
+    "int DeleteSDP(int X, Vertex **Root) {",
+    "  Vertex **p, *q, *r, *s;",
+    "",
+    "  p = Root;",
+    "  while (*p != NULL) {",
+    "    if ((*p)->Data < X)",
+    "      p = &((*p)->Right);",
+    "    else if ((*p)->Data > X)",
+    "      p = &((*p)->Left);",
+    "    else",
+    "      break;",
+    "  }",
+    "",
+    "  if (*p != NULL) {",
+    "    q = *p;",
+    "    if (q->Left == NULL)",
+    "      *p = q->Right;",
+    "    else if (q->Right == NULL)",
+    "      *p = q->Left;",
+    "    else {",
+    "      r = q->Left;",
+    "      s = q;",
+    "      while (r->Right != NULL) {",
+    "        s = r;",
+    "        r = r->Right;",
+    "      }",
+    "      if (s != q) {",
+    "        s->Right = r->Left;  // 1)",
+    "        r->Left = q->Left;   // 2)",
+    "      }",
+    "      r->Right = q->Right;   // 3)",
+    "      *p = r;                // 4)",
+    "    }",
+    "    free(q);",
+    "    return 1;",
+    "  }",
+    "  return 0;",
+    "}"
+  ];
+  const FIRST_LINE = 34; // строка int DeleteSDP в main.cpp
+
+  // ——— подсветка синтаксиса ———
+  function esc(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function hl(src){
+    const re = /(\/\/.*$)|("(?:[^"\\]|\\.)*")|('(?:[^'\\]|\\.)')|\b(int|char|void|struct|if|else|while|for|return|break|NULL|sizeof)\b|\b(\d+)\b/gm;
+    let out = '', last = 0, m;
+    while ((m = re.exec(src))){
+      out += esc(src.slice(last, m.index));
+      const cls = m[1] ? 'cm' : (m[2] || m[3]) ? 'st' : m[4] ? 'kw' : 'nu';
+      out += '<span class="'+cls+'">'+esc(m[0])+'</span>';
+      last = re.lastIndex;
+    }
+    return out + esc(src.slice(last));
+  }
+  document.querySelectorAll('pre[data-hl]').forEach(pre => { pre.innerHTML = hl(pre.textContent); });
+  const codeEl = document.getElementById('code');
+  codeEl.innerHTML = CODE.map((l,i) => '<div class="cl" data-l="'+(i+1)+'"><span class="n">'+(FIRST_LINE+i)+'</span><span>'+(hl(l)||' ')+'</span></div>').join('');
+  const codeLines = [...codeEl.querySelectorAll('.cl')];
+
+  // ——— модель дерева ———
+  let mode = 'letters';
+  const fk = k => k == null ? 'NULL' : (mode === 'letters' ? String.fromCharCode(k) : String(k));
+  const clone = o => JSON.parse(JSON.stringify(o));
+  const emptyTree = () => ({ root: null, nodes: {}, next: 1 });
+
+  function addSDP(st, key){
+    let p = { kind: 'root' };
+    const get = () => p.kind === 'root' ? st.root : st.nodes[p.node][p.side];
+    while (get() != null){
+      const c = get(), k = st.nodes[c].key;
+      if (key < k) p = { kind: 'field', node: c, side: 'left' };
+      else if (key > k) p = { kind: 'field', node: c, side: 'right' };
+      else return;
+    }
+    const id = st.next++;
+    st.nodes[id] = { key, left: null, right: null };
+    if (p.kind === 'root') st.root = id; else st.nodes[p.node][p.side] = id;
+  }
+  function layout(st){
+    const P = {}; let i = 0;
+    (function walk(id, d){
+      if (id == null) return;
+      const n = st.nodes[id];
+      walk(n.left, d+1);
+      P[id] = { x: (++i) * SX, y: TOP + d * SY };
+      walk(n.right, d+1);
+    })(st.root, 0);
+    P.__root = { x: st.root != null ? P[st.root].x : SX * 2, y: 0 };
+    return P;
+  }
+  function inorder(st){
+    const out = [];
+    (function walk(id){ if (id == null) return; const n = st.nodes[id]; walk(n.left); out.push(n.key); walk(n.right); })(st.root);
+    return out;
+  }
+  function edgeSet(st){
+    const S = new Set();
+    for (const id in st.nodes){
+      const n = st.nodes[id];
+      if (n.left != null) S.add(id+':left:'+n.left);
+      if (n.right != null) S.add(id+':right:'+n.right);
+    }
+    return S;
+  }
+
+  // ——— кадры удаления: точное повторение DeleteSDP ———
+  function buildFrames(base, X){
+    const st = clone(base), pos = layout(base), F = [];
+    let prev = clone(base);
+    let p = { kind: 'root' }, q = null, r = null, s = null, ghost = null;
+    const deref = () => p.kind === 'root' ? st.root : st.nodes[p.node][p.side];
+    const assign = v => { if (p.kind === 'root') st.root = v; else st.nodes[p.node][p.side] = v; };
+    const K = id => id == null ? 'NULL' : fk(st.nodes[id].key);
+    const pText = () => p.kind === 'root' ? '&Root' : '&(' + fk(st.nodes[p.node].key) + '→' + (p.side === 'left' ? 'Left' : 'Right') + ')';
+
+    function push(lines, title, text, extra){
+      extra = extra || {};
+      const snap = clone(st);
+      const before = edgeSet(prev), after = edgeSet(snap);
+      const ne = [];
+      after.forEach(e => { if (!before.has(e)) { const [a,b] = e.split(':'); ne.push(a+':'+b); } });
+      const rootNew = prev.root !== snap.root;
+      prev = snap;
+      const cur = deref();
+      F.push({
+        st: snap, pos: extra.pos || pos, lines, title, text,
+        p: Object.assign({}, p),
+        vars: {
+          p: pText(), pv: cur, pvk: cur == null ? 'NULL' : K(cur),
+          q, qk: q == null ? '—' : (st.nodes[q] ? K(q) : fk(ghost.key) + ' (освобождена)'),
+          r, rk: r == null ? '—' : K(r), s, sk: s == null ? '—' : K(s)
+        },
+        newEdges: ne, rootNew, ghost: extra.ghost || null, done: !!extra.done, result: extra.result
+      });
+    }
+
+    push([4], 'p = Root', 'p — указатель на указатель. Сейчас в нём адрес переменной Root, поэтому *p — это корень дерева. Ищем ключ ' + fk(X) + '.');
+    for (;;){
+      const c = deref();
+      if (c == null){ push([5], '*p == NULL', 'Указатель, на который смотрит p, пустой. Дальше идти некуда — цикл заканчивается.'); break; }
+      const k = st.nodes[c].key;
+      if (k < X){
+        push([5,6], fk(k) + ' < ' + fk(X), '*p = ' + fk(k) + '. Ключ вершины меньше искомого, значит ' + fk(X) + ' может быть только справа.');
+        p = { kind: 'field', node: c, side: 'right' };
+        push([7], 'p = &((*p)->Right)', 'Теперь p хранит адрес поля Right вершины ' + fk(k) + '. Сама вершина не меняется — сдвинулся только «прицел».');
+      } else if (k > X){
+        push([5,6,8], fk(k) + ' > ' + fk(X), '*p = ' + fk(k) + '. Ключ вершины больше искомого, значит ' + fk(X) + ' может быть только слева.');
+        p = { kind: 'field', node: c, side: 'left' };
+        push([9], 'p = &((*p)->Left)', 'Теперь p хранит адрес поля Left вершины ' + fk(k) + '.');
+      } else {
+        push([5,6,8,10,11], fk(k) + ' == ' + fk(X), 'Нашли вершину с ключом ' + fk(X) + ' — break. Важно: p сейчас равен ' + pText() + ', то есть указывает на то место у родителя, где хранится найденная вершина.');
+        break;
+      }
+    }
+    if (deref() == null){
+      push([14,37], 'return 0', 'Вершины ' + fk(X) + ' в дереве нет. Дерево не изменилось, main напечатает «Вершины ' + fk(X) + ' нет в дереве».', { done: true, result: 0 });
+      return F;
+    }
+    q = deref();
+    const Q = st.nodes[q];
+    push([14,15], 'q = *p', 'Запоминаем удаляемую вершину ' + K(q) + ' в q. Через q будем брать её поддеревья, а через p — менять указатель родителя.');
+    if (Q.left == null){
+      push([16], 'q->Left == NULL', 'У ' + K(q) + ' нет левого поддерева' + (Q.right == null ? ' (и правого тоже — это лист).' : '.'));
+      assign(Q.right);
+      push([17], '*p = q->Right', Q.right == null
+        ? 'Записываем NULL в ' + pText() + '. Лист просто отрезан от дерева.'
+        : 'Записываем в ' + pText() + ' правого сына ' + K(Q.right) + '. Родитель теперь указывает сразу на него, а ' + K(q) + ' выпала из дерева.');
+    } else if (Q.right == null){
+      push([16,18], 'q->Right == NULL', 'Левое поддерево есть, а правого нет — одно поддерево.');
+      assign(Q.left);
+      push([19], '*p = q->Left', 'Записываем в ' + pText() + ' левого сына ' + K(Q.left) + '. Поддерево поднимается на место ' + K(q) + '.');
+    } else {
+      push([16,18,20], 'Два поддерева', 'У ' + K(q) + ' есть оба сына. Просто «вытащить» её нельзя — нужна замена: самая правая (наибольшая) вершина левого поддерева.');
+      r = Q.left; s = q;
+      push([21,22], 'r = q->Left, s = q', 'r — кандидат на замену, начинаем с корня левого поддерева (' + K(r) + '). s — родитель r, сейчас это сама q.');
+      while (st.nodes[r].right != null){
+        push([23], K(r) + '->Right != NULL', 'У ' + K(r) + ' есть правый сын ' + K(st.nodes[r].right) + ' — он больше, идём вправо.');
+        s = r; r = st.nodes[r].right;
+        push([24,25], 's = r, r = r->Right', 'Теперь r = ' + K(r) + ', его родитель s = ' + K(s) + '.');
+      }
+      push([23], K(r) + '->Right == NULL', K(r) + ' — самая правая вершина левого поддерева, то есть наибольший ключ слева от ' + K(q) + '. Она встанет на место ' + K(q) + '.');
+      if (s !== q){
+        push([27], 's != q', 'r лежит глубже левого сына q, поэтому её надо аккуратно вынуть и переподвесить к ней оба поддерева q.');
+        const rl = st.nodes[r].left;
+        st.nodes[s].right = rl;
+        push([28], '1) s->Right = r->Left', 'Правое поле ' + K(s) + ' теперь указывает на ' + (rl == null ? 'NULL — у ' + K(r) + ' не было левых потомков' : 'левое поддерево ' + K(r) + ' (' + K(rl) + '). Эти ключи не потеряются') + '. Вершина ' + K(r) + ' вынута со своего места.');
+        st.nodes[r].left = Q.left;
+        push([29], '2) r->Left = q->Left', K(r) + ' забирает левое поддерево ' + K(q) + ' (его корень — ' + K(Q.left) + ').');
+      } else {
+        push([27], 's == q', 'Цикл не сделал ни шага: r — сам левый сын ' + K(q) + ', и его левое поддерево уже на месте. Шаги 1) и 2) пропускаем, иначе получилось бы ' + K(r) + '->Left = ' + K(r) + ' (петля).');
+      }
+      st.nodes[r].right = Q.right;
+      push([31], '3) r->Right = q->Right', K(r) + ' забирает правое поддерево ' + K(q) + ' (его корень — ' + K(Q.right) + ').');
+      assign(r);
+      push([32], '4) *p = r', 'Через p записываем ' + K(r) + ' в ' + pText() + ' — туда, где раньше лежала ' + fk(Q.key) + '. Теперь ' + fk(Q.key) + ' не связана с деревом.');
+    }
+    ghost = { id: q, key: Q.key };
+    delete st.nodes[q];
+    push([34], 'free(q)', 'Освобождаем память вершины ' + fk(ghost.key) + '. Все её поддеревья уже переподвешены, ничего не потеряно.', { ghost });
+    const finalPos = layout(st);
+    push([35], 'return 1', 'Готово. Обход слева направо: ' + (inorder(st).map(fk).join(' ') || '(дерево пустое)'), { pos: finalPos, done: true, result: 1 });
+    return F;
+  }
+
+  // ——— отрисовка ———
+  const svg = document.getElementById('tree');
+  const NS = 'http://www.w3.org/2000/svg';
+  function seg(a, b, endGap){
+    const dx = b.x - a.x, dy = b.y - a.y, L = Math.hypot(dx, dy) || 1, ux = dx / L, uy = dy / L;
+    return [a.x + ux * R, a.y + uy * R, b.x - ux * endGap, b.y - uy * endGap];
+  }
+  function line(c, cls, mk){
+    return '<line class="edge '+cls+'" x1="'+c[0].toFixed(1)+'" y1="'+c[1].toFixed(1)+'" x2="'+c[2].toFixed(1)+'" y2="'+c[3].toFixed(1)+'" marker-end="url(#'+mk+')"/>';
+  }
+  function draw(fr, P){
+    const st = fr.st;
+    let maxX = 0, maxY = TOP;
+    for (const k in P){ if (k === '__root') continue; maxX = Math.max(maxX, P[k].x); maxY = Math.max(maxY, P[k].y); }
+    const W = Math.max(maxX + SX, 8 * SX), H = maxY + R + 40;
+    svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+    svg.style.minWidth = Math.round(W * 0.72) + 'px';
+    svg.style.maxWidth = Math.round(W * 1.6) + 'px';
+    const mk = (id, cls) => '<marker id="'+id+'" class="'+cls+'" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto"><path d="M0,0 L10,5 L0,10 z"/></marker>';
+    let h = '<defs>' + mk('mDef','mk-def') + mk('mNew','mk-new') + mk('mPP','mk-pp') + '</defs>';
+    const v = fr.vars || {};
+    const pp = fr.p;
+    const newSet = new Set(fr.newEdges || []);
+
+    // рёбра
+    for (const id in st.nodes){
+      const n = st.nodes[id];
+      for (const side of ['left','right']){
+        const c = n[side];
+        if (c == null || !st.nodes[c] || !P[id] || !P[c]) continue;
+        const isP = pp && pp.kind === 'field' && String(pp.node) === id && pp.side === side;
+        const isNew = newSet.has(id + ':' + side);
+        const cls = isP ? 'pp' : isNew ? 'new' : '';
+        h += line(seg(P[id], P[c], R + 2), cls, isP ? 'mPP' : isNew ? 'mNew' : 'mDef');
+      }
+    }
+    // p смотрит на пустое поле
+    if (pp && pp.kind === 'field' && st.nodes[pp.node] && st.nodes[pp.node][pp.side] == null && P[pp.node]){
+      const a = P[pp.node], dir = pp.side === 'left' ? -1 : 1;
+      const bx = a.x + dir * 26, by = a.y + 40;
+      h += '<line class="stub" x1="'+(a.x + dir*R*0.55)+'" y1="'+(a.y + R*0.8)+'" x2="'+bx+'" y2="'+by+'"/>';
+      h += '<text class="nulltxt" x="'+bx+'" y="'+(by + 12)+'" text-anchor="middle">NULL</text>';
+    }
+    // Root
+    const rp = P.__root || { x: SX * 2 };
+    const rootIsP = pp && pp.kind === 'root';
+    h += '<rect class="rootbox" x="'+(rp.x - 26)+'" y="6" width="52" height="22" rx="5"/>';
+    h += '<text class="roottxt'+(rootIsP ? ' pp' : '')+'" x="'+rp.x+'" y="17">Root</text>';
+    if (st.root != null && P[st.root]){
+      const cls = rootIsP ? 'pp' : fr.rootNew ? 'new' : '';
+      h += line(seg({ x: rp.x, y: 28 - R }, P[st.root], R + 2), cls, rootIsP ? 'mPP' : fr.rootNew ? 'mNew' : 'mDef');
+    } else {
+      h += '<text class="nulltxt" x="'+(rp.x + 34)+'" y="21">= NULL</text>';
+    }
+    // освобождаемая вершина
+    if (fr.ghost && P[fr.ghost.id]){
+      const g = P[fr.ghost.id];
+      h += '<g class="ghost"><circle cx="'+g.x+'" cy="'+g.y+'" r="'+R+'"/><text x="'+g.x+'" y="'+g.y+'">'+esc(fk(fr.ghost.key))+'</text></g>';
+    }
+    // вершины
+    for (const id in st.nodes){
+      const a = P[id]; if (!a) continue;
+      const nid = Number(id);
+      const tags = [];
+      if (v.q === nid) tags.push(['q','q']);
+      if (v.r === nid) tags.push(['r','r']);
+      if (v.s === nid) tags.push(['s','s']);
+      if (v.pv === nid && !tags.length) tags.push(['*p','cur']);
+      const role = tags.length ? tags[0][1] : '';
+      h += '<g class="node'+(role ? ' role-' + role : '')+'"><circle cx="'+a.x+'" cy="'+a.y+'" r="'+R+'"/><text class="k" x="'+a.x+'" y="'+a.y+'">'+esc(fk(st.nodes[id].key))+'</text></g>';
+      let tx = a.x + R + 3;
+      for (const [t, c] of tags){
+        h += '<text class="tag '+c+'" x="'+tx+'" y="'+(a.y - R + 2)+'">'+esc(t)+'</text>';
+        tx += t.length * 8 + 5;
+      }
+    }
+    svg.innerHTML = h;
+  }
+
+  // ——— состояние интерфейса ———
+  let state, seq = [], frames = [], idx = 0, timer = null, shownPos = null, raf = null, attempts = 0, pending = null;
+  const $ = id => document.getElementById(id);
+
+  function idleFrame(){
+    return { st: clone(state), pos: layout(state), lines: [], title: 'Дерево построено', text: 'Обход слева направо: ' + (inorder(state).map(fk).join(' ') || '(дерево пустое)') + '. Введите ключ или нажмите на пример ниже.', p: null, vars: null, newEdges: [], ghost: null, idle: true };
+  }
+
+  function show(i, animate){
+    idx = i;
+    const fr = frames[i];
+    renderPanels(fr);
+    const target = fr.pos, from = shownPos;
+    if (raf) { cancelAnimationFrame(raf); raf = null; }
+    const moving = animate !== false && from && !reduce &&
+      Object.keys(target).some(k => from[k] && (Math.abs(from[k].x - target[k].x) > .5 || Math.abs(from[k].y - target[k].y) > .5));
+    shownPos = target;
+    if (!moving){ draw(fr, target); }
+    else {
+      const t0 = performance.now(), D = 560;
+      const tick = now => {
+        const t = Math.min(1, (now - t0) / D), e = t < .5 ? 2*t*t : 1 - Math.pow(-2*t + 2, 2) / 2;
+        const P = {};
+        for (const k in target){ const a = from[k] || target[k], b = target[k]; P[k] = { x: a.x + (b.x - a.x) * e, y: a.y + (b.y - a.y) * e }; }
+        draw(fr, P);
+        raf = t < 1 ? requestAnimationFrame(tick) : null;
+      };
+      raf = requestAnimationFrame(tick);
+    }
+    if (i === frames.length - 1) flushLog();
+  }
+
+  function renderPanels(fr){
+    const on = new Set(fr.lines);
+    codeLines.forEach((el, k) => el.classList.toggle('on', on.has(k + 1)));
+    const first = codeLines[fr.lines[fr.lines.length - 1] - 1];
+    if (first && !fr.idle){
+      const box = codeEl, top = first.offsetTop - box.offsetTop;
+      if (top < box.scrollTop || top > box.scrollTop + box.clientHeight - 30) box.scrollTop = top - 40;
+    }
+    $('stepTitle').textContent = fr.title;
+    $('stepText').textContent = fr.text;
+    const n = frames.length;
+    $('stepNo').textContent = fr.idle ? 'шагов нет' : 'шаг ' + (idx + 1) + ' из ' + n;
+    $('stepWhat').textContent = pending ? 'DeleteSDP(' + fk(pending.X) + ')' : '';
+    $('barFill').style.width = (n > 1 ? (idx / (n - 1)) * 100 : 0) + '%';
+    const v = fr.vars;
+    const row = (name, cls, val) => '<tr><td class="'+cls+'">'+name+'</td><td>'+esc(val)+'</td></tr>';
+    $('vars').innerHTML = v
+      ? row('p', 'cur', v.p) + row('*p', 'cur', v.pvk) + row('q', 'q', v.qk) + row('r', 'r', v.rk) + row('s', 's', v.sk)
+      : row('p', 'cur', '—') + row('*p', 'cur', '—') + row('q', 'q', '—') + row('r', 'r', '—') + row('s', 's', '—');
+    $('bFirst').disabled = $('bPrev').disabled = idx === 0;
+    $('bNext').disabled = $('bLast').disabled = idx >= n - 1;
+    $('bPlay').disabled = n <= 1;
+    $('bPlay').textContent = timer ? '❚❚ Пауза' : '▶ Пуск';
+  }
+
+  function stop(){ if (timer){ clearInterval(timer); timer = null; } }
+  function play(){
+    stop();
+    if (idx >= frames.length - 1) show(0);
+    timer = setInterval(() => {
+      if (idx >= frames.length - 1){ stop(); renderPanels(frames[idx]); return; }
+      show(idx + 1);
+    }, Number($('speed').value));
+    renderPanels(frames[idx]);
+  }
+
+  function flushLog(){
+    if (!pending) return;
+    const li = document.createElement('li');
+    li.innerHTML = pending.ok
+      ? 'Удалили <b>' + esc(fk(pending.X)) + '</b>: ' + esc(pending.after.map(fk).join(' ') || '(дерево пустое)')
+      : '<span class="miss">Вершины ' + esc(fk(pending.X)) + ' нет в дереве</span>: ' + esc(pending.after.map(fk).join(' '));
+    $('log').appendChild(li);
+    $('logEmpty').hidden = true;
+    pending = null;
+    $('stepWhat').textContent = '';
+  }
+
+  function doDelete(X){
+    flushLog(); stop();
+    frames = buildFrames(state, X);
+    const last = frames[frames.length - 1];
+    state = clone(last.st);
+    attempts++;
+    pending = { X, ok: last.result === 1, after: inorder(state) };
+    renderChips();
+    show(0);
+    play();
+  }
+
+  function parseKey(){
+    const raw = $('keyIn').value.trim();
+    const hint = $('inHint');
+    hint.classList.remove('err');
+    if (mode === 'letters'){
+      if (!raw){ hint.textContent = 'Введите одну букву.'; hint.classList.add('err'); return null; }
+      return raw[0].toUpperCase().charCodeAt(0);
+    }
+    const n = parseInt(raw, 10);
+    if (isNaN(n)){ hint.textContent = 'Введите целое число.'; hint.classList.add('err'); return null; }
+    return n;
+  }
+
+  function category(id){
+    const n = state.nodes[id];
+    if (n.left == null && n.right == null) return 0;
+    if (n.left == null || n.right == null) return 1;
+    return state.nodes[n.left].right == null ? 3 : 2;
+  }
+  function renderChips(){
+    const keys = inorder(state);
+    const ex = $('examples'), all = $('allKeys');
+    const names = ['лист', 'одно поддерево', 'два поддерева, s ≠ q', 'два поддерева, s = q'];
+    const found = [null, null, null, null];
+    for (const id in state.nodes){ const c = category(id); if (found[c] == null) found[c] = state.nodes[id].key; }
+    ex.innerHTML = '';
+    names.forEach((nm, c) => {
+      if (found[c] == null) return;
+      const b = document.createElement('button');
+      b.className = 'chip';
+      b.innerHTML = '<small>' + nm + '</small>' + esc(fk(found[c]));
+      b.addEventListener('click', () => { $('keyIn').value = fk(found[c]); doDelete(found[c]); });
+      ex.appendChild(b);
+    });
+    if (!ex.children.length) ex.innerHTML = '<span class="hint">Дерево пустое.</span>';
+    all.innerHTML = '';
+    keys.forEach(k => {
+      const b = document.createElement('button');
+      b.className = 'chip';
+      b.textContent = fk(k);
+      b.addEventListener('click', () => { $('keyIn').value = fk(k); doDelete(k); });
+      all.appendChild(b);
+    });
+    $('counter').textContent = 'ввод ' + Math.min(attempts, 10) + ' из 10' + (attempts >= 10 ? ' — в программе цикл бы закончился' : '');
+  }
+
+  function loadTree(keys){
+    flushLog(); stop();
+    seq = keys;
+    state = emptyTree();
+    keys.forEach(k => addSDP(state, k));
+    attempts = 0; pending = null;
+    $('log').innerHTML = ''; $('logEmpty').hidden = false;
+    $('seqLine').innerHTML = (mode === 'letters' ? 'Порядок вставки: ' : 'Сгенерированные числа: ') + '<b>' + esc(keys.map(fk).join(' ')) + '</b>';
+    frames = [idleFrame()];
+    shownPos = null;
+    renderChips();
+    show(0, false);
+  }
+
+  function genNumbers(){
+    let n = parseInt($('nCount').value, 10);
+    if (isNaN(n) || n < 1) n = 1;
+    if (n > 100) n = 100;
+    $('nCount').value = n;
+    const A = [];
+    while (A.length < n){
+      const x = Math.floor(Math.random() * 100) + 1;
+      if (!A.includes(x)) A.push(x);
+    }
+    loadTree(A);
+  }
+
+  function setMode(m){
+    mode = m;
+    $('mLetters').setAttribute('aria-pressed', m === 'letters');
+    $('mNumbers').setAttribute('aria-pressed', m === 'numbers');
+    $('genBox').hidden = m !== 'numbers';
+    $('inHint').classList.remove('err');
+    $('inHint').textContent = m === 'letters' ? 'Буквы — латинские заглавные, как в программе.' : 'Можно ввести и число, которого нет в дереве, — увидите return 0.';
+    if (m === 'letters'){ loadTree(FIO.slice()); $('keyIn').value = 'O'; }
+    else { genNumbers(); $('keyIn').value = fk(inorder(state)[0]); }
+  }
+
+  $('mLetters').addEventListener('click', () => setMode('letters'));
+  $('mNumbers').addEventListener('click', () => setMode('numbers'));
+  $('genBtn').addEventListener('click', genNumbers);
+  $('nCount').addEventListener('keydown', e => { if (e.key === 'Enter') genNumbers(); });
+  $('delBtn').addEventListener('click', () => { const k = parseKey(); if (k != null) doDelete(k); });
+  $('keyIn').addEventListener('keydown', e => { if (e.key === 'Enter'){ const k = parseKey(); if (k != null) doDelete(k); } });
+  $('bFirst').addEventListener('click', () => { stop(); show(0); });
+  $('bPrev').addEventListener('click', () => { stop(); if (idx > 0) show(idx - 1); });
+  $('bNext').addEventListener('click', () => { stop(); if (idx < frames.length - 1) show(idx + 1); });
+  $('bLast').addEventListener('click', () => { stop(); show(frames.length - 1); });
+  $('bPlay').addEventListener('click', () => { if (timer){ stop(); renderPanels(frames[idx]); } else play(); });
+  $('speed').addEventListener('change', () => { if (timer) play(); });
+  document.addEventListener('keydown', e => {
+    if (e.target.matches('input, select, textarea')) return;
+    if (e.key === 'ArrowRight'){ stop(); if (idx < frames.length - 1) show(idx + 1); }
+    if (e.key === 'ArrowLeft'){ stop(); if (idx > 0) show(idx - 1); }
+  });
+
+  setMode('letters');
+})();
+</script>

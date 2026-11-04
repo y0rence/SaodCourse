@@ -1,0 +1,970 @@
+<title>АВЛ-дерево поиска</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=PT+Serif:ital,wght@0,400;0,700;1,400&family=PT+Sans:ital,wght@0,400;0,700;1,400&family=JetBrains+Mono:wght@400;700&display=swap">
+<style>
+/* Layout: одна колонка чтения (68ch) внутри сетки 1040px; схемы и код выходят на всю ширину */
+:root{
+  --bg:#eceff3; --surface:#ffffff; --surface-2:#f4f6f9;
+  --ink:#16222e; --muted:#5b6b7a; --line:#d2dae2;
+  --accent:#17627d; --accent-soft:#dceaf0;
+  --danger:#b02a37; --danger-soft:#f7e0e2;
+  --ok:#1f7a4d; --ok-soft:#dcefe4;
+  --warn:#9a6a10;
+  --f-display:"PT Serif",Georgia,"Times New Roman",serif;
+  --f-body:"PT Sans","Helvetica Neue",Arial,sans-serif;
+  --f-mono:"JetBrains Mono","SF Mono",Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0f151b; --surface:#161e26; --surface-2:#1b242e;
+  --ink:#e4ebf2; --muted:#93a3b2; --line:#2c3844;
+  --accent:#5fb3cf; --accent-soft:#13303c;
+  --danger:#ef7079; --danger-soft:#3a1d21;
+  --ok:#5bc48c; --ok-soft:#163326;
+  --warn:#d9ab51;
+  color-scheme:dark;
+}}
+:root[data-theme="dark"]{
+  --bg:#0f151b; --surface:#161e26; --surface-2:#1b242e;
+  --ink:#e4ebf2; --muted:#93a3b2; --line:#2c3844;
+  --accent:#5fb3cf; --accent-soft:#13303c;
+  --danger:#ef7079; --danger-soft:#3a1d21;
+  --ok:#5bc48c; --ok-soft:#163326;
+  --warn:#d9ab51;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:16.5px;line-height:1.62;margin:0}
+.wrap{max-width:1060px;margin:0 auto;padding-inline:20px}
+.prose{max-width:68ch}
+h1,h2,h3,h4{font-family:var(--f-display);text-wrap:balance;line-height:1.22;margin:0}
+h1{font-size:clamp(1.9rem,5vw,2.9rem);letter-spacing:-.01em}
+h2{font-size:clamp(1.45rem,3.4vw,2rem);margin-block:2.6rem .9rem;padding-top:.6rem;border-top:2px solid var(--ink)}
+h3{font-size:1.18rem;margin-block:2rem .5rem;color:var(--accent)}
+h4{font-size:1rem;margin-block:1.3rem .35rem}
+p{margin:0 0 .85rem}
+ul,ol{margin:0 0 .9rem;padding-left:1.4rem}
+li{margin-bottom:.35rem}
+b,strong{font-weight:700}
+code{font-family:var(--f-mono);font-size:.88em;background:var(--surface-2);padding:.08em .35em;border-radius:3px}
+.eyebrow{font-size:.74rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:700}
+/* ——— шапка ——— */
+header.top{background:var(--surface);border-bottom:1px solid var(--line)}
+header.top .wrap{padding-block:2.6rem 2rem}
+.meta{display:flex;flex-wrap:wrap;gap:.4rem 1.6rem;margin-top:1.1rem;font-size:.92rem;color:var(--muted)}
+.meta b{color:var(--ink)}
+.lede{font-size:1.1rem;color:var(--muted);max-width:62ch;margin-top:.8rem}
+/* ——— навигация ——— */
+nav.toc{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--surface);border-bottom:1px solid var(--line)}
+nav.toc .wrap{display:flex;gap:1.1rem;overflow-x:auto;padding-block:.6rem;scrollbar-width:thin}
+nav.toc a{color:var(--muted);text-decoration:none;white-space:nowrap;font-size:.86rem;font-weight:700;letter-spacing:.01em}
+nav.toc a:hover{color:var(--accent)}
+main .wrap{padding-block:1rem 4rem}
+/* ——— блоки ——— */
+.card{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:1.1rem 1.25rem;margin-block:1.2rem}
+.card.accent{border-left:4px solid var(--accent)}
+.card.danger{border-left:4px solid var(--danger)}
+.card.ok{border-left:4px solid var(--ok)}
+.card h4{margin-top:0}
+.def{background:var(--accent-soft);border:1px solid var(--line);border-left:4px solid var(--accent);border-radius:6px;padding:1rem 1.2rem;margin-block:1.2rem}
+.def .eyebrow{color:var(--accent)}
+figure{margin:1.4rem 0}
+figcaption{font-size:.86rem;color:var(--muted);margin-top:.5rem}
+.scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+svg{display:block;max-width:100%;height:auto}
+table{border-collapse:collapse;width:100%;font-size:.93rem;font-variant-numeric:tabular-nums}
+th,td{border:1px solid var(--line);padding:.45rem .6rem;text-align:left}
+th{background:var(--surface-2);font-weight:700}
+td.num,th.num{text-align:right}
+.badge{display:inline-block;font-family:var(--f-mono);font-size:.78rem;padding:.08em .45em;border-radius:3px;background:var(--surface-2);border:1px solid var(--line)}
+.badge.r{background:var(--danger-soft);color:var(--danger);border-color:var(--danger)}
+.badge.g{background:var(--ok-soft);color:var(--ok);border-color:var(--ok)}
+.badge.a{background:var(--accent-soft);color:var(--accent);border-color:var(--accent)}
+pre{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:.9rem 1rem;overflow-x:auto;font-family:var(--f-mono);font-size:.84rem;line-height:1.55;margin-block:1rem}
+/* ——— разбор кода ——— */
+.cw{background:var(--surface);border:1px solid var(--line);border-radius:6px;margin-block:1.1rem;overflow:hidden}
+.cw-head{background:var(--surface-2);border-bottom:1px solid var(--line);padding:.55rem .9rem;font-family:var(--f-mono);font-size:.84rem;font-weight:700}
+.cwr{display:grid;grid-template-columns:3.1rem minmax(0,1fr);gap:0 .5rem;padding:.2rem .9rem}
+.cwr:hover{background:var(--surface-2)}
+.cwr i{font-style:normal;font-family:var(--f-mono);font-size:.74rem;color:var(--muted);text-align:right;padding-top:.22rem}
+.cwr code{background:none;padding:0;font-size:.84rem;white-space:pre;display:block;overflow-x:auto}
+.cwr .n{grid-column:2;font-size:.9rem;color:var(--muted);padding:.1rem 0 .45rem;border-bottom:1px dashed var(--line);margin-bottom:.25rem}
+.cwr .n b{color:var(--ink)}
+@media (min-width:900px){
+  .cwr{grid-template-columns:3.1rem minmax(0,25rem) minmax(0,1fr);gap:0 1.2rem;padding-block:.3rem}
+  .cwr .n{grid-column:3;grid-row:1;border-bottom:none;margin:0;padding:0}
+}
+/* ——— шаги построения ——— */
+.step{background:var(--surface);border:1px solid var(--line);border-radius:6px;margin-block:1.3rem;overflow:hidden}
+.step-head{display:flex;flex-wrap:wrap;align-items:baseline;gap:.5rem .8rem;padding:.7rem .95rem;background:var(--surface-2);border-bottom:1px solid var(--line)}
+.step-head .no{font-family:var(--f-mono);font-size:.78rem;color:var(--muted)}
+.step-head .ttl{font-family:var(--f-display);font-weight:700;font-size:1.05rem}
+.step-body{padding:.9rem .95rem}
+.step-body p{font-size:.95rem}
+.panes{display:grid;gap:1rem}
+@media (min-width:820px){.panes.two{grid-template-columns:1fr 1fr}}
+.pane{min-width:0}
+.pane .cap{font-size:.8rem;color:var(--muted);margin-bottom:.3rem;font-weight:700}
+.qa{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:.85rem 1rem;margin-bottom:.7rem}
+.qa .q{font-family:var(--f-display);font-weight:700;margin-bottom:.35rem}
+.qa .q span{color:var(--accent);margin-right:.4rem}
+.qa p:last-child{margin-bottom:0}
+.lit{font-family:var(--f-mono);font-weight:700;color:var(--accent)}
+footer{border-top:1px solid var(--line);background:var(--surface);color:var(--muted);font-size:.88rem}
+footer .wrap{padding-block:1.4rem 2rem}
+@media (prefers-reduced-motion:no-preference){.step,.card{scroll-margin-top:4rem}}
+h2,h3{scroll-margin-top:4rem}
+</style>
+
+<header class="top"><div class="wrap">
+  <div class="eyebrow">Структуры и алгоритмы обработки данных · лабораторная работа</div>
+  <h1>АВЛ-дерево поиска</h1>
+  <p class="lede">Полный разбор: зачем нужна балансировка по высоте, как работают четыре поворота, построчный разбор программы и ручное построение дерева по 12 буквам ФИО.</p>
+  <div class="meta">
+    <span><b>Оберемок Сергей Владимирович</b></span>
+    <span>группа ИП-514</span>
+    <span>задания 3.5 (1–4)</span>
+  </div>
+</div></header>
+
+<nav class="toc"><div class="wrap">
+  <a href="#zachem">Зачем</a>
+  <a href="#opredelenie">Определение</a>
+  <a href="#balance">Баланс и Rost</a>
+  <a href="#povoroty">Повороты</a>
+  <a href="#algoritm">Алгоритм</a>
+  <a href="#plohie">«Плохие» деревья</a>
+  <a href="#kod">Разбор кода</a>
+  <a href="#z1">Задание 1</a>
+  <a href="#z234">Задания 2–4</a>
+  <a href="#voprosy">20 вопросов</a>
+</div></nav>
+
+<main><div class="wrap">
+
+<h2 id="zachem">1. Зачем вообще нужно АВЛ-дерево</h2>
+<div class="prose">
+<p>До АВЛ-дерева в курсе было два дерева поиска, и у каждого своя беда.</p>
+</div>
+
+<div class="card danger">
+  <h4>СДП — случайное дерево поиска</h4>
+  <p>Строится проще некуда: берём ключи в том порядке, в каком они приходят, и каждый подвешиваем листом туда, куда привёл поиск. Дерево никак не перестраивается.</p>
+  <p><b>Плюс:</b> процедура построения элементарная.<br>
+  <b>Минус:</b> средняя высота <span class="lit">1,39·log₂(n+1)</span> — среднее время поиска на <b>39 %</b> хуже идеального. А если ключи пришли уже отсортированными, дерево вырождается в линейный список высотой <span class="lit">n</span>, и поиск становится линейным.</p>
+</div>
+
+<div class="card danger">
+  <h4>ИСДП — идеально сбалансированное дерево поиска</h4>
+  <p>Сбалансировано <b>по размеру</b>: для каждой вершины число вершин слева и справа отличается не больше чем на единицу. Строится из отсортированного массива делением пополам.</p>
+  <p><b>Плюс:</b> минимально возможная высота <span class="lit">log₂(n+1)</span> и минимальное среднее время поиска.<br>
+  <b>Минус:</b> добавили одну вершину — и критерий «размеры отличаются не больше чем на 1» ломается сразу у многих вершин. Перестройка после случайного включения — операция почти такая же дорогая, как построение дерева заново.</p>
+</div>
+
+<div class="prose">
+<p>Нужен компромисс: дерево, которое <b>почти такое же низкое, как ИСДП</b>, но которое <b>дёшево чинить после каждой вставки</b>. Для этого в 1962 году Г. М. Адельсон-Вельский и Е. М. Ландис предложили ослабить критерий сбалансированности: балансировать не по размеру, а <b>по высоте</b>.</p>
+<p>Идея простая: нам ведь важна не симметрия количества вершин, а именно длина пути поиска. Длина пути определяется высотой. Значит и ограничивать надо высоту.</p>
+</div>
+
+<h2 id="opredelenie">2. Определение и свойства</h2>
+
+<div class="def">
+  <div class="eyebrow">Определение</div>
+  <p style="margin-top:.4rem"><b>АВЛ-деревом</b> называется дерево поиска, у которого для <b>каждой</b> вершины высоты левого и правого поддеревьев отличаются не больше чем на единицу:<br>
+  <span class="lit">| h<sub>L</sub> − h<sub>R</sub> | ≤ 1</span> для любой вершины.</p>
+</div>
+
+<div class="prose">
+<p>Два слова в определении работают одновременно, и оба обязательны:</p>
+<ul>
+  <li><b>дерево поиска</b> — слева от вершины все ключи меньше, справа все больше. АВЛ-дерево <b>всегда</b> является деревом поиска, иначе в нём нельзя было бы искать;</li>
+  <li><b>для каждой вершины</b> — не только для корня. Условие проверяется в каждой точке дерева.</li>
+</ul>
+<p>Отсюда два замечания, которые часто спрашивают:</p>
+<ul>
+  <li><b>ИСДП всегда является АВЛ-деревом — верно.</b> Если размеры поддеревьев отличаются не больше чем на 1 у каждой вершины, то и высоты отличаются не больше чем на 1.</li>
+  <li><b>АВЛ-дерево является ИСДП — не всегда.</b> Контрпример ниже: высоты у корня 2 и 1 (разница 1, условие АВЛ выполнено), а размеры 3 и 1 (разница 2, условие ИСДП нарушено).</li>
+</ul>
+</div>
+
+<figure>
+  <div class="scroll"><div id="fig-avl-not-isdp"></div></div>
+  <figcaption>Слева — АВЛ-дерево, но не ИСДП: у корня слева 3 вершины, справа 1. Справа — не АВЛ-дерево: у отмеченной вершины высоты поддеревьев 2 и 0.</figcaption>
+</figure>
+
+<div class="prose">
+<h3>Преимущества АВЛ-дерева</h3>
+<ol>
+  <li><b>Простой критерий сбалансированности</b> — достаточно хранить в вершине одно число от −1 до +1.</li>
+  <li><b>Простая процедура перестройки</b> — после вставки нужен максимум <b>один</b> поворот, а не перестройка всего дерева, как в ИСДП.</li>
+  <li><b>Среднее время поиска близко к ИСДП</b> — средняя высота АВЛ-дерева <span class="lit">1,025·log₂(n+1)</span>, то есть хуже идеала всего на <b>2,5 %</b> (против 39 % у СДП).</li>
+</ol>
+</div>
+
+<h2 id="balance">3. Показатель баланса и переменная Rost</h2>
+
+<div class="prose">
+<p>Чтобы проверять условие АВЛ, высоты поддеревьев считать нельзя: вычисление высоты — это обход всего поддерева, слишком дорого. Поэтому в каждую вершину добавляют одно поле — <b>показатель баланса</b> <code>Balance</code>:</p>
+</div>
+
+<div class="def">
+  <div class="eyebrow">Показатель баланса</div>
+  <table style="margin-top:.5rem"><thead><tr><th>Balance</th><th>Что означает</th><th>Как читать</th></tr></thead><tbody>
+  <tr><td class="num"><span class="badge">−1</span></td><td>h<sub>L</sub> &gt; h<sub>R</sub></td><td>левое поддерево выше</td></tr>
+  <tr><td class="num"><span class="badge">0</span></td><td>h<sub>L</sub> = h<sub>R</sub></td><td>высоты равны</td></tr>
+  <tr><td class="num"><span class="badge">+1</span></td><td>h<sub>L</sub> &lt; h<sub>R</sub></td><td>правое поддерево выше</td></tr>
+  <tr><td class="num"><span class="badge r">±2</span></td><td colspan="2">состояние, которого в готовом дереве быть не может — это и есть нарушение, требующее поворота</td></tr>
+  </tbody></table>
+  <p style="margin:.6rem 0 0;font-size:.92rem;color:var(--muted)">Короче: <code>Balance = h<sub>R</sub> − h<sub>L</sub></code>. Хранится прямо в вершине, рядом с данными и указателями. У новой вершины Balance = 0, потому что оба её поддерева пусты.</p>
+</div>
+
+<div class="prose">
+<p><b>Где он меняется.</b> Только на обратном ходе рекурсии и только у вершин, лежащих на пути поиска. Остальных вершин вставка не касается — их высоты не изменились. Это и даёт трудоёмкость O(log n): просматривается один путь, а не всё дерево.</p>
+
+<h3>Переменная Rost</h3>
+<p><code>Rost</code> — это логическая переменная (одна на всё дерево, глобальная), которая отвечает на один вопрос: <b>выросла ли высота того поддерева, из которого мы только что вернулись?</b></p>
+<ul>
+  <li><code>Rost = true</code> — поддерево стало выше на 1, значит родителю нужно пересчитать свой баланс;</li>
+  <li><code>Rost = false</code> — высота поддерева не изменилась, значит выше по пути вообще ничего делать не нужно, и рекурсия просто разматывается до конца вхолостую.</li>
+</ul>
+<p>Как она меняется по ходу построения:</p>
+<ol>
+  <li>создали новую вершину → <code>Rost = true</code> (пустое поддерево высоты 0 стало поддеревом высоты 1);</li>
+  <li>поднялись к вершине, у которой баланс был перекошен <b>в другую сторону</b> → перекос выровнялся, высота вершины не изменилась → <code>Rost = false</code>, рост остановился;</li>
+  <li>поднялись к вершине с балансом 0 → она стала −1 или +1, её высота увеличилась → <code>Rost</code> остаётся <code>true</code>, идём выше;</li>
+  <li>поднялись к вершине, у которой перекос был <b>в ту же сторону</b> → получилось бы ±2 → делаем поворот. После поворота высота поддерева становится такой же, какой была до вставки → <code>Rost = false</code>.</li>
+  <li>ключ уже есть в дереве → ничего не добавили → <code>Rost = false</code>.</li>
+</ol>
+<p>Пункт 4 — ключевой. Именно поэтому <b>нарушение баланса возможно только в одной вершине и один поворот полностью восстанавливает структуру всего АВЛ-дерева</b>.</p>
+
+<h3>Три случая при включении вершины</h3>
+<p>Пусть новая вершина попала в <b>левое</b> поддерево некоторой вершины и это поддерево выросло. Возможны ровно три случая:</p>
+</div>
+
+<div class="panes two">
+  <div class="pane card">
+    <h4>Вставка в ЛЕВОЕ поддерево</h4>
+    <ol style="margin-bottom:0">
+      <li><b>было h<sub>L</sub> &lt; h<sub>R</sub></b> (Balance = +1) → стало h<sub>L</sub> = h<sub>R</sub>, Balance = 0. Высота вершины не изменилась, <b>Rost = false</b>.</li>
+      <li><b>было h<sub>L</sub> = h<sub>R</sub></b> (Balance = 0) → стало h<sub>L</sub> &gt; h<sub>R</sub>, Balance = −1. Высота выросла, <b>Rost = true</b>, идём выше.</li>
+      <li><b>было h<sub>L</sub> &gt; h<sub>R</sub></b> (Balance = −1) → стало бы −2. <b>Нарушение баланса</b>, нужен поворот <b>LL</b> или <b>LR</b>.</li>
+    </ol>
+  </div>
+  <div class="pane card">
+    <h4>Вставка в ПРАВОЕ поддерево</h4>
+    <ol style="margin-bottom:0">
+      <li><b>было h<sub>L</sub> &gt; h<sub>R</sub></b> (Balance = −1) → стало h<sub>L</sub> = h<sub>R</sub>, Balance = 0. Высота не изменилась, <b>Rost = false</b>.</li>
+      <li><b>было h<sub>L</sub> = h<sub>R</sub></b> (Balance = 0) → стало h<sub>L</sub> &lt; h<sub>R</sub>, Balance = +1. Высота выросла, <b>Rost = true</b>, идём выше.</li>
+      <li><b>было h<sub>L</sub> &lt; h<sub>R</sub></b> (Balance = +1) → стало бы +2. <b>Нарушение баланса</b>, нужен поворот <b>RR</b> или <b>RL</b>.</li>
+    </ol>
+  </div>
+</div>
+
+<h2 id="povoroty">4. Повороты: четыре случая</h2>
+
+<div class="prose">
+<p>Поворот — это локальная перестройка трёх (или двух) вершин, которая <b>сохраняет порядок дерева поиска</b> и уменьшает высоту перекошенного поддерева на 1. Поворотов ровно четыре, и название читается так:</p>
+<ul>
+  <li><b>первая буква</b> — в какую сторону от вершины <code>p</code> случился перекос (L — влево, R — вправо);</li>
+  <li><b>вторая буква</b> — в какую сторону ушёл перекос у её сына <code>q</code>.</li>
+</ul>
+<p>Выбор поворота делается по одному признаку — по балансу сына:</p>
+<table>
+<thead><tr><th>Ситуация у вершины p</th><th>Баланс сына</th><th>Поворот</th><th>Другое название</th></tr></thead>
+<tbody>
+<tr><td>перекос влево (стало бы −2)</td><td><code>p-&gt;Left-&gt;Balance &lt; 0</code></td><td><b>LL</b></td><td>малое правое вращение</td></tr>
+<tr><td>перекос влево (стало бы −2)</td><td><code>p-&gt;Left-&gt;Balance &gt; 0</code></td><td><b>LR</b></td><td>большое правое вращение</td></tr>
+<tr><td>перекос вправо (стало бы +2)</td><td><code>p-&gt;Right-&gt;Balance &gt; 0</code></td><td><b>RR</b></td><td>малое левое вращение</td></tr>
+<tr><td>перекос вправо (стало бы +2)</td><td><code>p-&gt;Right-&gt;Balance &lt; 0</code></td><td><b>RL</b></td><td>большое левое вращение</td></tr>
+</tbody></table>
+</div>
+
+<h3>LL-поворот (RR симметричен)</h3>
+<div class="prose"><p>Новая вершина попала в <b>левое</b> поддерево <b>левого</b> сына. Левый сын <code>A</code> поднимается на место <code>B</code>, а <code>B</code> становится его правым сыном и забирает себе «средний» кусок <code>T₂</code>.</p></div>
+
+<figure><div class="scroll">
+<svg viewBox="0 0 580 300" class="fig" role="img" aria-label="Схема LL-поворота">
+ <style>
+  svg.fig{width:100%;max-width:640px;margin-inline:auto}
+  .fig polygon{fill:var(--surface-2);stroke:var(--ink);stroke-width:2.5;vector-effect:non-scaling-stroke}
+  .fig .ed{stroke:var(--ink);stroke-width:2;fill:none}
+  .fig circle{fill:var(--surface);stroke:var(--ink);stroke-width:2.5}
+  .fig text{font-family:var(--f-body);fill:var(--ink)}
+  .fig .nm{font-weight:700;font-size:17px;text-anchor:middle;dominant-baseline:central}
+  .fig .bal{font-size:14px;font-family:var(--f-mono);fill:var(--accent)}
+  .fig .bad{fill:var(--danger);font-weight:700}
+  .fig .tl{font-size:14px;text-anchor:middle;font-weight:700}
+  .fig .ht{font-size:12px;text-anchor:middle;fill:var(--muted);font-family:var(--f-mono)}
+  .fig .dir{font-size:14px;font-weight:700;fill:var(--danger);font-family:var(--f-mono)}
+  .fig .ptr{font-size:14px;font-style:italic;fill:var(--accent);font-weight:700}
+  .fig .arr{font-size:26px;fill:var(--accent);text-anchor:middle}
+  .fig .mark{fill:var(--ok);stroke:var(--ok);stroke-width:2}
+ </style>
+ <!-- ДО -->
+ <path class="ed" d="M140 36 L85 104 M140 36 L208 168 M85 104 L48 168 M85 104 L123 168"/>
+ <polygon points="48,168 76,236 20,236"/>
+ <polygon points="123,168 151,236 95,236"/>
+ <polygon points="208,168 236,236 180,236"/>
+ <rect class="mark" x="40" y="226" width="16" height="10" rx="2"/>
+ <circle cx="140" cy="36" r="17"/><text class="nm" x="140" y="36">B</text>
+ <circle cx="85" cy="104" r="17"/><text class="nm" x="85" y="104">A</text>
+ <text class="bal bad" x="162" y="26">−2</text><text class="bal" x="40" y="98">−1</text>
+ <text class="ptr" x="166" y="48">p</text><text class="ptr" x="100" y="128">q</text>
+ <text class="dir" x="105" y="68">L</text><text class="dir" x="52" y="140">L</text>
+ <text class="tl" x="48" y="252">T₁</text><text class="ht" x="48" y="268">h+1</text>
+ <text class="tl" x="123" y="252">T₂</text><text class="ht" x="123" y="268">h</text>
+ <text class="tl" x="208" y="252">T₃</text><text class="ht" x="208" y="268">h</text>
+ <!-- стрелка -->
+ <text class="arr" x="277" y="150">⟶</text>
+ <text class="ht" x="277" y="172">LL</text>
+ <!-- ПОСЛЕ -->
+ <path class="ed" d="M395 36 L338 108 M395 36 L455 104 M455 104 L443 168 M455 104 L528 168"/>
+ <polygon points="338,108 366,176 310,176"/>
+ <polygon points="443,168 471,236 415,236"/>
+ <polygon points="528,168 556,236 500,236"/>
+ <rect class="mark" x="330" y="166" width="16" height="10" rx="2"/>
+ <circle cx="395" cy="36" r="17"/><text class="nm" x="395" y="36">A</text>
+ <circle cx="455" cy="104" r="17"/><text class="nm" x="455" y="104">B</text>
+ <text class="bal" x="417" y="26">0</text><text class="bal" x="478" y="98">0</text>
+ <text class="ptr" x="372" y="26">p</text>
+ <text class="tl" x="338" y="192">T₁</text><text class="ht" x="338" y="208">h+1</text>
+ <text class="tl" x="443" y="252">T₂</text><text class="ht" x="443" y="268">h</text>
+ <text class="tl" x="528" y="252">T₃</text><text class="ht" x="528" y="268">h</text>
+</svg>
+</div>
+<figcaption>Треугольник — целое поддерево. Зелёная метка — то поддерево, куда попала новая вершина и которое выросло. До поворота высота всего куска была h+2, после — снова h+2, поэтому выше по дереву ничего менять не нужно.</figcaption>
+</figure>
+
+<div class="panes two">
+<div class="pane"><div class="cap">Псевдокод LL (из лекции)</div>
+<pre>q = p--&gt;Left
+p--&gt;Bal = 0
+q--&gt;Bal = 0
+p--&gt;Left  = q--&gt;Right
+q--&gt;Right = p
+p = q</pre></div>
+<div class="pane"><div class="cap">Псевдокод RR (зеркально)</div>
+<pre>q = p--&gt;Right
+p--&gt;Bal = 0
+q--&gt;Bal = 0
+p--&gt;Right = q--&gt;Left
+q--&gt;Left  = p
+p = q</pre></div>
+</div>
+
+<h3>LR-поворот (RL симметричен)</h3>
+<div class="prose"><p>Новая вершина попала в <b>правое</b> поддерево <b>левого</b> сына. Здесь одного вращения мало: если поднять <code>A</code>, перекос просто перевернётся. Поэтому наверх идёт <b>внук</b> <code>B</code>, а <code>A</code> и <code>C</code> становятся его сыновьями и делят между собой четыре поддерева.</p></div>
+
+<figure><div class="scroll">
+<svg viewBox="0 0 590 310" class="fig" role="img" aria-label="Схема LR-поворота">
+ <!-- ДО -->
+ <path class="ed" d="M150 28 L85 92 M150 28 L220 100 M85 92 L35 152 M85 92 L135 152 M135 152 L105 212 M135 152 L165 212"/>
+ <polygon points="35,152 63,220 7,220"/>
+ <polygon points="105,212 133,280 77,280"/>
+ <polygon points="165,212 193,280 137,280"/>
+ <polygon points="220,100 248,168 192,168"/>
+ <rect class="mark" x="97" y="270" width="16" height="10" rx="2"/>
+ <circle cx="150" cy="28" r="17"/><text class="nm" x="150" y="28">C</text>
+ <circle cx="85" cy="92" r="17"/><text class="nm" x="85" y="92">A</text>
+ <circle cx="135" cy="152" r="16"/><text class="nm" x="135" y="152">B</text>
+ <text class="bal bad" x="170" y="18">−2</text><text class="bal" x="60" y="80">+1</text><text class="bal" x="156" y="146">−1</text>
+ <text class="ptr" x="176" y="38">p</text><text class="ptr" x="55" y="104">q</text><text class="ptr" x="108" y="160">r</text>
+ <text class="dir" x="105" y="58">L</text><text class="dir" x="120" y="128">R</text>
+ <text class="tl" x="35" y="236">T₁</text><text class="ht" x="35" y="251">h</text>
+ <text class="tl" x="105" y="296">T₂</text><text class="ht" x="105" y="309">h−1</text>
+ <text class="tl" x="165" y="296">T₃</text><text class="ht" x="165" y="309">h−1</text>
+ <text class="tl" x="220" y="184">T₄</text><text class="ht" x="220" y="199">h</text>
+ <text class="arr" x="285" y="150">⟶</text><text class="ht" x="285" y="172">LR</text>
+ <!-- ПОСЛЕ -->
+ <path class="ed" d="M450 28 L398 92 M450 28 L505 92 M398 92 L365 152 M398 92 L425 152 M505 92 L478 152 M505 92 L540 152"/>
+ <polygon points="365,152 393,220 337,220"/>
+ <polygon points="425,152 453,220 397,220"/>
+ <polygon points="478,152 506,220 450,220"/>
+ <polygon points="540,152 568,220 512,220"/>
+ <rect class="mark" x="417" y="210" width="16" height="10" rx="2"/>
+ <circle cx="450" cy="28" r="17"/><text class="nm" x="450" y="28">B</text>
+ <circle cx="398" cy="92" r="17"/><text class="nm" x="398" y="92">A</text>
+ <circle cx="505" cy="92" r="17"/><text class="nm" x="505" y="92">C</text>
+ <text class="bal" x="471" y="18">0</text><text class="bal" x="371" y="84">0</text><text class="bal" x="527" y="84">0</text>
+ <text class="ptr" x="427" y="18">p</text>
+ <text class="tl" x="365" y="236">T₁</text><text class="ht" x="365" y="251">h</text>
+ <text class="tl" x="425" y="236">T₂</text><text class="ht" x="425" y="251">h−1</text>
+ <text class="tl" x="478" y="236">T₃</text><text class="ht" x="478" y="251">h−1</text>
+ <text class="tl" x="540" y="236">T₄</text><text class="ht" x="540" y="251">h</text>
+</svg>
+</div>
+<figcaption>Новая вершина могла попасть и в T₂, и в T₃ — от этого зависят итоговые балансы A и C, поэтому в коде перед перестройкой стоят две проверки знака <code>r-&gt;Balance</code>.</figcaption>
+</figure>
+
+<div class="card accent">
+<h4>Почему в LR два <code>if</code>, а в LL ни одного</h4>
+<p>В LL оба участника гарантированно выравниваются: <code>p-&gt;Balance = 0</code> и <code>q-&gt;Balance = 0</code> без вариантов. В LR вершина <code>r</code> (внук) поднимается наверх и отдаёт своих детей налево и направо, и один из них короче другого:</p>
+<ul>
+<li><code>r-&gt;Balance &lt; 0</code> — новая вершина была в T₂ → после поворота у C недостаёт левого куска → <code>p-&gt;Balance = 1</code>;</li>
+<li><code>r-&gt;Balance &gt; 0</code> — новая вершина была в T₃ → у A недостаёт правого куска → <code>q-&gt;Balance = −1</code>;</li>
+<li><code>r-&gt;Balance = 0</code> — вырожденный случай (r и есть новая вершина, T₂ и T₃ пусты) → оба получают 0.</li>
+</ul>
+<p style="margin-bottom:0">Сама вершина <code>r</code> после поворота всегда уравновешена: <code>r-&gt;Balance = 0</code>.</p>
+</div>
+
+<h3>Все четыре поворота на простейших примерах</h3>
+<div class="prose"><p>Минимальный случай — три вершины. В каждом примере вставка третьей вершины ломает баланс корня, и один поворот превращает «палку» в идеальное дерево высоты 2.</p></div>
+<div id="fig-rot-examples"></div>
+
+<h2 id="algoritm">5. Алгоритм добавления вершины</h2>
+
+<div class="def">
+<div class="eyebrow">Идея</div>
+<ol style="margin:.5rem 0 0">
+<li>Сначала добавляем новую вершину так же, как в <b>случайное</b> дерево поиска: идём по пути поиска и подвешиваем её <b>листом</b>.</li>
+<li>Двигаясь <b>назад по пути поиска</b>, ищем вершину, в которой нарушился баланс (высоты поддеревьев стали отличаться больше чем на единицу).</li>
+<li>Если такая вершина найдена — <b>меняем структуру дерева</b> поворотом, чтобы восстановить баланс.</li>
+</ol>
+</div>
+
+<div class="prose">
+<h3>Три задачи, которые нужно решить</h3>
+<table>
+<thead><tr><th>Задача</th><th>Решение</th></tr></thead>
+<tbody>
+<tr><td>Как двигаться назад по пути поиска?</td><td><b>Рекурсия.</b> Она автоматически хранит адреса всех пройденных вершин в стеке вызовов и сама возвращает нас в них на обратном ходе. Никаких «родительских» указателей вводить не нужно.</td></tr>
+<tr><td>Как определить нарушение баланса?</td><td><b>Показатель Balance</b> в каждой вершине: −1, 0, +1. Если при пересчёте он должен был бы стать ±2 — баланс нарушен.</td></tr>
+<tr><td>Как восстановить баланс?</td><td><b>Поворот</b> LL, LR, RR или RL — выбирается по балансу сына.</td></tr>
+</tbody>
+</table>
+
+<h3>Трудоёмкость</h3>
+<ul>
+<li><b>Поиск места вставки</b> — проход по одному пути от корня до листа: <b>O(log n)</b> сравнений, не больше чем <span class="lit">1,45·log₂(n+2)</span>.</li>
+<li><b>Обратный ход и пересчёт балансов</b> — тот же путь: <b>O(log n)</b>.</li>
+<li><b>Поворот</b> — переброс двух-трёх указателей: <b>O(1)</b>, и он нужен <b>максимум один раз</b> на всю вставку.</li>
+</ul>
+<p>Итого трудоёмкость включения вершины в АВЛ-дерево — <b>O(log n)</b>. Для сравнения, перестройка ИСДП после включения — O(n).</p>
+</div>
+
+<h2 id="plohie">6. «Плохие» АВЛ-деревья и оценка высоты</h2>
+
+<div class="def">
+<div class="eyebrow">Определение</div>
+<p style="margin-top:.4rem"><b>«Плохим»</b> называется АВЛ-дерево, которое имеет <b>наименьшее число вершин при фиксированной высоте</b>. Это худший, самый «разреженный» случай — именно он даёт верхнюю оценку высоты.</p>
+</div>
+
+<div class="prose">
+<p>Строятся такие деревья рекурсивно. Чтобы дерево высоты h имело как можно меньше вершин, берём корень и подвешиваем к нему два минимальных поддерева <b>разной</b> высоты — больше различать нельзя, условие АВЛ не позволит:</p>
+<p style="text-align:center;font-family:var(--f-mono);font-size:1.05rem"><b>T<sub>h</sub> = ⟨ T<sub>h−1</sub>, x, T<sub>h−2</sub> ⟩</b></p>
+<p>где T₀ — пустое дерево, T₁ — дерево из одной вершины. Отсюда количество вершин:</p>
+<p style="text-align:center;font-family:var(--f-mono)"><b>N<sub>h</sub> = N<sub>h−1</sub> + N<sub>h−2</sub> + 1</b></p>
+<p>Это в точности рекуррентность чисел Фибоначчи (со сдвигом: N<sub>h</sub> = F<sub>h+2</sub> − 1), поэтому «плохие» АВЛ-деревья называют <b>деревьями Фибоначчи</b>.</p>
+</div>
+
+<table>
+<thead><tr><th class="num">h</th><th class="num">1</th><th class="num">2</th><th class="num">3</th><th class="num">4</th><th class="num">5</th><th class="num">6</th><th class="num">7</th><th class="num">8</th></tr></thead>
+<tbody><tr><th>N<sub>h</sub> — минимум вершин</th><td class="num">1</td><td class="num">2</td><td class="num">4</td><td class="num">7</td><td class="num">12</td><td class="num">20</td><td class="num">33</td><td class="num">54</td></tr></tbody>
+</table>
+<p style="font-size:.9rem;color:var(--muted)">Проверка для задания: при n = 100 вершинам соответствует минимум h = 9 (N₉ = 88 ≤ 100 &lt; N₁₀ = 143), то есть выше 9 АВЛ-дерево из 100 вершин не поднимется никогда. На практике получается 7–8.</p>
+
+<div class="def">
+<div class="eyebrow">Теорема Адельсона-Вельского и Ландиса</div>
+<p style="margin-top:.4rem;text-align:center;font-family:var(--f-mono);font-size:1.02rem">log₂(n+1) ≤ h<sub>АВЛ</sub>(n) &lt; 1,45·log₂(n+2) − 0,328</p>
+<p style="margin-bottom:0">Слева — лучший случай, это ИСДП. Справа — «плохие» АВЛ-деревья. Значит, <b>АВЛ-дерево никогда не превышает ИСДП по высоте больше чем на 45 %</b>, независимо от количества вершин.</p>
+</div>
+
+<h3>Сводная таблица по трём деревьям</h3>
+<div class="scroll"><table>
+<thead><tr><th>Дерево поиска</th><th>Минимальная высота</th><th>Средняя высота</th><th>Максимальная высота</th></tr></thead>
+<tbody>
+<tr><th>ИСДП</th><td>log₂(n+1)</td><td>log₂(n+1)</td><td>log₂(n+1)</td></tr>
+<tr><th>СДП</th><td>log₂(n+1)</td><td><b>1,39</b>·log₂(n+1)</td><td><b>n</b></td></tr>
+<tr><th>АВЛ</th><td>log₂(n+1)</td><td><b>1,025</b>·log₂(n+1)</td><td><b>1,45</b>·log₂(n+1)</td></tr>
+</tbody></table></div>
+<p style="font-size:.9rem;color:var(--muted)">Отсюда два числа, которые спрашивают на защите: средняя высота АВЛ-дерева больше средней высоты ИСДП на <b>2,5 %</b>, максимальная — не больше чем на <b>45 %</b>.</p>
+
+<h2 id="kod">7. Разбор программы по строчкам</h2>
+<div class="prose">
+<p>Разбирается файл <code>main.cpp</code> — реализация по псевдокоду пособия. Номера слева совпадают с номерами строк в файле.</p>
+</div>
+
+<div class="card accent">
+<h4>Главное, без чего код не читается: <code>Vertex *&amp;p</code></h4>
+<p>Это <b>ссылка на указатель</b>. Обычный <code>Vertex *p</code> передал бы копию адреса: функция смогла бы менять поля вершины, но не смогла бы заменить саму вершину в дереве. А поворот именно это и делает — ставит на место <code>p</code> другую вершину.</p>
+<p style="margin-bottom:0">Когда в <code>AddAVL</code> пишут <code>AddAVL(D, p-&gt;Left)</code>, в функцию уходит ссылка <b>на само поле</b> <code>p-&gt;Left</code>. Присваивание <code>p = q</code> внутри поворота физически перезаписывает поле родителя (или переменную корня). Поэтому никаких «вернуть новый корень поддерева» в этом коде не нужно.</p>
+</div>
+
+<h3>7.1. Структура вершины и глобальная переменная</h3>
+<div class="cw">
+<div class="cw-head">строки 1–15</div>
+<div class="cwr"><i>1</i><code>#include &lt;stdio.h&gt;</code><div class="n">printf для вывода.</div></div>
+<div class="cwr"><i>2</i><code>#include &lt;stdlib.h&gt;</code><div class="n">rand, srand.</div></div>
+<div class="cwr"><i>3</i><code>#include &lt;time.h&gt;</code><div class="n">time — зерно генератора, чтобы при каждом запуске набор был новый.</div></div>
+<div class="cwr"><i>5</i><code>#define N 100</code><div class="n">Количество вершин по заданию 3. Одна константа на всю программу.</div></div>
+<div class="cwr"><i>8</i><code>struct Vertex {</code><div class="n">Вершина дерева.</div></div>
+<div class="cwr"><i>9</i><code>    int Data;</code><div class="n">Ключ. По нему идёт поиск и сравнение.</div></div>
+<div class="cwr"><i>10</i><code>    int Balance;</code><div class="n"><b>Показатель баланса</b>: −1 левое выше, 0 равны, +1 правое выше. Это и есть «дополнительное поле», которое отличает АВЛ-дерево от обычного дерева поиска.</div></div>
+<div class="cwr"><i>11</i><code>    Vertex *Left;</code><div class="n">Указатель на левое поддерево (все ключи меньше Data).</div></div>
+<div class="cwr"><i>12</i><code>    Vertex *Right;</code><div class="n">Указатель на правое поддерево (все ключи больше Data).</div></div>
+<div class="cwr"><i>13</i><code>};</code><div class="n"></div></div>
+<div class="cwr"><i>15</i><code>bool Rost;</code><div class="n"><b>Глобальная</b> логическая переменная «дерево выросло». Сделана глобальной специально: иначе её пришлось бы протаскивать через все рекурсивные вызовы ещё одним параметром-ссылкой.</div></div>
+</div>
+
+<h3>7.2. LL-поворот</h3>
+<div class="cw">
+<div class="cw-head">строки 20–28 · малое правое вращение</div>
+<div class="cwr"><i>20</i><code>void LL(Vertex *&amp;p)</code><div class="n">p — вершина, в которой сломался баланс (та, что стала бы −2).</div></div>
+<div class="cwr"><i>22</i><code>    Vertex *q = p-&gt;Left;</code><div class="n">q — левый сын. Именно он поднимется на место p.</div></div>
+<div class="cwr"><i>23</i><code>    q-&gt;Balance = 0;</code><div class="n">После LL обе вершины уравновешиваются — без всяких условий.</div></div>
+<div class="cwr"><i>24</i><code>    p-&gt;Balance = 0;</code><div class="n"></div></div>
+<div class="cwr"><i>25</i><code>    p-&gt;Left = q-&gt;Right;</code><div class="n">p отдаёт свою левую ветку и забирает «средний» кусок T₂ — правое поддерево q. Порядок дерева поиска сохраняется: все ключи T₂ больше q и меньше p.</div></div>
+<div class="cwr"><i>26</i><code>    q-&gt;Right = p;</code><div class="n">p становится правым сыном q.</div></div>
+<div class="cwr"><i>27</i><code>    p = q;</code><div class="n">Корнем этого куска объявляется q. Благодаря <code>*&amp;</code> это присваивание попадает прямо в поле родителя.</div></div>
+</div>
+
+<h3>7.3. LR-поворот</h3>
+<div class="cw">
+<div class="cw-head">строки 31–43 · большое правое вращение</div>
+<div class="cwr"><i>32</i><code>    Vertex *q = p-&gt;Left;</code><div class="n">q — левый сын.</div></div>
+<div class="cwr"><i>33</i><code>    Vertex *r = q-&gt;Right;</code><div class="n">r — внук, правый сын левого сына. Именно <b>он</b> поднимется на самый верх.</div></div>
+<div class="cwr"><i>35</i><code>    if (r-&gt;Balance &lt; 0) p-&gt;Balance = 1; else p-&gt;Balance = 0;</code><div class="n">Новая вершина была в <b>левом</b> поддереве r (в T₂) → после поворота p достанется более короткая левая часть → баланс p становится +1. Иначе 0.</div></div>
+<div class="cwr"><i>36</i><code>    if (r-&gt;Balance &gt; 0) q-&gt;Balance = -1; else q-&gt;Balance = 0;</code><div class="n">Симметрично: новая вершина была в правом поддереве r (в T₃) → у q не хватает правой части → баланс q становится −1.</div></div>
+<div class="cwr"><i>37</i><code>    r-&gt;Balance = 0;</code><div class="n">Сама r встаёт корнем и всегда уравновешена.</div></div>
+<div class="cwr"><i>38</i><code>    p-&gt;Left  = r-&gt;Right;</code><div class="n">Четыре строки переброса указателей: p забирает T₃…</div></div>
+<div class="cwr"><i>39</i><code>    q-&gt;Right = r-&gt;Left;</code><div class="n">…q забирает T₂…</div></div>
+<div class="cwr"><i>40</i><code>    r-&gt;Left  = q;</code><div class="n">…q становится левым сыном r…</div></div>
+<div class="cwr"><i>41</i><code>    r-&gt;Right = p;</code><div class="n">…p — правым сыном r.</div></div>
+<div class="cwr"><i>42</i><code>    p = r;</code><div class="n">Новый корень куска — r.</div></div>
+</div>
+<p style="font-size:.92rem;color:var(--muted)">Важно: строки 35–36 обязаны идти <b>до</b> строки 37, иначе <code>r-&gt;Balance</code> уже затёрт нулём и условия проверять нечем.</p>
+
+<h3>7.4. RR- и RL-повороты</h3>
+<div class="prose"><p>Полностью зеркальны предыдущим: везде <code>Left</code> меняется на <code>Right</code>, а знаки сравнений — на противоположные.</p></div>
+<div class="cw">
+<div class="cw-head">строки 46–69</div>
+<div class="cwr"><i>48</i><code>    Vertex *q = p-&gt;Right;</code><div class="n">RR: правый сын поднимается на место p.</div></div>
+<div class="cwr"><i>51</i><code>    p-&gt;Right = q-&gt;Left;</code><div class="n">p забирает левое поддерево q.</div></div>
+<div class="cwr"><i>52</i><code>    q-&gt;Left = p;</code><div class="n">p становится левым сыном q.</div></div>
+<div class="cwr"><i>59</i><code>    Vertex *q = p-&gt;Right;</code><div class="n">RL: q — правый сын…</div></div>
+<div class="cwr"><i>60</i><code>    Vertex *r = q-&gt;Left;</code><div class="n">…r — его левый сын, он и поднимется наверх.</div></div>
+<div class="cwr"><i>61</i><code>    if (r-&gt;Balance &gt; 0) p-&gt;Balance = -1; else p-&gt;Balance = 0;</code><div class="n">Зеркало строки 35.</div></div>
+<div class="cwr"><i>62</i><code>    if (r-&gt;Balance &lt; 0) q-&gt;Balance = 1; else q-&gt;Balance = 0;</code><div class="n">Зеркало строки 36.</div></div>
+<div class="cwr"><i>66</i><code>    r-&gt;Left = p;  r-&gt;Right = q;</code><div class="n">Здесь p слева, q справа — обратно к LR, потому что перекос был в другую сторону.</div></div>
+</div>
+
+<h3>7.5. AddAVL — сердце программы</h3>
+<div class="cw">
+<div class="cw-head">строки 73–121 · добавление вершины</div>
+<div class="cwr"><i>73</i><code>void AddAVL(int D, Vertex *&amp;p)</code><div class="n">D — добавляемый ключ, p — ссылка на указатель на корень текущего поддерева.</div></div>
+<div class="cwr"><i>75</i><code>    if (p == NULL) {</code><div class="n"><b>База рекурсии.</b> Дошли до пустого места — сюда и вставляем.</div></div>
+<div class="cwr"><i>76</i><code>        p = new Vertex;</code><div class="n">Выделяем память. Запись сразу попадает в поле родителя — снова благодаря <code>*&amp;</code>.</div></div>
+<div class="cwr"><i>77</i><code>        p-&gt;Data = D;</code><div class="n"></div></div>
+<div class="cwr"><i>78</i><code>        p-&gt;Left = NULL;</code><div class="n">Новая вершина всегда лист.</div></div>
+<div class="cwr"><i>79</i><code>        p-&gt;Right = NULL;</code><div class="n"></div></div>
+<div class="cwr"><i>80</i><code>        p-&gt;Balance = 0;</code><div class="n">У листа оба поддерева пусты, высоты равны.</div></div>
+<div class="cwr"><i>81</i><code>        Rost = true;</code><div class="n"><b>Дерево выросло.</b> С этого флага начинается вся работа на обратном ходе рекурсии.</div></div>
+<div class="cwr"><i>83</i><code>    else if (p-&gt;Data &gt; D) {</code><div class="n">Ключ меньше — идём влево, как в обычном дереве поиска.</div></div>
+<div class="cwr"><i>84</i><code>        AddAVL(D, p-&gt;Left);</code><div class="n">Рекурсивный спуск. Всё, что ниже, выполняется уже <b>на обратном ходе</b>.</div></div>
+<div class="cwr"><i>85</i><code>        if (Rost == true) {</code><div class="n">Левая ветвь выросла? Если нет — ниже уже всё починено, делать нечего.</div></div>
+<div class="cwr"><i>86</i><code>            if (p-&gt;Balance &gt; 0) {</code><div class="n"><b>Случай 1.</b> Было правое выше (+1), выросло левое.</div></div>
+<div class="cwr"><i>87</i><code>                p-&gt;Balance = 0;</code><div class="n">Перекос выровнялся.</div></div>
+<div class="cwr"><i>88</i><code>                Rost = false;</code><div class="n">Высота самой вершины p не изменилась → рост останавливается, выше ничего не трогаем.</div></div>
+<div class="cwr"><i>90</i><code>            else if (p-&gt;Balance == 0) {</code><div class="n"><b>Случай 2.</b> Были равны.</div></div>
+<div class="cwr"><i>91</i><code>                p-&gt;Balance = -1;</code><div class="n">Левое стало выше. Rost остаётся true — высота p выросла, сигнал идёт дальше вверх.</div></div>
+<div class="cwr"><i>93</i><code>            else {</code><div class="n"><b>Случай 3.</b> Было уже −1, стало бы −2 → <b>нарушение баланса</b>.</div></div>
+<div class="cwr"><i>94</i><code>                if (p-&gt;Left-&gt;Balance &lt; 0) LL(p);</code><div class="n">Левый сын тоже перекошен влево → вставка была «LL» → малое правое вращение.</div></div>
+<div class="cwr"><i>95</i><code>                else LR(p);</code><div class="n">Иначе левый сын перекошен вправо → «LR» → большое правое вращение.</div></div>
+<div class="cwr"><i>96</i><code>                Rost = false;</code><div class="n">После поворота высота куска вернулась к прежней → <b>рост прекращается навсегда</b>. Это и есть доказательство того, что поворот нужен максимум один.</div></div>
+<div class="cwr"><i>100</i><code>    else if (p-&gt;Data &lt; D) {</code><div class="n">Ключ больше — идём вправо. Дальше всё зеркально.</div></div>
+<div class="cwr"><i>101</i><code>        AddAVL(D, p-&gt;Right);</code><div class="n"></div></div>
+<div class="cwr"><i>103</i><code>            if (p-&gt;Balance &lt; 0) { … Rost = false; }</code><div class="n">Случай 1: перекос был влево — выровнялся.</div></div>
+<div class="cwr"><i>107</i><code>            else if (p-&gt;Balance == 0) p-&gt;Balance = 1;</code><div class="n">Случай 2: высота выросла, идём выше.</div></div>
+<div class="cwr"><i>111</i><code>                if (p-&gt;Right-&gt;Balance &gt; 0) RR(p);</code><div class="n">Случай 3: правый сын перекошен вправо → RR.</div></div>
+<div class="cwr"><i>112</i><code>                else RL(p);</code><div class="n">Правый сын перекошен влево → RL.</div></div>
+<div class="cwr"><i>117</i><code>    else {</code><div class="n">p-&gt;Data == D — <b>такой ключ уже есть</b>.</div></div>
+<div class="cwr"><i>119</i><code>        Rost = false;</code><div class="n">Ничего не добавили, дерево не выросло. Обязательная строка: без неё в Rost остался бы мусор от предыдущего вызова.</div></div>
+</div>
+
+<h3>7.6. Построение ИСДП для сравнения</h3>
+<div class="cw">
+<div class="cw-head">строки 125–137</div>
+<div class="cwr"><i>125</i><code>int A[N + 1];</code><div class="n">Массив ключей. Нумерация с 1 (как в пособии), поэтому размер N+1.</div></div>
+<div class="cwr"><i>127</i><code>Vertex *ISDP(int L, int R)</code><div class="n">Строит идеально сбалансированное дерево из <b>отсортированного</b> отрезка A[L..R].</div></div>
+<div class="cwr"><i>129</i><code>    if (L &gt; R) return NULL;</code><div class="n">Пустой отрезок — пустое дерево.</div></div>
+<div class="cwr"><i>130</i><code>    int m = (L + R) / 2;</code><div class="n">Середина. Отсюда и «идеальность»: слева и справа остаётся одинаковое (±1) число элементов.</div></div>
+<div class="cwr"><i>132</i><code>    p-&gt;Data = A[m];</code><div class="n">Средний элемент становится корнем. Так как массив отсортирован, свойство дерева поиска выполняется автоматически.</div></div>
+<div class="cwr"><i>134</i><code>    p-&gt;Left  = ISDP(L, m - 1);</code><div class="n">Рекурсивно левая половина…</div></div>
+<div class="cwr"><i>135</i><code>    p-&gt;Right = ISDP(m + 1, R);</code><div class="n">…и правая. Поворотов здесь нет и не нужно: дерево сразу строится идеальным.</div></div>
+</div>
+
+<h3>7.7. Обход и характеристики</h3>
+<div class="cw">
+<div class="cw-head">строки 142–193</div>
+<div class="cwr"><i>142</i><code>void LeftToRight(Vertex *p)</code><div class="n"><b>Обход слева направо</b> (симметричный, in-order).</div></div>
+<div class="cwr"><i>145</i><code>        LeftToRight(p-&gt;Left);</code><div class="n">Сначала всё левое поддерево…</div></div>
+<div class="cwr"><i>146</i><code>        printf("%d ", p-&gt;Data);</code><div class="n">…потом сама вершина…</div></div>
+<div class="cwr"><i>147</i><code>        LeftToRight(p-&gt;Right);</code><div class="n">…потом правое. Для дерева поиска такой обход всегда выдаёт ключи <b>по возрастанию</b> — это удобная проверка правильности построения.</div></div>
+<div class="cwr"><i>152</i><code>int Size(Vertex *p)</code><div class="n"><b>Размер</b> — количество вершин: 1 + размер левого + размер правого.</div></div>
+<div class="cwr"><i>165</i><code>int Height(Vertex *p)</code><div class="n"><b>Высота</b> — 1 + максимум из высот поддеревьев. Пустое дерево имеет высоту 0.</div></div>
+<div class="cwr"><i>172</i><code>int SDP(Vertex *p, int L)</code><div class="n"><b>Сумма длин путей</b> от корня до всех вершин. L — номер уровня текущей вершины (корень вызывается с L = 1).</div></div>
+<div class="cwr"><i>175</i><code>    return L + SDP(p-&gt;Left, L+1) + SDP(p-&gt;Right, L+1);</code><div class="n">Каждая вершина добавляет свой уровень. Средняя высота = SDP / Size — это среднее число сравнений при поиске.</div></div>
+<div class="cwr"><i>179</i><code>int Sum(Vertex *p)</code><div class="n"><b>Контрольная сумма</b> — сумма всех ключей. Нужна для проверки: у ИСДП и АВЛ она обязана совпасть, ведь множество ключей одно и то же, отличается только форма дерева.</div></div>
+<div class="cwr"><i>186</i><code>void FreeTree(Vertex *p)</code><div class="n">Освобождение памяти. Сначала дети, потом сама вершина — иначе указатели будут потеряны.</div></div>
+</div>
+
+<h3>7.8. Подготовка данных</h3>
+<div class="cw">
+<div class="cw-head">строки 198–222</div>
+<div class="cwr"><i>198</i><code>void FillRand(int n)</code><div class="n">Заполняет A[1..n] случайными <b>неповторяющимися</b> числами.</div></div>
+<div class="cwr"><i>202</i><code>        int x = rand() % 1000;</code><div class="n">Случайное число 0…999.</div></div>
+<div class="cwr"><i>204</i><code>        for (int j = 1; j &lt; i; j++)</code><div class="n">Проверка, что такого числа ещё не было. Повторы недопустимы: AddAVL их просто проигнорирует, и в дереве окажется меньше 100 вершин.</div></div>
+<div class="cwr"><i>207</i><code>            A[i] = x; i++;</code><div class="n">Индекс двигается только при успехе — иначе бросаем кубик заново.</div></div>
+<div class="cwr"><i>214</i><code>void SelectSort(int n)</code><div class="n">Сортировка прямым выбором. Нужна <b>только для ИСДП</b>: его алгоритм требует отсортированного массива. АВЛ-дереву сортировка не нужна — более того, вредна (из отсортированных данных получилась бы цепочка поворотов).</div></div>
+</div>
+
+<h3>7.9. main</h3>
+<div class="cw">
+<div class="cw-head">строки 226–277</div>
+<div class="cwr"><i>233</i><code>int F[12] = {16,2,6,18,14,12,19,4,11,3,13,1};</code><div class="n"><b>Задание 1.</b> Номера 12 первых неповторяющихся букв ФИО в алфавите.</div></div>
+<div class="cwr"><i>236</i><code>for (int i = 0; i &lt; 12; i++) AddAVL(F[i], RootF);</code><div class="n">Строим то же дерево, что ниже построено вручную, — и сверяем результат.</div></div>
+<div class="cwr"><i>242</i><code>LeftToRight(RootF);</code><div class="n">Обход должен выдать числа по возрастанию — проверка корректности.</div></div>
+<div class="cwr"><i>248</i><code>srand(time(NULL));</code><div class="n">Инициализация генератора текущим временем: при каждом запуске набор из 100 чисел новый.</div></div>
+<div class="cwr"><i>252</i><code>for (int i = 1; i &lt;= N; i++) AddAVL(A[i], AVL);</code><div class="n"><b>Задание 3.</b> АВЛ-дерево строится из <b>неотсортированного</b> массива — в порядке поступления.</div></div>
+<div class="cwr"><i>260</i><code>SelectSort(N);</code><div class="n"><b>Задание 4.</b> Теперь сортируем тот же массив…</div></div>
+<div class="cwr"><i>261</i><code>Vertex *Isdp = ISDP(1, N);</code><div class="n">…и строим из него ИСДП. Ключи те же — значит сравнение честное.</div></div>
+<div class="cwr"><i>269</i><code>(double)SDP(Isdp, 1) / Size(Isdp)</code><div class="n">Средняя высота. Приведение к double обязательно, иначе деление целочисленное и дробная часть пропадёт.</div></div>
+<div class="cwr"><i>275</i><code>FreeTree(AVL); FreeTree(Isdp);</code><div class="n">Память возвращается системе.</div></div>
+</div>
+
+<h2 id="z1">8. Задание 1. Построение АВЛ-дерева вручную</h2>
+
+<div class="prose">
+<p><b>Условие.</b> Для набора из 12 первых последовательных неповторяющихся символов ФИО построить вручную АВЛ-дерево поиска.</p>
+<p><b>ФИО:</b> Оберемок Сергей Владимирович. Выписываем буквы подряд и вычёркиваем те, что уже встречались (регистр не различаем):</p>
+</div>
+
+<div class="scroll"><table style="font-family:var(--f-mono)">
+<thead><tr><th>Позиция в ФИО</th><th>Буквы</th></tr></thead>
+<tbody>
+<tr><td>О&nbsp;б&nbsp;е&nbsp;р&nbsp;е&nbsp;м&nbsp;о&nbsp;к</td><td><b>О Б Е Р</b> <s>е</s> <b>М</b> <s>о</s> <b>К</b></td></tr>
+<tr><td>С&nbsp;е&nbsp;р&nbsp;г&nbsp;е&nbsp;й</td><td><b>С</b> <s>е</s> <s>р</s> <b>Г</b> <s>е</s> <b>Й</b></td></tr>
+<tr><td>В&nbsp;л&nbsp;а&nbsp;д&nbsp;и&nbsp;м&nbsp;и&nbsp;р&nbsp;о&nbsp;в&nbsp;и&nbsp;ч</td><td><b>В Л А</b> — 12 букв набрано, дальше не идём</td></tr>
+</tbody></table></div>
+
+<div class="card ok">
+<h4>Последовательность включения</h4>
+<p>Буквы сравнивать между собой нельзя, поэтому каждую заменяем её <b>номером в русском алфавите</b> (33 буквы, с Ё):</p>
+<div class="scroll"><table style="font-family:var(--f-mono);text-align:center">
+<thead><tr><th>Буква</th><th class="num">О</th><th class="num">Б</th><th class="num">Е</th><th class="num">Р</th><th class="num">М</th><th class="num">К</th><th class="num">С</th><th class="num">Г</th><th class="num">Й</th><th class="num">В</th><th class="num">Л</th><th class="num">А</th></tr></thead>
+<tbody><tr><th>Номер</th><td class="num">16</td><td class="num">2</td><td class="num">6</td><td class="num">18</td><td class="num">14</td><td class="num">12</td><td class="num">19</td><td class="num">4</td><td class="num">11</td><td class="num">3</td><td class="num">13</td><td class="num">1</td></tr></tbody>
+</table></div>
+<p style="margin:.7rem 0 0;font-size:.92rem;color:var(--muted)">Именно этот массив записан в программе в строке 233 — ручное построение и программа должны дать одинаковое дерево.</p>
+</div>
+
+<h3>Краткая запись — так, как это рисуют в тетради</h3>
+<div class="prose">
+<p>На бумаге все двенадцать шагов не рисуют. Рисуют только те моменты, когда баланс сломался: дерево целиком, обведена вершина с балансом ±2 и две вершины, которые вместе с ней участвуют в повороте, рядом — название поворота и стрелка к следующему рисунку. Между рисунками вершины просто дописываются листьями, без перестроек.</p>
+<p>Для последовательности <b>16 2 6 18 14 12 19 4 11 3 13 1</b> таких моментов <b>пять</b>, поэтому рисунков шесть: пять с нарушением и один итоговый.</p>
+</div>
+
+<div id="short"></div>
+
+<div class="prose">
+<p>Дальше — 12 шагов. В каждом шаге слева показано, что получилось бы <b>без балансировки</b> (как в обычном дереве поиска), справа — результат после обработки обратного хода рекурсии. Число в кружке — ключ, буква под ним — исходный символ, маленькая цифра справа сверху — <code>Balance</code>.</p>
+</div>
+
+<div id="steps"></div>
+
+<h3>Проверка результата</h3>
+<div class="card">
+<p><b>Обход слева направо:</b></p>
+<pre>1 2 3 4 6 11 12 13 14 16 18 19
+А Б В Г Е Й  К  Л  М  О  Р  С</pre>
+<p>Ключи идут строго по возрастанию, буквы — по алфавиту. Значит, свойство дерева поиска не нарушено ни одним из пяти поворотов.</p>
+<div class="scroll"><table>
+<thead><tr><th>Характеристика</th><th class="num">Значение</th><th>Как получено</th></tr></thead>
+<tbody>
+<tr><td>Корень</td><td class="num">6 (Е)</td><td>поднялся туда LL-поворотом на последнем шаге</td></tr>
+<tr><td>Размер</td><td class="num">12</td><td>все 12 букв различны, ни одна не отброшена</td></tr>
+<tr><td>Контрольная сумма</td><td class="num">119</td><td>16+2+6+18+14+12+19+4+11+3+13+1</td></tr>
+<tr><td>Высота</td><td class="num">4</td><td>log₂(13) ≈ 3,7 — АВЛ-дерево держится у самого минимума</td></tr>
+<tr><td>Средняя высота</td><td class="num">3,08</td><td>(1·1 + 2·2 + 4·3 + 5·4) / 12 = 37/12</td></tr>
+<tr><td>Поворотов за построение</td><td class="num">5</td><td>LR, RL, RR, RL, LL — встретились все четыре вида</td></tr>
+</tbody></table></div>
+</div>
+
+<h2 id="z234">9. Задания 2, 3, 4</h2>
+
+<div class="prose">
+<p><b>Задание 2</b> — функция добавления вершины: это <code>AddAVL</code>, строки 73–121, разобранные выше.</p>
+<p><b>Задание 3</b> — построить АВЛ-дерево из 100 случайно заданных вершин и распечатать обход слева направо.<br>
+<b>Задание 4</b> — вычислить размер, контрольную сумму, высоту и среднюю высоту, сравнить с ИСДП.</p>
+</div>
+
+<pre>Zadanie 1. Proverka na 12 simvolah FIO
+Posledovatelnost:     16 2 6 18 14 12 19 4 11 3 13 1
+Obhod sleva napravo:  1 2 3 4 6 11 12 13 14 16 18 19
+Koren = 6, Razmer = 12, Vysota = 4
+
+Zadanie 3. AVL-derevo iz 100 sluchainyh vershin
+Obhod sleva napravo:
+8 11 14 17 24 28 30 51 61 67 75 89 92 100 105 116 118 120 144 154 183 214 224 225
+231 240 243 251 254 258 265 289 297 303 306 308 311 324 325 336 351 380 382 390
+395 405 417 448 453 462 463 480 514 529 530 540 541 578 580 586 596 599 604 605
+615 631 633 649 650 653 654 663 685 698 716 725 726 732 738 742 773 801 807 812
+821 825 848 863 891 900 909 916 926 939 942 956 957 983 985 996</pre>
+
+<h3>Таблица сравнения (задание 4)</h3>
+<div class="scroll"><table>
+<thead><tr><th>n = 100</th><th class="num">Размер</th><th class="num">Контр. сумма</th><th class="num">Высота</th><th class="num">Средн. высота</th></tr></thead>
+<tbody>
+<tr><th>ИСДП</th><td class="num">100</td><td class="num">47399</td><td class="num">7</td><td class="num">5,80</td></tr>
+<tr><th>АВЛ</th><td class="num">100</td><td class="num">47399</td><td class="num">8</td><td class="num">5,88</td></tr>
+</tbody></table></div>
+<p style="font-size:.9rem;color:var(--muted)">Данные случайные, поэтому контрольная сумма меняется от запуска к запуску. Устойчиво повторяются другие числа: у ИСДП всегда высота 7 и средняя высота 5,80 (форма дерева зависит только от n), у АВЛ — высота 7–8 и средняя высота 5,83…5,94.</p>
+
+<div class="panes two">
+<div class="pane card">
+<h4>Что показывает сравнение</h4>
+<ul style="margin-bottom:0">
+<li><b>Размер совпал</b> (100 и 100) — значит, в случайном наборе действительно не было повторов и AddAVL ничего не потерял.</li>
+<li><b>Контрольная сумма совпала</b> — в обоих деревьях лежат одни и те же ключи. Это главная проверка: отличается только форма.</li>
+<li><b>Высота</b> отличается на 1 (7 против 8) — около 14 %, при теоретическом пределе 45 %.</li>
+<li><b>Средняя высота</b> отличается на 0,05–0,14, то есть примерно на <b>1–2 %</b> — ровно та оценка 2,5 %, что даёт теория.</li>
+</ul>
+</div>
+<div class="pane card">
+<h4>Цена этой разницы</h4>
+<p>АВЛ-дерево проигрывает ИСДП меньше 2 % среднего времени поиска, но строится <b>за O(log n) на вставку</b> и не требует ни сортировки, ни знания всех ключей заранее.</p>
+<p style="margin-bottom:0">ИСДП в тех же условиях пришлось бы перестраивать целиком после каждого включения — O(n) на вставку. Поэтому для динамических данных берут АВЛ, а ИСДП годится только тогда, когда весь набор известен сразу и больше не меняется.</p>
+</div>
+</div>
+
+<h2 id="voprosy">10. Ответы на контрольные вопросы</h2>
+
+<div class="qa"><div class="q"><span>1.</span>Какие недостатки ИСДП и СДП компенсирует АВЛ-дерево?</div>
+<p>У <b>СДП</b> — большая средняя высота (на 39 % выше идеала) и риск выродиться в список при упорядоченных данных. У <b>ИСДП</b> — слишком дорогая перестройка: после включения одной вершины дерево приходится строить практически заново. АВЛ-дерево даёт среднюю высоту почти как у ИСДП и при этом чинится одним поворотом за O(log n).</p></div>
+
+<div class="qa"><div class="q"><span>2.</span>Назовите фамилии авторов АВЛ-дерева.</div>
+<p>Г. М. <b>Адельсон-Вельский</b> и Е. М. <b>Ландис</b>, 1962 год. Отсюда и название: <b>А</b>дельсон-<b>В</b>ельский, <b>Л</b>андис.</p></div>
+
+<div class="qa"><div class="q"><span>3.</span>Дайте определение АВЛ-дерева.</div>
+<p>Дерево поиска называется АВЛ-деревом, если для <b>каждой</b> его вершины высоты левого и правого поддеревьев отличаются не больше чем на единицу.</p></div>
+
+<div class="qa"><div class="q"><span>4.</span>Является ли АВЛ-дерево ИСДП?</div>
+<p><b>Не всегда.</b> Обратное верно: всякое ИСДП является АВЛ-деревом. АВЛ-дерево балансируется по высоте, а ИСДП — по размеру, и условие по размеру строже.</p></div>
+
+<div class="qa"><div class="q"><span>5.</span>Является ли АВЛ-дерево деревом поиска?</div>
+<p><b>Да, всегда</b> — это часть определения. Все повороты сохраняют порядок ключей, поэтому обход слева направо всегда даёт возрастающую последовательность.</p></div>
+
+<div class="qa"><div class="q"><span>6.</span>По какому параметру сбалансировано АВЛ-дерево?</div>
+<p>По <b>высоте</b> поддеревьев (а ИСДП — по размеру, то есть по количеству вершин).</p></div>
+
+<div class="qa"><div class="q"><span>7.</span>Каковы преимущества АВЛ-дерева?</div>
+<p>1) простой критерий сбалансированности — одно число в вершине; 2) простая процедура перестройки — максимум один поворот; 3) среднее время поиска близко к ИСДП, хуже всего на 2,5 %.</p></div>
+
+<div class="qa"><div class="q"><span>8.</span>Какие ситуации возможны при включении новой вершины в левое поддерево?</div>
+<p>Три: 1) было h<sub>L</sub> &lt; h<sub>R</sub> → стало h<sub>L</sub> = h<sub>R</sub>, высота вершины не изменилась, рост прекращается; 2) было h<sub>L</sub> = h<sub>R</sub> → стало h<sub>L</sub> &gt; h<sub>R</sub>, высота выросла, идём выше; 3) было h<sub>L</sub> &gt; h<sub>R</sub> → <b>нарушение баланса</b>, нужен поворот LL или LR.</p></div>
+
+<div class="qa"><div class="q"><span>9.</span>Какие ситуации возможны при включении новой вершины в правое поддерево?</div>
+<p>Симметрично: 1) было h<sub>L</sub> &gt; h<sub>R</sub> → стало равенство, рост прекращается; 2) было h<sub>L</sub> = h<sub>R</sub> → стало h<sub>L</sub> &lt; h<sub>R</sub>, идём выше; 3) было h<sub>L</sub> &lt; h<sub>R</sub> → <b>нарушение баланса</b>, нужен поворот RR или RL.</p></div>
+
+<div class="qa"><div class="q"><span>10.</span>Сформулируйте идею добавления новой вершины.</div>
+<p>Сначала добавить вершину листом, как в случайное дерево поиска. Затем, двигаясь назад по пути поиска, найти вершину, в которой нарушился баланс, и если она нашлась — восстановить баланс поворотом.</p></div>
+
+<div class="qa"><div class="q"><span>11.</span>Для чего используется рекурсия?</div>
+<p>Чтобы <b>двигаться назад по пути поиска</b>. Рекурсия сама хранит в стеке адреса всех пройденных вершин и автоматически возвращает в них управление на обратном ходе. Без неё пришлось бы заводить в вершине указатель на родителя или явный стек.</p></div>
+
+<div class="qa"><div class="q"><span>12.</span>Что такое показатель баланса? Где хранится и как изменяется?</div>
+<p>Это число <code>Balance</code> ∈ {−1, 0, +1}: −1 — левое поддерево выше, 0 — высоты равны, +1 — правое выше. <b>Хранится в самой вершине</b> отдельным полем. У новой вершины равен 0. Пересчитывается <b>только на обратном ходе рекурсии и только у вершин пути поиска</b>; значение ±2 означает нарушение и требует поворота.</p></div>
+
+<div class="qa"><div class="q"><span>13.</span>Что показывает переменная Рост (Rost)? Как она изменяется?</div>
+<p>Показывает, <b>увеличилась ли высота</b> поддерева, из которого вернулась рекурсия. Становится <code>true</code> при создании новой вершины; остаётся <code>true</code>, пока на пути встречаются вершины с балансом 0; становится <code>false</code>, когда перекос выровнялся, когда выполнен поворот или когда такой ключ уже есть. Как только Rost = false, выше по дереву ничего не меняется.</p></div>
+
+<div class="qa"><div class="q"><span>14.</span>Для чего нужны повороты? Назовите виды.</div>
+<p>Поворот — локальная перестройка, которая <b>уменьшает высоту перекошенного поддерева на 1</b> и возвращает балансы в допустимые пределы, не нарушая порядок дерева поиска. Виды: <b>LL</b> и <b>RR</b> (малые, одинарные), <b>LR</b> и <b>RL</b> (большие, двойные).</p></div>
+
+<div class="qa"><div class="q"><span>15.</span>Сколько поворотов может потребоваться при добавлении одной вершины?</div>
+<p><b>Не более одного.</b> После поворота высота поддерева становится такой же, какой была до вставки, поэтому Rost = false и выше по пути баланс уже не нарушается. Большой поворот (LR, RL) состоит из двух простых вращений, но считается одним поворотом.</p></div>
+
+<div class="qa"><div class="q"><span>16.</span>На сколько процентов средняя высота АВЛ-дерева больше средней высоты ИСДП?</div>
+<p>Примерно на <b>2,5 %</b>: средняя высота АВЛ-дерева ≈ 1,025·log₂(n+1), у ИСДП — log₂(n+1). Для сравнения, у СДП — на 39 %.</p></div>
+
+<div class="qa"><div class="q"><span>17.</span>Какова трудоёмкость включения вершины в АВЛ-дерево?</div>
+<p><b>O(log n)</b> — проход по одному пути вниз и обратно; поворот выполняется за O(1) и не более одного раза. Число сравнений не превышает 1,45·log₂(n+2).</p></div>
+
+<div class="qa"><div class="q"><span>18.</span>Дайте определение «плохого» АВЛ-дерева.</div>
+<p>«Плохим» называется АВЛ-дерево, имеющее <b>наименьшее число вершин при фиксированной высоте</b>. Строится по правилу T<sub>h</sub> = ⟨T<sub>h−1</sub>, x, T<sub>h−2</sub>⟩.</p></div>
+
+<div class="qa"><div class="q"><span>19.</span>Почему «плохие» АВЛ-деревья называют деревьями Фибоначчи?</div>
+<p>Потому что число вершин в них подчиняется рекуррентности чисел Фибоначчи: N<sub>h</sub> = N<sub>h−1</sub> + N<sub>h−2</sub> + 1 (ряд 1, 2, 4, 7, 12, 20, 33, 54, …).</p></div>
+
+<div class="qa"><div class="q"><span>20.</span>На сколько процентов АВЛ-дерево может превышать ИСДП по высоте?</div>
+<p>Не более чем на <b>45 %</b>, независимо от количества вершин: log₂(n+1) ≤ h<sub>АВЛ</sub>(n) &lt; 1,45·log₂(n+2) − 0,328.</p></div>
+
+</div></main>
+
+<footer><div class="wrap">
+  Лабораторная работа по дисциплине «Структуры и алгоритмы обработки данных». Задания 3.5 (1–4), тема «АВЛ-дерево поиска».
+  Исходный код — <code>main.cpp</code>, реализация по псевдокоду пособия. Оберемок Сергей Владимирович, ИП-514.
+</div></footer>
+
+<script>
+const D = {"letters":"ОБЕРМКСГЙВЛА","seq":[16,2,6,18,14,12,19,4,11,3,13,1],"labels":{"16":"О","2":"Б","6":"Е","18":"Р","14":"М","12":"К","19":"С","4":"Г","11":"Й","3":"В","13":"Л","1":"А"},"steps":[{"i":1,"val":16,"letter":"О","naive":{"d":16,"b":0,"l":null,"r":null},"tree":{"d":16,"b":0,"l":null,"r":null},"rot":null,"pivot":null,"h":1,"order":[16]},{"i":2,"val":2,"letter":"Б","naive":{"d":16,"b":-1,"l":{"d":2,"b":0,"l":null,"r":null},"r":null},"tree":{"d":16,"b":-1,"l":{"d":2,"b":0,"l":null,"r":null},"r":null},"rot":null,"pivot":null,"h":2,"order":[2,16]},{"i":3,"val":6,"letter":"Е","naive":{"d":16,"b":-2,"l":{"d":2,"b":1,"l":null,"r":{"d":6,"b":0,"l":null,"r":null}},"r":null},"tree":{"d":6,"b":0,"l":{"d":2,"b":0,"l":null,"r":null},"r":{"d":16,"b":0,"l":null,"r":null}},"rot":"LR","pivot":16,"h":2,"order":[2,6,16]},{"i":4,"val":18,"letter":"Р","naive":{"d":6,"b":1,"l":{"d":2,"b":0,"l":null,"r":null},"r":{"d":16,"b":1,"l":null,"r":{"d":18,"b":0,"l":null,"r":null}}},"tree":{"d":6,"b":1,"l":{"d":2,"b":0,"l":null,"r":null},"r":{"d":16,"b":1,"l":null,"r":{"d":18,"b":0,"l":null,"r":null}}},"rot":null,"pivot":null,"h":3,"order":[2,6,16,18]},{"i":5,"val":14,"letter":"М","naive":{"d":6,"b":1,"l":{"d":2,"b":0,"l":null,"r":null},"r":{"d":16,"b":0,"l":{"d":14,"b":0,"l":null,"r":null},"r":{"d":18,"b":0,"l":null,"r":null}}},"tree":{"d":6,"b":1,"l":{"d":2,"b":0,"l":null,"r":null},"r":{"d":16,"b":0,"l":{"d":14,"b":0,"l":null,"r":null},"r":{"d":18,"b":0,"l":null,"r":null}}},"rot":null,"pivot":null,"h":3,"order":[2,6,14,16,18]},{"i":6,"val":12,"letter":"К","naive":{"d":6,"b":2,"l":{"d":2,"b":0,"l":null,"r":null},"r":{"d":16,"b":-1,"l":{"d":14,"b":-1,"l":{"d":12,"b":0,"l":null,"r":null},"r":null},"r":{"d":18,"b":0,"l":null,"r":null}}},"tree":{"d":14,"b":0,"l":{"d":6,"b":0,"l":{"d":2,"b":0,"l":null,"r":null},"r":{"d":12,"b":0,"l":null,"r":null}},"r":{"d":16,"b":1,"l":null,"r":{"d":18,"b":0,"l":null,"r":null}}},"rot":"RL","pivot":6,"h":3,"order":[2,6,12,14,16,18]},{"i":7,"val":19,"letter":"С","naive":{"d":14,"b":1,"l":{"d":6,"b":0,"l":{"d":2,"b":0,"l":null,"r":null},"r":{"d":12,"b":0,"l":null,"r":null}},"r":{"d":16,"b":2,"l":null,"r":{"d":18,"b":1,"l":null,"r":{"d":19,"b":0,"l":null,"r":null}}}},"tree":{"d":14,"b":0,"l":{"d":6,"b":0,"l":{"d":2,"b":0,"l":null,"r":null},"r":{"d":12,"b":0,"l":null,"r":null}},"r":{"d":18,"b":0,"l":{"d":16,"b":0,"l":null,"r":null},"r":{"d":19,"b":0,"l":null,"r":null}}},"rot":"RR","pivot":16,"h":3,"order":[2,6,12,14,16,18,19]},{"i":8,"val":4,"letter":"Г","naive":{"d":14,"b":-1,"l":{"d":6,"b":-1,"l":{"d":2,"b":1,"l":null,"r":{"d":4,"b":0,"l":null,"r":null}},"r":{"d":12,"b":0,"l":null,"r":null}},"r":{"d":18,"b":0,"l":{"d":16,"b":0,"l":null,"r":null},"r":{"d":19,"b":0,"l":null,"r":null}}},"tree":{"d":14,"b":-1,"l":{"d":6,"b":-1,"l":{"d":2,"b":1,"l":null,"r":{"d":4,"b":0,"l":null,"r":null}},"r":{"d":12,"b":0,"l":null,"r":null}},"r":{"d":18,"b":0,"l":{"d":16,"b":0,"l":null,"r":null},"r":{"d":19,"b":0,"l":null,"r":null}}},"rot":null,"pivot":null,"h":4,"order":[2,4,6,12,14,16,18,19]},{"i":9,"val":11,"letter":"Й","naive":{"d":14,"b":-1,"l":{"d":6,"b":0,"l":{"d":2,"b":1,"l":null,"r":{"d":4,"b":0,"l":null,"r":null}},"r":{"d":12,"b":-1,"l":{"d":11,"b":0,"l":null,"r":null},"r":null}},"r":{"d":18,"b":0,"l":{"d":16,"b":0,"l":null,"r":null},"r":{"d":19,"b":0,"l":null,"r":null}}},"tree":{"d":14,"b":-1,"l":{"d":6,"b":0,"l":{"d":2,"b":1,"l":null,"r":{"d":4,"b":0,"l":null,"r":null}},"r":{"d":12,"b":-1,"l":{"d":11,"b":0,"l":null,"r":null},"r":null}},"r":{"d":18,"b":0,"l":{"d":16,"b":0,"l":null,"r":null},"r":{"d":19,"b":0,"l":null,"r":null}}},"rot":null,"pivot":null,"h":4,"order":[2,4,6,11,12,14,16,18,19]},{"i":10,"val":3,"letter":"В","naive":{"d":14,"b":-2,"l":{"d":6,"b":-1,"l":{"d":2,"b":2,"l":null,"r":{"d":4,"b":-1,"l":{"d":3,"b":0,"l":null,"r":null},"r":null}},"r":{"d":12,"b":-1,"l":{"d":11,"b":0,"l":null,"r":null},"r":null}},"r":{"d":18,"b":0,"l":{"d":16,"b":0,"l":null,"r":null},"r":{"d":19,"b":0,"l":null,"r":null}}},"tree":{"d":14,"b":-1,"l":{"d":6,"b":0,"l":{"d":3,"b":0,"l":{"d":2,"b":0,"l":null,"r":null},"r":{"d":4,"b":0,"l":null,"r":null}},"r":{"d":12,"b":-1,"l":{"d":11,"b":0,"l":null,"r":null},"r":null}},"r":{"d":18,"b":0,"l":{"d":16,"b":0,"l":null,"r":null},"r":{"d":19,"b":0,"l":null,"r":null}}},"rot":"RL","pivot":2,"h":4,"order":[2,3,4,6,11,12,14,16,18,19]},{"i":11,"val":13,"letter":"Л","naive":{"d":14,"b":-1,"l":{"d":6,"b":0,"l":{"d":3,"b":0,"l":{"d":2,"b":0,"l":null,"r":null},"r":{"d":4,"b":0,"l":null,"r":null}},"r":{"d":12,"b":0,"l":{"d":11,"b":0,"l":null,"r":null},"r":{"d":13,"b":0,"l":null,"r":null}}},"r":{"d":18,"b":0,"l":{"d":16,"b":0,"l":null,"r":null},"r":{"d":19,"b":0,"l":null,"r":null}}},"tree":{"d":14,"b":-1,"l":{"d":6,"b":0,"l":{"d":3,"b":0,"l":{"d":2,"b":0,"l":null,"r":null},"r":{"d":4,"b":0,"l":null,"r":null}},"r":{"d":12,"b":0,"l":{"d":11,"b":0,"l":null,"r":null},"r":{"d":13,"b":0,"l":null,"r":null}}},"r":{"d":18,"b":0,"l":{"d":16,"b":0,"l":null,"r":null},"r":{"d":19,"b":0,"l":null,"r":null}}},"rot":null,"pivot":null,"h":4,"order":[2,3,4,6,11,12,13,14,16,18,19]},{"i":12,"val":1,"letter":"А","naive":{"d":14,"b":-2,"l":{"d":6,"b":-1,"l":{"d":3,"b":-1,"l":{"d":2,"b":-1,"l":{"d":1,"b":0,"l":null,"r":null},"r":null},"r":{"d":4,"b":0,"l":null,"r":null}},"r":{"d":12,"b":0,"l":{"d":11,"b":0,"l":null,"r":null},"r":{"d":13,"b":0,"l":null,"r":null}}},"r":{"d":18,"b":0,"l":{"d":16,"b":0,"l":null,"r":null},"r":{"d":19,"b":0,"l":null,"r":null}}},"tree":{"d":6,"b":0,"l":{"d":3,"b":-1,"l":{"d":2,"b":-1,"l":{"d":1,"b":0,"l":null,"r":null},"r":null},"r":{"d":4,"b":0,"l":null,"r":null}},"r":{"d":14,"b":0,"l":{"d":12,"b":0,"l":{"d":11,"b":0,"l":null,"r":null},"r":{"d":13,"b":0,"l":null,"r":null}},"r":{"d":18,"b":0,"l":{"d":16,"b":0,"l":null,"r":null},"r":{"d":19,"b":0,"l":null,"r":null}}}},"rot":"LL","pivot":14,"h":4,"order":[1,2,3,4,6,11,12,13,14,16,18,19]}]};
+const LET = D.labels;
+const ROTNAME = {LL:"LL — малое правое вращение", RR:"RR — малое левое вращение",
+                 LR:"LR — большое правое вращение", RL:"RL — большое левое вращение"};
+
+/* раскладка: x по порядку обхода слева направо, y по глубине */
+function layout(root){
+  const ns=[]; let i=0;
+  (function w(n,d){ if(!n) return; w(n.l,d+1); n._x=i++; n._y=d; ns.push(n); w(n.r,d+1); })(root,0);
+  return ns;
+}
+function balTxt(b){ return b>0 ? "+"+b : (b<0 ? "−"+(-b) : "0"); }
+
+function svgTree(root, o){
+  o = o||{};
+  const ns = layout(root); if(!ns.length) return "";
+  const XS = o.xs||46, YS = 56, R = 16, M = 26, TOP = 28;
+  let maxd = 0; ns.forEach(n => { if(n._y>maxd) maxd = n._y; });
+  const letters = o.letters !== false;
+  const W = ns.length*XS + 2*M, H = maxd*YS + TOP + R + (letters?30:14);
+  const X = n => M + n._x*XS + XS/2, Y = n => TOP + n._y*YS;
+  let e = "", g = "";
+  ns.forEach(n => ["l","r"].forEach(k => { if(n[k]) e += `<line x1="${X(n)}" y1="${Y(n)}" x2="${X(n[k])}" y2="${Y(n[k])}"/>`; }));
+  const hi = o.hi || [];
+  ns.forEach(n => {
+    let cls = "";
+    if(o.add === n.d) cls = "new";
+    else if(o.pivot === n.d) cls = "pivot";
+    if(Math.abs(n.b) > 1) cls = "broken";
+    if(hi.indexOf(n.d) >= 0){
+      cls += " hi";
+      g += `<circle class="halo" cx="${X(n)}" cy="${Y(n)}" r="${R+5}"/>`;
+    }
+    const lt = letters && LET[n.d] ? `<text class="lt" x="${X(n)}" y="${Y(n)+R+17}">${LET[n.d]}</text>` : "";
+    g += `<g class="nd ${cls}"><circle cx="${X(n)}" cy="${Y(n)}" r="${R}"/>`
+       + `<text class="v" x="${X(n)}" y="${Y(n)}">${n.d}</text>`
+       + `<text class="b" x="${X(n)+R+2}" y="${Y(n)-R+3}">${balTxt(n.b)}</text>${lt}</g>`;
+  });
+  return `<svg class="tsvg" viewBox="0 0 ${W} ${H}" width="${W}" role="img" aria-label="дерево">`
+       + `<g class="ed">${e}</g>${g}</svg>`;
+}
+
+const NOTES = [
+ "Дерево пустое. Вершина <b>16 (О)</b> становится корнем с балансом 0. Возвращаться некуда, построение первого шага закончено.",
+ "2 &lt; 16 — идём влево, там пусто, подвешиваем лист. На обратном ходе у вершины 16 баланс был 0, выросла левая ветвь → баланс −1, <code>Rost</code> остаётся true. Высота дерева стала 2.",
+ "6 &lt; 16 → влево к 2; 6 &gt; 2 → вправо, лист. Обратный ход: у 2 баланс 0 → +1, растём дальше. У 16 баланс был −1, снова выросла левая ветвь → <b>стало бы −2</b>. Левый сын 2 имеет баланс +1 (перекос вправо) → это случай <b>LR</b>: наверх поднимается внук <b>6 (Е)</b>, а 2 и 16 становятся его сыновьями.",
+ "18 &gt; 6 → вправо к 16; 18 &gt; 16 → вправо, лист. У 16: 0 → +1. У 6: 0 → +1. Рост дошёл до корня, но корень выше передавать некуда. Нарушений нет, высота 3.",
+ "14 &gt; 6 → к 16; 14 &lt; 16 → влево, лист. У вершины 16 баланс был +1, а выросла <b>левая</b> ветвь → перекос выровнялся: баланс 0, <code>Rost = false</code>. Рекурсия доматывается до корня вхолостую, баланс вершины 6 не трогаем.",
+ "12 &gt; 6 → к 16 → к 14 → влево, лист. У 14: 0 → −1. У 16: 0 → −1. У 6 баланс был +1, выросла правая ветвь → <b>стало бы +2</b>. Правый сын 16 перекошен влево (−1) → случай <b>RL</b>: наверх идёт внук <b>14 (М)</b>, слева от него 6, справа 16.",
+ "19 &gt; 14 → к 16 → к 18 → вправо, лист. У 18: 0 → +1. У 16 баланс был +1, снова выросла правая ветвь → <b>стало бы +2</b>. Правый сын 18 перекошен вправо (+1) → случай <b>RR</b>: 18 поднимается на место 16, а 16 становится его левым сыном.",
+ "4 &lt; 14 → к 6 → к 2 → вправо, лист. У 2: 0 → +1. У 6: 0 → −1. У корня 14: 0 → −1. Все три вершины на пути были уравновешены, поэтому рост дошёл до самого верха и дерево выросло до высоты 4. Поворот не понадобился.",
+ "11 &lt; 14 → к 6 → к 12 → влево, лист. У 12: 0 → −1, растём. У 6 баланс был −1, а выросла <b>правая</b> ветвь → перекос выровнялся: 0, <code>Rost = false</code>. Выше по дереву ничего не меняется.",
+ "3 &lt; 14 → к 6 → к 2 → к 4 → влево, лист. У 4: 0 → −1. У 2 баланс был +1, выросла правая ветвь → <b>стало бы +2</b>. Правый сын 4 перекошен влево (−1) → случай <b>RL</b>: наверх поднимается внук <b>3 (В)</b>, слева 2, справа 4.",
+ "13 &lt; 14 → к 6 → к 12 → вправо, лист. У вершины 12 баланс был −1, выросла правая ветвь → выровнялось: 0, <code>Rost = false</code>. Снова ничего перестраивать не нужно.",
+ "1 &lt; 14 → к 6 → к 3 → к 2 → влево, лист. У 2: 0 → −1. У 3: 0 → −1. У 6: 0 → −1. У корня 14 баланс был −1, выросла левая ветвь → <b>стало бы −2</b>. Левый сын 6 перекошен влево (−1) → случай <b>LL</b>: <b>6 (Е)</b> поднимается в корень, 14 становится его правым сыном и забирает поддерево с корнем 12."
+];
+
+function renderSteps(){
+  const box = document.getElementById("steps");
+  box.innerHTML = D.steps.map(s => {
+    const rot = s.rot;
+    const title = rot
+      ? `Включаем <b>${s.letter}</b> = ${s.val} · ${ROTNAME[rot]}`
+      : `Включаем <b>${s.letter}</b> = ${s.val} · без поворота`;
+    const badge = rot
+      ? `<span class="badge r">${rot}</span>`
+      : `<span class="badge g">баланс цел</span>`;
+    const before = rot
+      ? `<div class="pane"><div class="cap">Нарушение: было бы так</div><div class="scroll">${svgTree(s.naive,{add:s.val,pivot:s.pivot})}</div></div>`
+      : "";
+    const afterCap = rot ? "После поворота " + rot : "Результат шага";
+    return `<div class="step" id="step${s.i}">
+      <div class="step-head"><span class="no">ШАГ ${s.i} / 12</span><span class="ttl">${title}</span>${badge}
+        <span class="no" style="margin-left:auto">высота ${s.h}</span></div>
+      <div class="step-body">
+        <p>${NOTES[s.i-1]}</p>
+        <div class="panes ${rot?"two":""}">${before}
+          <div class="pane"><div class="cap">${afterCap}</div><div class="scroll">${svgTree(s.tree,{add:s.val})}</div></div>
+        </div>
+      </div></div>`;
+  }).join("");
+}
+
+/* вспомогательные фигуры */
+const nd = (d,b,l,r) => ({d:d,b:b,l:l||null,r:r||null});
+
+function renderExtras(){
+  const f1 = document.getElementById("fig-avl-not-isdp");
+  const t1 = nd(8,-1, nd(4,0, nd(2,0), nd(6,0)), nd(10,0));
+  const t2 = nd(8,-2, nd(4,-1, nd(2,-1, nd(1,0)), nd(6,0)), nd(10,0));
+  f1.innerHTML = `<div class="panes two">
+    <div class="pane"><div class="cap">АВЛ-дерево, но не ИСДП</div>${svgTree(t1,{letters:false})}</div>
+    <div class="pane"><div class="cap">Не АВЛ-дерево: у корня −2</div>${svgTree(t2,{letters:false})}</div></div>`;
+
+  const ex = [
+    ["LL", nd(4,-2, nd(2,-1, nd(1,0))), nd(2,0, nd(1,0), nd(4,0))],
+    ["LR", nd(4,-2, nd(2,1, null, nd(3,0))), nd(3,0, nd(2,0), nd(4,0))],
+    ["RR", nd(4,2, null, nd(6,1, null, nd(7,0))), nd(6,0, nd(4,0), nd(7,0))],
+    ["RL", nd(4,2, null, nd(6,-1, nd(5,0))), nd(5,0, nd(4,0), nd(6,0))]
+  ];
+  document.getElementById("fig-rot-examples").innerHTML =
+    `<div class="panes two">` + ex.map(([k,a,b]) =>
+      `<div class="pane card"><h4>${ROTNAME[k]}</h4>
+        <div class="panes two" style="gap:.4rem">
+          <div class="pane"><div class="cap">до</div>${svgTree(a,{letters:false,xs:40})}</div>
+          <div class="pane"><div class="cap">после</div>${svgTree(b,{letters:false,xs:40})}</div>
+        </div></div>`).join("") + `</div>`;
+}
+
+/* краткая запись: только моменты поворотов */
+const SHORT = [
+ {step:3,  hi:[16,2,6],   add:"О(16), Б(2), Е(6)",      who:"у вершины 16 стало −2, левый сын 2 перекошен вправо"},
+ {step:6,  hi:[6,16,14],  add:"Р(18), М(14), К(12)",    who:"у вершины 6 стало +2, правый сын 16 перекошен влево"},
+ {step:7,  hi:[16,18,19], add:"С(19)",                  who:"у вершины 16 стало +2, правый сын 18 перекошен вправо"},
+ {step:10, hi:[2,4,3],    add:"Г(4), Й(11), В(3)",      who:"у вершины 2 стало +2, правый сын 4 перекошен влево"},
+ {step:12, hi:[14,6,3],   add:"Л(13), А(1)",            who:"у вершины 14 стало −2, левый сын 6 перекошен влево"}
+];
+function renderShort(){
+  const html = SHORT.map((o,k) => {
+    const s = D.steps[o.step-1];
+    return `<div class="sh">
+      <div class="sh-head"><span class="sh-no">РИСУНОК ${k+1}</span>
+        <span class="sh-cap">добавили <b>${o.add}</b> — ${o.who}</span>
+        <span class="sh-rot">${s.rot} &rArr;</span></div>
+      <div class="scroll">${svgTree(s.naive,{pivot:s.pivot,hi:o.hi})}</div></div>`;
+  }).join("") + (() => {
+    const f = D.steps[11];
+    return `<div class="sh">
+      <div class="sh-head"><span class="sh-no">РИСУНОК 6</span>
+        <span class="sh-cap">после LL — <b>готовое АВЛ-дерево</b>, все балансы в пределах ±1</span>
+        <span class="sh-rot done">корень 6 (Е)</span></div>
+      <div class="scroll">${svgTree(f.tree,{})}</div></div>`;
+  })();
+  document.getElementById("short").innerHTML = html;
+}
+
+renderSteps();
+renderShort();
+renderExtras();
+</script>
+<style>
+.tsvg{max-width:100%;height:auto;margin:0 auto}
+.sh{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:.75rem .9rem 1rem;margin-bottom:1rem}
+.sh-head{display:flex;flex-wrap:wrap;align-items:baseline;gap:.4rem .7rem;margin-bottom:.55rem}
+.sh-no{font-family:var(--f-mono);font-size:.76rem;color:var(--muted)}
+.sh-cap{font-size:.95rem}
+.sh-cap b{font-family:var(--f-mono)}
+.sh-rot{margin-left:auto;font-family:var(--f-display);font-weight:700;font-size:1rem;color:var(--danger);white-space:nowrap}
+.sh-rot.done{color:var(--ok)}
+.tsvg .hi circle{stroke:var(--accent);stroke-width:3}
+.tsvg .halo{fill:none;stroke:var(--accent);stroke-width:1.6;stroke-dasharray:4 3;opacity:.85}
+.tsvg .ed line{stroke:var(--muted);stroke-width:1.8}
+.tsvg circle{fill:var(--surface);stroke:var(--ink);stroke-width:2}
+.tsvg .v{font-family:var(--f-mono);font-size:13px;font-weight:700;fill:var(--ink);text-anchor:middle;dominant-baseline:central}
+.tsvg .b{font-family:var(--f-mono);font-size:11px;fill:var(--muted);text-anchor:start;paint-order:stroke;stroke:var(--surface);stroke-width:3px;stroke-linejoin:round}
+.tsvg .lt{font-family:var(--f-display);font-size:13px;font-weight:700;fill:var(--accent);text-anchor:middle;paint-order:stroke;stroke:var(--surface);stroke-width:3px;stroke-linejoin:round}
+.tsvg .new circle{stroke:var(--ok);stroke-width:3;fill:var(--ok-soft)}
+.tsvg .new .v{fill:var(--ok)}
+.tsvg .pivot circle{stroke:var(--danger);stroke-width:3;fill:var(--danger-soft)}
+.tsvg .pivot .v{fill:var(--danger)}
+.tsvg .broken circle{stroke:var(--danger);stroke-width:3;fill:var(--danger-soft)}
+.tsvg .broken .v,.tsvg .broken .b{fill:var(--danger);font-weight:700}
+</style>

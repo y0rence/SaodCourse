@@ -1,0 +1,821 @@
+<title>Идеально сбалансированное дерево поиска</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=PT+Serif:ital,wght@0,400;0,700;1,400&family=PT+Sans:ital,wght@0,400;0,700;1,400&family=JetBrains+Mono:wght@400;700&display=swap">
+
+<style>
+  :root {
+    --paper:   #F2F5F7;
+    --surface: #FFFFFF;
+    --sunk:    #E9EEF2;
+    --ink:     #182430;
+    --muted:   #5D6E7D;
+    --rule:    #D2DAE1;
+    --accent:  #2C6E8E;
+    --mark:    #8F6414;
+    --mark-bg: #F6EEDA;
+    --ok:      #2E6B4F;
+    --shadow:  0 1px 2px rgba(24,36,48,.06), 0 8px 24px -16px rgba(24,36,48,.35);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper:   #111920;
+      --surface: #18222B;
+      --sunk:    #1E2A34;
+      --ink:     #DEE6EC;
+      --muted:   #8B9BA8;
+      --rule:    #2B3843;
+      --accent:  #74B6D4;
+      --mark:    #D9A945;
+      --mark-bg: #2C2617;
+      --ok:      #6FBE93;
+      --shadow:  0 1px 2px rgba(0,0,0,.4), 0 8px 24px -16px rgba(0,0,0,.8);
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --paper:   #111920;
+    --surface: #18222B;
+    --sunk:    #1E2A34;
+    --ink:     #DEE6EC;
+    --muted:   #8B9BA8;
+    --rule:    #2B3843;
+    --accent:  #74B6D4;
+    --mark:    #D9A945;
+    --mark-bg: #2C2617;
+    --ok:      #6FBE93;
+    --shadow:  0 1px 2px rgba(0,0,0,.4), 0 8px 24px -16px rgba(0,0,0,.8);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: "PT Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-size: 16.5px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .page {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 56px 28px 96px;
+  }
+
+  /* ---------- шапка ---------- */
+
+  .masthead {
+    border-top: 3px solid var(--ink);
+    padding-top: 22px;
+    margin-bottom: 52px;
+  }
+
+  .eyebrow {
+    font-size: 12px;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-weight: 700;
+    margin: 0 0 14px;
+  }
+
+  h1 {
+    font-family: "PT Serif", Georgia, serif;
+    font-size: clamp(30px, 5vw, 44px);
+    line-height: 1.12;
+    font-weight: 700;
+    letter-spacing: -.015em;
+    text-wrap: balance;
+    margin: 0 0 6px;
+  }
+
+  .subtitle {
+    font-family: "PT Serif", Georgia, serif;
+    font-style: italic;
+    font-size: clamp(17px, 2.4vw, 21px);
+    color: var(--muted);
+    margin: 0 0 28px;
+    text-wrap: balance;
+  }
+
+  .meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 36px;
+    border-top: 1px solid var(--rule);
+    padding-top: 16px;
+  }
+
+  .meta div { display: flex; flex-direction: column; gap: 2px; }
+
+  .meta dt {
+    font-size: 11.5px;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-weight: 700;
+  }
+
+  .meta dd {
+    margin: 0;
+    font-family: "JetBrains Mono", ui-monospace, monospace;
+    font-size: 14px;
+  }
+
+  /* ---------- секции заданий ---------- */
+
+  section { margin-bottom: 64px; }
+
+  .task-head {
+    display: flex;
+    align-items: baseline;
+    gap: 16px;
+    border-bottom: 2px solid var(--ink);
+    padding-bottom: 10px;
+    margin-bottom: 26px;
+  }
+
+  .task-num {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--surface);
+    background: var(--accent);
+    padding: 3px 9px;
+    border-radius: 3px;
+    flex: none;
+  }
+
+  h2 {
+    font-family: "PT Serif", Georgia, serif;
+    font-size: clamp(21px, 3vw, 26px);
+    font-weight: 700;
+    margin: 0;
+    text-wrap: balance;
+  }
+
+  h3 {
+    font-family: "PT Sans", sans-serif;
+    font-size: 12.5px;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-weight: 700;
+    margin: 34px 0 12px;
+  }
+
+  p { max-width: 68ch; margin: 0 0 14px; }
+
+  .lead { font-size: 17.5px; }
+
+  ol, ul { max-width: 68ch; padding-left: 22px; margin: 0 0 16px; }
+  li { margin-bottom: 7px; }
+
+  code {
+    font-family: "JetBrains Mono", ui-monospace, monospace;
+    font-size: .88em;
+    background: var(--sunk);
+    padding: 1px 5px;
+    border-radius: 3px;
+  }
+
+  b, strong { font-weight: 700; }
+
+  .k { color: var(--mark); font-weight: 700; }
+
+  /* ---------- блоки ---------- */
+
+  .block {
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    border-radius: 5px;
+    box-shadow: var(--shadow);
+    overflow: hidden;
+    margin-bottom: 20px;
+  }
+
+  .block-label {
+    font-size: 11.5px;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    font-weight: 700;
+    color: var(--muted);
+    background: var(--sunk);
+    border-bottom: 1px solid var(--rule);
+    padding: 8px 16px;
+  }
+
+  pre {
+    font-family: "JetBrains Mono", ui-monospace, monospace;
+    font-size: 13px;
+    line-height: 1.65;
+    margin: 0;
+    padding: 16px;
+    overflow-x: auto;
+    tab-size: 2;
+  }
+
+  pre .cm { color: var(--muted); }
+  pre .hl { color: var(--mark); font-weight: 700; }
+
+  .wrap { white-space: pre-wrap; word-break: break-word; }
+
+  /* псевдокод из пособия — без карточки, с линейкой слева */
+  .pseudo {
+    border-left: 3px solid var(--accent);
+    background: var(--sunk);
+    padding: 14px 18px;
+    margin: 0 0 20px;
+    font-family: "JetBrains Mono", ui-monospace, monospace;
+    font-size: 13px;
+    line-height: 1.7;
+    white-space: pre;
+    overflow-x: auto;
+  }
+
+  /* определение / свойство — выделены типографикой, не рамкой */
+  .note {
+    border-left: 3px solid var(--rule);
+    padding-left: 18px;
+    margin: 0 0 18px;
+    max-width: 68ch;
+  }
+
+  .note .term {
+    font-family: "PT Serif", Georgia, serif;
+    font-weight: 700;
+    font-style: italic;
+  }
+
+  /* ---------- схема дерева ---------- */
+
+  figure { margin: 0 0 22px; }
+
+  .figbox {
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    border-radius: 5px;
+    box-shadow: var(--shadow);
+    padding: 10px 4px 4px;
+    overflow-x: auto;
+  }
+
+  .figbox svg { display: block; min-width: 640px; width: 100%; height: auto; }
+
+  figcaption {
+    font-size: 13.5px;
+    color: var(--muted);
+    margin-top: 10px;
+    max-width: 68ch;
+  }
+
+  .edge  { stroke: var(--rule); stroke-width: 1.6; fill: none; }
+  .node  { fill: var(--surface); stroke: var(--accent); stroke-width: 1.6; }
+  .root  { fill: var(--mark-bg); stroke: var(--mark); stroke-width: 2.2; }
+  .nlab  { font-family: "JetBrains Mono", monospace; font-size: 15px; font-weight: 700; fill: var(--ink); text-anchor: middle; }
+  .ilab  { font-family: "JetBrains Mono", monospace; font-size: 10.5px; fill: var(--muted); text-anchor: middle; }
+  .llab  { font-family: "PT Sans", sans-serif; font-size: 11px; letter-spacing: .08em; fill: var(--muted); text-transform: uppercase; }
+  .lline { stroke: var(--rule); stroke-width: 1; stroke-dasharray: 2 4; }
+
+  /* ---------- таблицы ---------- */
+
+  .tablebox { overflow-x: auto; margin-bottom: 20px; }
+
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    font-size: 14.5px;
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    border-radius: 5px;
+  }
+
+  th, td {
+    text-align: left;
+    padding: 9px 14px;
+    border-bottom: 1px solid var(--rule);
+  }
+
+  thead th {
+    font-size: 11.5px;
+    letter-spacing: .09em;
+    text-transform: uppercase;
+    color: var(--muted);
+    background: var(--sunk);
+    white-space: nowrap;
+  }
+
+  tbody tr:last-child td { border-bottom: none; }
+
+  td.num, th.num { font-family: "JetBrains Mono", monospace; font-variant-numeric: tabular-nums; }
+
+  td.mono { font-family: "JetBrains Mono", monospace; }
+
+  tr.accent td { background: var(--mark-bg); }
+  tr.accent td.mono, tr.accent td.num { color: var(--mark); font-weight: 700; }
+
+  .match { color: var(--ok); font-weight: 700; }
+
+  /* ---------- выводы ---------- */
+
+  .closing {
+    border-top: 3px solid var(--ink);
+    padding-top: 22px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { animation: none !important; transition: none !important; }
+  }
+
+  @media (max-width: 620px) {
+    .page { padding: 36px 18px 72px; }
+    .meta { gap: 10px 24px; }
+  }
+
+  a { color: var(--accent); text-underline-offset: 3px; }
+  a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 2px; }
+
+  .toc {
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 26px;
+    padding: 16px 0 0;
+    margin: 16px 0 0;
+    border-top: 1px solid var(--rule);
+    max-width: none;
+    font-size: 15px;
+  }
+  .toc li { margin: 0; }
+
+  .sub { color: var(--accent); margin-right: 6px; }
+
+  /* построчный разбор кода */
+  .listing {
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    border-radius: 5px;
+    box-shadow: var(--shadow);
+    overflow: hidden;
+    margin-bottom: 22px;
+  }
+  .lrow {
+    display: grid;
+    grid-template-columns: 3.2em minmax(0, 1.05fr) minmax(0, 1fr);
+    border-top: 1px solid var(--sunk);
+  }
+  .block-label + .lrow { border-top: none; }
+  .lrow .ln {
+    font-family: "JetBrains Mono", ui-monospace, monospace;
+    font-size: 11.5px;
+    color: var(--muted);
+    text-align: right;
+    padding: 8px 10px 8px 0;
+    background: var(--sunk);
+    font-variant-numeric: tabular-nums;
+    user-select: none;
+  }
+  .lrow .src {
+    font-family: "JetBrains Mono", ui-monospace, monospace;
+    font-size: 12.5px;
+    line-height: 1.55;
+    white-space: pre-wrap;
+    word-break: break-word;
+    background: none;
+    border-radius: 0;
+    padding: 8px 14px;
+    color: var(--ink);
+  }
+  .lrow .ex {
+    font-size: 14px;
+    line-height: 1.5;
+    padding: 8px 14px;
+    border-left: 1px solid var(--rule);
+  }
+  .lrow .ex code { font-size: 12px; }
+  .lrow.blank .ln, .lrow.blank .src, .lrow.blank .ex { padding-top: 1px; padding-bottom: 1px; font-size: 9px; line-height: 1.2; }
+  .lrow.blank .ln { color: transparent; }
+
+  @media (max-width: 760px) {
+    .lrow { grid-template-columns: 2.8em minmax(0, 1fr); }
+    .lrow .ex { grid-column: 2; border-left: none; padding-top: 0; color: var(--muted); }
+    .lrow.blank .ex { display: none; }
+  }
+
+  /* расчётные таблицы */
+  .ins { color: var(--mark); font-weight: 700; background: var(--mark-bg); padding: 0 3px; border-radius: 2px; }
+  .dim { color: var(--muted); }
+  td.arr { white-space: nowrap; }
+  tr.nil td { color: var(--muted); }
+  td.nums { font-size: 12.5px; white-space: normal; min-width: 380px; }
+  td.num b, td.mono b { color: var(--ink); }
+
+  .calc {
+    font-family: "JetBrains Mono", ui-monospace, monospace;
+    font-size: 13.5px;
+    line-height: 1.8;
+    background: var(--sunk);
+    border-left: 3px solid var(--mark);
+    padding: 12px 18px;
+    margin: 0 0 20px;
+    overflow-x: auto;
+    white-space: pre-wrap;
+  }
+  .calc b { color: var(--mark); }
+
+  .cmp td.match, .cmp th.match { text-align: center; }
+</style>
+
+<div class="page">
+
+  <header class="masthead">
+    <p class="eyebrow">Структуры и алгоритмы обработки данных · Лабораторная работа</p>
+    <h1>Идеально сбалансированное дерево поиска</h1>
+    <p class="subtitle">Построение ИСДП вручную и программно, обход слева направо, размер, контрольная сумма, высота и средняя высота — с полными расчётами и построчным разбором кода</p>
+    <dl class="meta">
+      <div><dt>Раздел пособия</dt><dd>10.2, с. 45—46</dd></div>
+      <div><dt>Набор символов</dt><dd>OBERMKSGYVLA</dd></div>
+      <div><dt>Язык</dt><dd>C</dd></div>
+      <div><dt>Файл</dt><dd>main.cpp, 173 строк</dd></div>
+    </dl>
+    <ul class="toc">
+      <li><a href="#theory">Теория</a></li>
+      <li><a href="#t1">Задание 1</a></li>
+      <li><a href="#t2">Задание 2</a></li>
+      <li><a href="#t3">Задание 3</a></li>
+      <li><a href="#end">Выводы</a></li>
+    </ul>
+  </header>
+
+  <!-- ================= ТЕОРИЯ ================= -->
+  <section id="theory">
+    <div class="task-head">
+      <span class="task-num">ТЕОРИЯ</span>
+      <h2>Что такое ИСДП и как оно строится</h2>
+    </div>
+
+    <div class="note">
+      <p><span class="term">Определение.</span> Двоичное дерево называется <b>идеально сбалансированным</b> (ИСД), если для каждой его вершины размеры левого и правого поддеревьев отличаются не более чем на 1.</p>
+    </div>
+
+    <div class="note">
+      <p><span class="term">Свойство 1.</span> Высота ИСД с <i>n</i> вершинами минимальна и равна <code>h(n) = log₂(n + 1)</code>, округлённому вверх до целого.</p>
+      <p><span class="term">Свойство 2.</span> Если дерево идеально сбалансировано, то все его поддеревья также идеально сбалансированы.</p>
+    </div>
+
+    <p><b>Дерево поиска</b> — двоичное дерево, в котором для каждой вершины все ключи левого поддерева меньше её ключа, а все ключи правого — больше.</p>
+
+    <p>Задача построения ИСДП из элементов массива <code>A = (a₁, a₂, …, aₙ)</code> решается в два этапа:</p>
+
+    <ol>
+      <li><b>Сортировка массива A.</b> Она делает дерево деревом <i>поиска</i>: всё, что левее середины, меньше корня, всё, что правее, — больше.</li>
+      <li><b>Рекурсивное деление пополам.</b> Корнем берём средний элемент отсортированного массива, из меньших элементов строим левое поддерево, из больших — правое. Процесс продолжается, пока очередная часть не станет пустой.</li>
+    </ol>
+
+    <p>Деление пополам на каждом шаге и даёт идеальную сбалансированность: размеры двух половин отличаются не более чем на один элемент.</p>
+
+    <h3>Алгоритм на псевдокоде (пособие, с. 46)</h3>
+
+    <div class="pseudo">ИСДП (L, R)
+IF (L &gt; R) ИСДП := NIL
+ELSE m := [(L+R) / 2]
+     &lt;Выделяем память для p&gt;
+     p → Data  := A[m]
+     p → Left  := ИСДП (L, m-1)
+     p → Right := ИСДП (m+1, R)
+     ИСДП := p
+FI</div>
+
+    <p><code>L</code> и <code>R</code> — левая и правая границы той части массива, из которой строится дерево; функция возвращает указатель на построенное дерево.</p>
+
+    <h3>Характеристики дерева</h3>
+
+    <ul>
+      <li><b>Размер</b> — число вершин: <code>size(p) = 1 + size(левое) + size(правое)</code>, у пустого дерева 0.</li>
+      <li><b>Контрольная сумма</b> — сумма ключей всех вершин. Если она совпадает с суммой исходных данных, ни один элемент не потерян и не задвоен.</li>
+      <li><b>Высота</b> — число уровней: <code>h(p) = 1 + max(h(левое), h(правое))</code>, у пустого дерева 0.</li>
+      <li><b>Средняя высота</b> — сумма длин путей от корня до каждой вершины, делённая на размер. Длина пути до вершины равна её уровню (у корня 1).</li>
+    </ul>
+
+    <p>Для ИСДП максимальное число сравнений при поиске <code>Cmax = 2·log₂(n+1)</code>. Если поиск любой вершины происходит одинаково часто, ИСДП обеспечивает минимальное среднее время поиска. Недостаток — при добавлении нового элемента дерево приходится строить заново.</p>
+  </section>
+
+  <!-- ================= ЗАДАНИЕ 1 ================= -->
+  <section id="t1">
+    <div class="task-head">
+      <span class="task-num">1</span>
+      <h2>ИСДП из 12 неповторяющихся символов ФИО, построенное вручную</h2>
+    </div>
+
+    <p class="lead">По 12 первым последовательным неповторяющимся символам ФИО строим ИСДП вручную и считаем все характеристики. Потом тот же набор подаём программе и сверяем результаты.</p>
+
+    <h3><span class="sub">1.1</span>Выбор символов</h3>
+
+    <p>ФИО записываем латиницей: <code>OBEREMOK SERGEY VLADIMIROVICH</code>. Идём по буквам слева направо и пропускаем те, что уже встречались. Фамилия и имя дают только 9 разных букв, оставшиеся 3 берутся из отчества.</p>
+
+    <div class="tablebox">
+      <table>
+        <thead><tr><th>Часть ФИО</th><th>Буквы (зачёркнуты повторы)</th><th>Новые символы</th><th class="num">Всего</th></tr></thead>
+        <tbody>
+          <tr><td>Фамилия</td><td class="mono">O B E R <s>E</s> M <s>O</s> K</td><td class="mono">O B E R M K</td><td class="num">6</td></tr>
+          <tr><td>Имя</td><td class="mono">S <s>E</s> <s>R</s> G <s>E</s> Y</td><td class="mono">S G Y</td><td class="num">9</td></tr>
+          <tr><td>Отчество</td><td class="mono">V L A <span class="dim">D I M I R O V I C H</span></td><td class="mono">V L A</td><td class="num">12</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>Набор: <code>A = (O, B, E, R, M, K, S, G, Y, V, L, A)</code>. Повторов нет, поэтому дерево будет деревом поиска в строгом смысле: <code>левое &lt; корень &lt; правое</code>. Буквы сравниваются по ASCII-кодам, то есть в алфавитном порядке.</p>
+
+    <h3><span class="sub">1.2</span>Этап 1 — сортировка простыми вставками</h3>
+
+    <p>На шаге <code>i</code> элемент <code>x = A[i]</code> сдвигается влево, пока слева стоят большие буквы. Вставленная буква <span class="ins">выделена</span>, справа от черты — ещё не просмотренная часть.</p>
+
+    <div class="tablebox">
+      <table>
+        <thead><tr><th class="num">i</th><th>x = A[i]</th><th class="num">Сдвигов</th><th class="num">Позиция</th><th>Массив после шага</th></tr></thead>
+        <tbody>
+          <tr><td class="num">—</td><td class="mono">—</td><td class="num">—</td><td class="num">—</td><td class="mono arr">O <span class="dim">| B E R M K S G Y V L A</span></td></tr>
+          <tr><td class="num">2</td><td class="mono">B</td><td class="num">1</td><td class="num">1</td><td class="mono arr"><span class="ins">B</span> O <span class="dim">| E R M K S G Y V L A</span></td></tr><tr><td class="num">3</td><td class="mono">E</td><td class="num">1</td><td class="num">2</td><td class="mono arr">B <span class="ins">E</span> O <span class="dim">| R M K S G Y V L A</span></td></tr><tr><td class="num">4</td><td class="mono">R</td><td class="num">0</td><td class="num">4</td><td class="mono arr">B E O <span class="ins">R</span> <span class="dim">| M K S G Y V L A</span></td></tr><tr><td class="num">5</td><td class="mono">M</td><td class="num">2</td><td class="num">3</td><td class="mono arr">B E <span class="ins">M</span> O R <span class="dim">| K S G Y V L A</span></td></tr><tr><td class="num">6</td><td class="mono">K</td><td class="num">3</td><td class="num">3</td><td class="mono arr">B E <span class="ins">K</span> M O R <span class="dim">| S G Y V L A</span></td></tr><tr><td class="num">7</td><td class="mono">S</td><td class="num">0</td><td class="num">7</td><td class="mono arr">B E K M O R <span class="ins">S</span> <span class="dim">| G Y V L A</span></td></tr><tr><td class="num">8</td><td class="mono">G</td><td class="num">5</td><td class="num">3</td><td class="mono arr">B E <span class="ins">G</span> K M O R S <span class="dim">| Y V L A</span></td></tr><tr><td class="num">9</td><td class="mono">Y</td><td class="num">0</td><td class="num">9</td><td class="mono arr">B E G K M O R S <span class="ins">Y</span> <span class="dim">| V L A</span></td></tr><tr><td class="num">10</td><td class="mono">V</td><td class="num">1</td><td class="num">9</td><td class="mono arr">B E G K M O R S <span class="ins">V</span> Y <span class="dim">| L A</span></td></tr><tr><td class="num">11</td><td class="mono">L</td><td class="num">6</td><td class="num">5</td><td class="mono arr">B E G K <span class="ins">L</span> M O R S V Y <span class="dim">| A</span></td></tr><tr><td class="num">12</td><td class="mono">A</td><td class="num">11</td><td class="num">1</td><td class="mono arr"><span class="ins">A</span> B E G K L M O R S V Y</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="calc">Всего сдвигов: 1 + 1 + 0 + 2 + 3 + 0 + 5 + 0 + 1 + 6 + 11 = <b>30</b>
+A<sub>упор</sub> = <b>A B E G K L M O R S V Y</b>
+индексы     1 2 3 4 5 6 7 8 9 10 11 12</div>
+
+    <h3><span class="sub">1.3</span>Этап 2 — рекурсивное построение ИСДП(1, 12)</h3>
+
+    <p>Вызовы перечислены в том порядке, в котором их выполняет программа: сначала вершина, затем целиком левое поддерево, затем правое. Каждая из 12 вершин даёт два дочерних вызова, поэтому пустых вызовов (NIL) на один больше, чем вершин: всего 12 + 13 = 25.</p>
+
+    <p>Середина считается как <code>m = (L + R) / 2</code>. В программе <code>L</code> и <code>R</code> — целые числа, поэтому дробная часть отбрасывается: <code>(1 + 12) / 2 = 6.5 → 6</code>.</p>
+
+    <div class="tablebox">
+      <table>
+        <thead><tr><th class="num">№</th><th>Вызов</th><th>Проверка L &gt; R</th><th class="num">m</th><th>Вершина</th><th>Место в дереве</th></tr></thead>
+        <tbody>
+          <tr class="accent"><td class="num">1</td><td class="mono">ИСДП(1, 12)</td><td>1 ≤ 12</td><td class="num">(1 + 12) / 2 = 6.5 → 6</td><td class="mono">A[6] = L</td><td>корень, уровень 1</td></tr><tr><td class="num">2</td><td class="mono">ИСДП(1, 5)</td><td>1 ≤ 5</td><td class="num">(1 + 5) / 2 = 3</td><td class="mono">A[3] = E</td><td>левый сын L, уровень 2</td></tr><tr><td class="num">3</td><td class="mono">ИСДП(1, 2)</td><td>1 ≤ 2</td><td class="num">(1 + 2) / 2 = 1.5 → 1</td><td class="mono">A[1] = A</td><td>левый сын E, уровень 3</td></tr><tr class="nil"><td class="num">4</td><td class="mono">ИСДП(1, 0)</td><td>1 &gt; 0 → NIL</td><td class="num">—</td><td class="mono">—</td><td>левое поддерево A пустое</td></tr><tr><td class="num">5</td><td class="mono">ИСДП(2, 2)</td><td>2 ≤ 2</td><td class="num">(2 + 2) / 2 = 2</td><td class="mono">A[2] = B</td><td>правый сын A, уровень 4</td></tr><tr class="nil"><td class="num">6</td><td class="mono">ИСДП(2, 1)</td><td>2 &gt; 1 → NIL</td><td class="num">—</td><td class="mono">—</td><td>левое поддерево B пустое</td></tr><tr class="nil"><td class="num">7</td><td class="mono">ИСДП(3, 2)</td><td>3 &gt; 2 → NIL</td><td class="num">—</td><td class="mono">—</td><td>правое поддерево B пустое</td></tr><tr><td class="num">8</td><td class="mono">ИСДП(4, 5)</td><td>4 ≤ 5</td><td class="num">(4 + 5) / 2 = 4.5 → 4</td><td class="mono">A[4] = G</td><td>правый сын E, уровень 3</td></tr><tr class="nil"><td class="num">9</td><td class="mono">ИСДП(4, 3)</td><td>4 &gt; 3 → NIL</td><td class="num">—</td><td class="mono">—</td><td>левое поддерево G пустое</td></tr><tr><td class="num">10</td><td class="mono">ИСДП(5, 5)</td><td>5 ≤ 5</td><td class="num">(5 + 5) / 2 = 5</td><td class="mono">A[5] = K</td><td>правый сын G, уровень 4</td></tr><tr class="nil"><td class="num">11</td><td class="mono">ИСДП(5, 4)</td><td>5 &gt; 4 → NIL</td><td class="num">—</td><td class="mono">—</td><td>левое поддерево K пустое</td></tr><tr class="nil"><td class="num">12</td><td class="mono">ИСДП(6, 5)</td><td>6 &gt; 5 → NIL</td><td class="num">—</td><td class="mono">—</td><td>правое поддерево K пустое</td></tr><tr><td class="num">13</td><td class="mono">ИСДП(7, 12)</td><td>7 ≤ 12</td><td class="num">(7 + 12) / 2 = 9.5 → 9</td><td class="mono">A[9] = R</td><td>правый сын L, уровень 2</td></tr><tr><td class="num">14</td><td class="mono">ИСДП(7, 8)</td><td>7 ≤ 8</td><td class="num">(7 + 8) / 2 = 7.5 → 7</td><td class="mono">A[7] = M</td><td>левый сын R, уровень 3</td></tr><tr class="nil"><td class="num">15</td><td class="mono">ИСДП(7, 6)</td><td>7 &gt; 6 → NIL</td><td class="num">—</td><td class="mono">—</td><td>левое поддерево M пустое</td></tr><tr><td class="num">16</td><td class="mono">ИСДП(8, 8)</td><td>8 ≤ 8</td><td class="num">(8 + 8) / 2 = 8</td><td class="mono">A[8] = O</td><td>правый сын M, уровень 4</td></tr><tr class="nil"><td class="num">17</td><td class="mono">ИСДП(8, 7)</td><td>8 &gt; 7 → NIL</td><td class="num">—</td><td class="mono">—</td><td>левое поддерево O пустое</td></tr><tr class="nil"><td class="num">18</td><td class="mono">ИСДП(9, 8)</td><td>9 &gt; 8 → NIL</td><td class="num">—</td><td class="mono">—</td><td>правое поддерево O пустое</td></tr><tr><td class="num">19</td><td class="mono">ИСДП(10, 12)</td><td>10 ≤ 12</td><td class="num">(10 + 12) / 2 = 11</td><td class="mono">A[11] = V</td><td>правый сын R, уровень 3</td></tr><tr><td class="num">20</td><td class="mono">ИСДП(10, 10)</td><td>10 ≤ 10</td><td class="num">(10 + 10) / 2 = 10</td><td class="mono">A[10] = S</td><td>левый сын V, уровень 4</td></tr><tr class="nil"><td class="num">21</td><td class="mono">ИСДП(10, 9)</td><td>10 &gt; 9 → NIL</td><td class="num">—</td><td class="mono">—</td><td>левое поддерево S пустое</td></tr><tr class="nil"><td class="num">22</td><td class="mono">ИСДП(11, 10)</td><td>11 &gt; 10 → NIL</td><td class="num">—</td><td class="mono">—</td><td>правое поддерево S пустое</td></tr><tr><td class="num">23</td><td class="mono">ИСДП(12, 12)</td><td>12 ≤ 12</td><td class="num">(12 + 12) / 2 = 12</td><td class="mono">A[12] = Y</td><td>правый сын V, уровень 4</td></tr><tr class="nil"><td class="num">24</td><td class="mono">ИСДП(12, 11)</td><td>12 &gt; 11 → NIL</td><td class="num">—</td><td class="mono">—</td><td>левое поддерево Y пустое</td></tr><tr class="nil"><td class="num">25</td><td class="mono">ИСДП(13, 12)</td><td>13 &gt; 12 → NIL</td><td class="num">—</td><td class="mono">—</td><td>правое поддерево Y пустое</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3><span class="sub">1.4</span>Построенное дерево</h3>
+
+    <figure>
+      <div class="figbox"><svg viewBox="0 0 800 350" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Схема ИСДП: корень L; второй уровень E, R; третий A, G, M, V; четвёртый B, K, O, S, Y"><line class="lline" x1="30" y1="48" x2="782" y2="48"></line><text class="llab" x="748" y="36">ур. 1</text><line class="lline" x1="30" y1="128" x2="782" y2="128"></line><text class="llab" x="748" y="116">ур. 2</text><line class="lline" x1="30" y1="208" x2="782" y2="208"></line><text class="llab" x="748" y="196">ур. 3</text><line class="lline" x1="30" y1="288" x2="782" y2="288"></line><text class="llab" x="748" y="276">ур. 4</text><line class="edge" x1="361" y1="48" x2="172" y2="128"></line><line class="edge" x1="172" y1="128" x2="46" y2="208"></line><line class="edge" x1="46" y1="208" x2="109" y2="288"></line><line class="edge" x1="172" y1="128" x2="235" y2="208"></line><line class="edge" x1="235" y1="208" x2="298" y2="288"></line><line class="edge" x1="361" y1="48" x2="550" y2="128"></line><line class="edge" x1="550" y1="128" x2="424" y2="208"></line><line class="edge" x1="424" y1="208" x2="487" y2="288"></line><line class="edge" x1="550" y1="128" x2="676" y2="208"></line><line class="edge" x1="676" y1="208" x2="613" y2="288"></line><line class="edge" x1="676" y1="208" x2="739" y2="288"></line><circle class="node" cx="109" cy="288" r="18"></circle><text class="nlab" x="109" y="294">B</text><text class="ilab" x="109" y="325">A[2]</text><circle class="node" cx="46" cy="208" r="18"></circle><text class="nlab" x="46" y="214">A</text><text class="ilab" x="46" y="245">A[1]</text><circle class="node" cx="298" cy="288" r="18"></circle><text class="nlab" x="298" y="294">K</text><text class="ilab" x="298" y="325">A[5]</text><circle class="node" cx="235" cy="208" r="18"></circle><text class="nlab" x="235" y="214">G</text><text class="ilab" x="235" y="245">A[4]</text><circle class="node" cx="172" cy="128" r="18"></circle><text class="nlab" x="172" y="134">E</text><text class="ilab" x="172" y="165">A[3]</text><circle class="node" cx="487" cy="288" r="18"></circle><text class="nlab" x="487" y="294">O</text><text class="ilab" x="487" y="325">A[8]</text><circle class="node" cx="424" cy="208" r="18"></circle><text class="nlab" x="424" y="214">M</text><text class="ilab" x="424" y="245">A[7]</text><circle class="node" cx="613" cy="288" r="18"></circle><text class="nlab" x="613" y="294">S</text><text class="ilab" x="613" y="325">A[10]</text><circle class="node" cx="739" cy="288" r="18"></circle><text class="nlab" x="739" y="294">Y</text><text class="ilab" x="739" y="325">A[12]</text><circle class="node" cx="676" cy="208" r="18"></circle><text class="nlab" x="676" y="214">V</text><text class="ilab" x="676" y="245">A[11]</text><circle class="node" cx="550" cy="128" r="18"></circle><text class="nlab" x="550" y="134">R</text><text class="ilab" x="550" y="165">A[9]</text><circle class="root" cx="361" cy="48" r="19"></circle><text class="nlab" x="361" y="54">L</text><text class="ilab" x="361" y="85">A[6]</text></svg></div>
+      <figcaption>ИСДП из набора OBERMKSGYVLA. Горизонтальное положение вершины совпадает с её номером в упорядоченном массиве — поэтому обход слева направо читает A<sub>упор</sub> по порядку: A → B → E → G → K → L → M → O → R → S → V → Y.</figcaption>
+    </figure>
+
+    <h3><span class="sub">1.5</span>Проверка идеальной сбалансированности</h3>
+
+    <p>По определению для <i>каждой</i> вершины размеры поддеревьев отличаются не более чем на 1:</p>
+
+    <div class="tablebox">
+      <table>
+        <thead><tr><th>Вершина</th><th class="num">Размер левого</th><th class="num">Размер правого</th><th class="num">Разница</th><th>Условие</th></tr></thead>
+        <tbody><tr><td class="mono"><b>A</b></td><td class="num">0</td><td class="num">1</td><td class="num">|0 − 1| = 1</td><td class="match">≤ 1 ✓</td></tr><tr><td class="mono"><b>B</b></td><td class="num">0</td><td class="num">0</td><td class="num">|0 − 0| = 0</td><td class="match">≤ 1 ✓</td></tr><tr><td class="mono"><b>E</b></td><td class="num">2</td><td class="num">2</td><td class="num">|2 − 2| = 0</td><td class="match">≤ 1 ✓</td></tr><tr><td class="mono"><b>G</b></td><td class="num">0</td><td class="num">1</td><td class="num">|0 − 1| = 1</td><td class="match">≤ 1 ✓</td></tr><tr><td class="mono"><b>K</b></td><td class="num">0</td><td class="num">0</td><td class="num">|0 − 0| = 0</td><td class="match">≤ 1 ✓</td></tr><tr><td class="mono"><b>L</b></td><td class="num">5</td><td class="num">6</td><td class="num">|5 − 6| = 1</td><td class="match">≤ 1 ✓</td></tr><tr><td class="mono"><b>M</b></td><td class="num">0</td><td class="num">1</td><td class="num">|0 − 1| = 1</td><td class="match">≤ 1 ✓</td></tr><tr><td class="mono"><b>O</b></td><td class="num">0</td><td class="num">0</td><td class="num">|0 − 0| = 0</td><td class="match">≤ 1 ✓</td></tr><tr><td class="mono"><b>R</b></td><td class="num">2</td><td class="num">3</td><td class="num">|2 − 3| = 1</td><td class="match">≤ 1 ✓</td></tr><tr><td class="mono"><b>S</b></td><td class="num">0</td><td class="num">0</td><td class="num">|0 − 0| = 0</td><td class="match">≤ 1 ✓</td></tr><tr><td class="mono"><b>V</b></td><td class="num">1</td><td class="num">1</td><td class="num">|1 − 1| = 0</td><td class="match">≤ 1 ✓</td></tr><tr><td class="mono"><b>Y</b></td><td class="num">0</td><td class="num">0</td><td class="num">|0 − 0| = 0</td><td class="match">≤ 1 ✓</td></tr></tbody>
+      </table>
+    </div>
+
+    <h3><span class="sub">1.6</span>Расчёт характеристик вручную</h3>
+
+    <p>Все четыре функции рекурсивны: значение вершины зависит от значений её поддеревьев. Поэтому считаем снизу вверх — сначала листья, корень последним. Пустое поддерево везде даёт 0. В столбце «Сумма путей» первое слагаемое — уровень вершины.</p>
+
+    <div class="tablebox">
+      <table>
+        <thead><tr><th class="num">Порядок</th><th>Вершина</th><th class="num">Уровень</th><th class="num">ASCII</th><th class="num">Размер</th><th class="num">Контр. сумма</th><th class="num">Высота</th><th class="num">Сумма путей</th></tr></thead>
+        <tbody><tr><td class="num">1</td><td class="mono"><b>B</b></td><td class="num">4</td><td class="num">66</td><td class="num">1 + 0 + 0 = <b>1</b></td><td class="num">66 + 0 + 0 = <b>66</b></td><td class="num">1 + max(0, 0) = <b>1</b></td><td class="num">4 + 0 + 0 = <b>4</b></td></tr><tr><td class="num">2</td><td class="mono"><b>A</b></td><td class="num">3</td><td class="num">65</td><td class="num">1 + 0 + 1 = <b>2</b></td><td class="num">65 + 0 + 66 = <b>131</b></td><td class="num">1 + max(0, 1) = <b>2</b></td><td class="num">3 + 0 + 4 = <b>7</b></td></tr><tr><td class="num">3</td><td class="mono"><b>K</b></td><td class="num">4</td><td class="num">75</td><td class="num">1 + 0 + 0 = <b>1</b></td><td class="num">75 + 0 + 0 = <b>75</b></td><td class="num">1 + max(0, 0) = <b>1</b></td><td class="num">4 + 0 + 0 = <b>4</b></td></tr><tr><td class="num">4</td><td class="mono"><b>G</b></td><td class="num">3</td><td class="num">71</td><td class="num">1 + 0 + 1 = <b>2</b></td><td class="num">71 + 0 + 75 = <b>146</b></td><td class="num">1 + max(0, 1) = <b>2</b></td><td class="num">3 + 0 + 4 = <b>7</b></td></tr><tr><td class="num">5</td><td class="mono"><b>E</b></td><td class="num">2</td><td class="num">69</td><td class="num">1 + 2 + 2 = <b>5</b></td><td class="num">69 + 131 + 146 = <b>346</b></td><td class="num">1 + max(2, 2) = <b>3</b></td><td class="num">2 + 7 + 7 = <b>16</b></td></tr><tr><td class="num">6</td><td class="mono"><b>O</b></td><td class="num">4</td><td class="num">79</td><td class="num">1 + 0 + 0 = <b>1</b></td><td class="num">79 + 0 + 0 = <b>79</b></td><td class="num">1 + max(0, 0) = <b>1</b></td><td class="num">4 + 0 + 0 = <b>4</b></td></tr><tr><td class="num">7</td><td class="mono"><b>M</b></td><td class="num">3</td><td class="num">77</td><td class="num">1 + 0 + 1 = <b>2</b></td><td class="num">77 + 0 + 79 = <b>156</b></td><td class="num">1 + max(0, 1) = <b>2</b></td><td class="num">3 + 0 + 4 = <b>7</b></td></tr><tr><td class="num">8</td><td class="mono"><b>S</b></td><td class="num">4</td><td class="num">83</td><td class="num">1 + 0 + 0 = <b>1</b></td><td class="num">83 + 0 + 0 = <b>83</b></td><td class="num">1 + max(0, 0) = <b>1</b></td><td class="num">4 + 0 + 0 = <b>4</b></td></tr><tr><td class="num">9</td><td class="mono"><b>Y</b></td><td class="num">4</td><td class="num">89</td><td class="num">1 + 0 + 0 = <b>1</b></td><td class="num">89 + 0 + 0 = <b>89</b></td><td class="num">1 + max(0, 0) = <b>1</b></td><td class="num">4 + 0 + 0 = <b>4</b></td></tr><tr><td class="num">10</td><td class="mono"><b>V</b></td><td class="num">3</td><td class="num">86</td><td class="num">1 + 1 + 1 = <b>3</b></td><td class="num">86 + 83 + 89 = <b>258</b></td><td class="num">1 + max(1, 1) = <b>2</b></td><td class="num">3 + 4 + 4 = <b>11</b></td></tr><tr><td class="num">11</td><td class="mono"><b>R</b></td><td class="num">2</td><td class="num">82</td><td class="num">1 + 2 + 3 = <b>6</b></td><td class="num">82 + 156 + 258 = <b>496</b></td><td class="num">1 + max(2, 2) = <b>3</b></td><td class="num">2 + 7 + 11 = <b>20</b></td></tr><tr><td class="num">12</td><td class="mono"><b>L</b></td><td class="num">1</td><td class="num">76</td><td class="num">1 + 5 + 6 = <b>12</b></td><td class="num">76 + 346 + 496 = <b>918</b></td><td class="num">1 + max(3, 3) = <b>4</b></td><td class="num">1 + 16 + 20 = <b>37</b></td></tr></tbody>
+      </table>
+    </div>
+
+    <p>Итог по корню L и проверка каждой величины другим способом:</p>
+
+    <div class="calc">Размер          = <b>12</b>  (5 в левом поддереве + 1 корень + 6 в правом)
+
+Контрольная сумма = A 65 + B 66 + E 69 + G 71 + K 75 + L 76 + M 77 + O 79 + R 82 + S 83 + V 86 + Y 89
+                  = <b>918</b>
+
+Высота          = <b>4</b>
+  теория: 2³ = 8 &lt; n+1 = 13 ≤ 16 = 2⁴  →  log₂13 = 3.70, округляем вверх  →  <b>4</b>  ✓ минимальная
+
+Сумма путей     = уровень · вершин на уровне = 1·1 + 2·2 + 3·4 + 4·5
+                = 1 + 4 + 12 + 20 = <b>37</b>
+
+Средняя высота  = 37 / 12 = 3.0833 ≈ <b>3.08</b></div>
+
+    <h3><span class="sub">1.7</span>Проверка программой — функция task1</h3>
+
+    <p>Функции <code>sortArray</code>, <code>buildISDP</code> и <code>leftRightChar</code> разобраны в задании 2, функции характеристик — в задании 3.</p>
+
+    <div class="listing"><div class="block-label">main.cpp · строки 110–140 · task1</div><div class="lrow"><span class="ln">110</span><code class="src">void task1(void) {</code><span class="ex">Задание 1: проверка программы на наборе символов из ФИО. <code>(void)</code> в C явно означает, что функция не принимает параметров.</span></div><div class="lrow"><span class="ln">111</span><code class="src">  int A[] = {0, &#x27;O&#x27;, &#x27;B&#x27;, &#x27;E&#x27;, &#x27;R&#x27;, &#x27;M&#x27;, &#x27;K&#x27;, &#x27;S&#x27;, &#x27;G&#x27;, &#x27;Y&#x27;, &#x27;V&#x27;, &#x27;L&#x27;, &#x27;A&#x27;};</code><span class="ex">Символы в одинарных кавычках — символьные константы, в C они имеют тип <code>int</code> и равны ASCII-кодам: <code>'O'</code> = 79. <code>A[0] = 0</code> — фиктивный элемент, чтобы данные лежали в <code>A[1..12]</code>. Размер массива (13) компилятор считает по списку.</span></div><div class="lrow"><span class="ln">112</span><code class="src">  int n = 12;</code><span class="ex">Количество элементов.</span></div><div class="lrow"><span class="ln">113</span><code class="src">  int i;</code><span class="ex">Счётчик для циклов печати.</span></div><div class="lrow"><span class="ln">114</span><code class="src">  struct Vertex *root;</code><span class="ex">Указатель на корень дерева.</span></div><div class="lrow blank"><span class="ln">115</span><span class="src"></span><span class="ex"></span></div><div class="lrow"><span class="ln">116</span><code class="src">  printf(&quot;===== Задание 1: ИСДП из 12 неповторяющихся символов ФИО =====\n&quot;);</code><span class="ex">Заголовок задания.</span></div><div class="lrow blank"><span class="ln">117</span><span class="src"></span><span class="ex"></span></div><div class="lrow"><span class="ln">118</span><code class="src">  printf(&quot;Исходный массив A:   &quot;);</code><span class="ex">Подпись перед исходным массивом; пробелы выравнивают столбцы.</span></div><div class="lrow"><span class="ln">119</span><code class="src">  for (i = 1; i &lt;= n; i++)</code><span class="ex">Перебираем элементы <code>A[1]</code> … <code>A[12]</code>.</span></div><div class="lrow"><span class="ln">120</span><code class="src">    printf(&quot;%c &quot;, A[i]);</code><span class="ex">Печатаем каждый код как букву (<code>%c</code>).</span></div><div class="lrow"><span class="ln">121</span><code class="src">  printf(&quot;\n&quot;);</code><span class="ex">Перевод строки.</span></div><div class="lrow blank"><span class="ln">122</span><span class="src"></span><span class="ex"></span></div><div class="lrow"><span class="ln">123</span><code class="src">  sortArray(A, n);</code><span class="ex">Этап 1: сортируем массив.</span></div><div class="lrow blank"><span class="ln">124</span><span class="src"></span><span class="ex"></span></div><div class="lrow"><span class="ln">125</span><code class="src">  printf(&quot;Упорядоченный Aупор: &quot;);</code><span class="ex">Подпись перед упорядоченным массивом.</span></div><div class="lrow"><span class="ln">126</span><code class="src">  for (i = 1; i &lt;= n; i++)</code><span class="ex">Перебираем элементы.</span></div><div class="lrow"><span class="ln">127</span><code class="src">    printf(&quot;%c &quot;, A[i]);</code><span class="ex">Печатаем букву.</span></div><div class="lrow"><span class="ln">128</span><code class="src">  printf(&quot;\n&quot;);</code><span class="ex">Перевод строки.</span></div><div class="lrow blank"><span class="ln">129</span><span class="src"></span><span class="ex"></span></div><div class="lrow"><span class="ln">130</span><code class="src">  root = buildISDP(A, 1, n);</code><span class="ex">Этап 2: строим ИСДП из всего массива <code>A[1..12]</code>; <code>root</code> указывает на корень.</span></div><div class="lrow blank"><span class="ln">131</span><span class="src"></span><span class="ex"></span></div><div class="lrow"><span class="ln">132</span><code class="src">  printf(&quot;Обход слева направо: &quot;);</code><span class="ex">Подпись перед обходом.</span></div><div class="lrow"><span class="ln">133</span><code class="src">  leftRightChar(root);</code><span class="ex">Обход слева направо — он должен совпасть с упорядоченным массивом.</span></div><div class="lrow"><span class="ln">134</span><code class="src">  printf(&quot;\n\n&quot;);</code><span class="ex">Два перевода строки: конец строки обхода и пустая строка перед характеристиками.</span></div><div class="lrow blank"><span class="ln">135</span><span class="src"></span><span class="ex"></span></div><div class="lrow"><span class="ln">136</span><code class="src">  printStats(root);</code><span class="ex">Размер, контрольная сумма, высота и средняя высота.</span></div><div class="lrow"><span class="ln">137</span><code class="src">  printf(&quot;\n&quot;);</code><span class="ex">Отделяем вывод задания 1 от следующего.</span></div><div class="lrow blank"><span class="ln">138</span><span class="src"></span><span class="ex"></span></div><div class="lrow"><span class="ln">139</span><code class="src">  deleteTree(root);</code><span class="ex">Освобождаем память дерева.</span></div><div class="lrow"><span class="ln">140</span><code class="src">}</code><span class="ex">Конец функции.</span></div></div>
+
+    <div class="block">
+      <div class="block-label">Консоль · задание 1</div>
+      <pre>===== Задание 1: ИСДП из 12 неповторяющихся символов ФИО =====
+Исходный массив A:   O B E R M K S G Y V L A
+Упорядоченный Aупор: A B E G K L M O R S V Y
+Обход слева направо: A B E G K L M O R S V Y
+
+Размер дерева:         12
+Контрольная сумма:     918
+Высота дерева:         4
+Средняя высота дерева: 3.08</pre>
+    </div>
+
+    <div class="tablebox">
+      <table class="cmp">
+        <thead><tr><th>Величина</th><th>Вручную</th><th>Программа</th><th class="match">Совпадает</th></tr></thead>
+        <tbody>
+          <tr><td>Упорядоченный массив</td><td class="mono">A B E G K L M O R S V Y</td><td class="mono">A B E G K L M O R S V Y</td><td class="match">✓</td></tr>
+          <tr><td>Обход слева направо</td><td class="mono">A B E G K L M O R S V Y</td><td class="mono">A B E G K L M O R S V Y</td><td class="match">✓</td></tr>
+          <tr><td>Размер</td><td class="num">12</td><td class="num">12</td><td class="match">✓</td></tr>
+          <tr><td>Контрольная сумма</td><td class="num">918</td><td class="num">918</td><td class="match">✓</td></tr>
+          <tr><td>Высота</td><td class="num">4</td><td class="num">4</td><td class="match">✓</td></tr>
+          <tr><td>Средняя высота</td><td class="num">3.08</td><td class="num">3.08</td><td class="match">✓</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ================= ЗАДАНИЕ 2 ================= -->
+  <section id="t2">
+    <div class="task-head">
+      <span class="task-num">2</span>
+      <h2>Функция построения ИСДП и дерево из 100 вершин</h2>
+    </div>
+
+    <p class="lead">Разбираем по строкам всё, что нужно для построения и обхода: подключения, структуру вершины, сортировку, <code>buildISDP</code>, обходы и функции <code>task2</code> и <code>main</code>.</p>
+
+    <h3><span class="sub">2.1</span>Конструкции языка C в программе</h3>
+
+    <p>Программа написана в стиле языка C: вывод через <code>printf</code>, память через <code>malloc</code> и <code>free</code>, переменные объявлены в начале функций. Файл собирается и компилятором C (<code>gcc</code>), и компилятором C++ (<code>g++</code>).</p>
+
+    <div class="tablebox">
+      <table>
+        <thead><tr><th>Конструкция</th><th>Где используется</th><th>Что делает</th></tr></thead>
+        <tbody>
+          <tr><td class="mono">printf("…", …)</td><td>везде, где есть вывод</td><td>форматированный вывод: спецификаторы в строке заменяются значениями аргументов</td></tr>
+          <tr><td class="mono">%d</td><td>leftRight, printStats</td><td>целое число <code>int</code></td></tr>
+          <tr><td class="mono">%c</td><td>leftRightChar, task1</td><td>символ по его коду: 76 → <code>L</code></td></tr>
+          <tr><td class="mono">%.2f</td><td>printStats</td><td>вещественное число с двумя знаками после запятой</td></tr>
+          <tr><td class="mono">
+</td><td>везде, где есть вывод</td><td>перевод строки</td></tr>
+          <tr><td class="mono">struct Vertex *p</td><td>все функции дерева</td><td>указатель на структуру-вершину</td></tr>
+          <tr><td class="mono">p-&gt;data</td><td>все функции дерева</td><td>поле структуры через указатель, то же, что <code>(*p).data</code></td></tr>
+          <tr><td class="mono">malloc(sizeof(struct Vertex))</td><td>buildISDP</td><td>выделяет память под одну вершину</td></tr>
+          <tr><td class="mono">free(p)</td><td>deleteTree</td><td>возвращает память, выделенную <code>malloc</code></td></tr>
+          <tr><td class="mono">NULL</td><td>buildISDP, обходы, характеристики</td><td>пустой указатель — пустое поддерево (NIL в пособии)</td></tr>
+          <tr><td class="mono">(double), (struct Vertex *)</td><td>averageHeight, buildISDP</td><td>явное приведение типа</td></tr>
+          <tr><td class="mono">void f(void)</td><td>task1, task2, main</td><td>функция без параметров</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3><span class="sub">2.2</span>Подключения и структура вершины</h3>
+    <div class="listing"><div class="block-label">main.cpp · строки 1–9 · заголовки и struct Vertex</div><div class="lrow"><span class="ln">1</span><code class="src">#include &lt;stdio.h&gt;</code><span class="ex">Стандартная библиотека ввода-вывода языка C: функция <code>printf</code> для форматированного вывода.</span></div><div class="lrow"><span class="ln">2</span><code class="src">#include &lt;stdlib.h&gt;</code><span class="ex">Стандартная библиотека C: <code>malloc</code> и <code>free</code> для динамической памяти, <code>rand</code> и <code>srand</code> для случайных чисел, константа <code>NULL</code>.</span></div><div class="lrow"><span class="ln">3</span><code class="src">#include &lt;time.h&gt;</code><span class="ex">Функция <code>time</code> — текущее время для инициализации генератора случайных чисел.</span></div><div class="lrow blank"><span class="ln">4</span><span class="src"></span><span class="ex"></span></div><div class="lrow"><span class="ln">5</span><code class="src">struct Vertex {</code><span class="ex">Описание структуры вершины. В C полное имя типа — <code>struct Vertex</code>, слово <code>struct</code> пишется при каждом использовании.</span></div><div class="lrow"><span class="ln">6</span><code class="src">  int data;</code><span class="ex">Поле данных — ключ вершины. В задании 1 здесь хранится ASCII-код буквы, в задании 2 — случайное число.</span></div><div class="lrow"><span class="ln">7</span><code class="src">  struct Vertex *left;</code><span class="ex">Указатель на левое поддерево: в дереве поиска там ключи меньше ключа вершины.</span></div><div class="lrow"><span class="ln">8</span><code class="src">  struct Vertex *right;</code><span class="ex">Указатель на правое поддерево: там ключи больше.</span></div><div class="lrow"><span class="ln">9</span><code class="src">};</code><span class="ex">Конец описания структуры — после фигурной скобки обязательна точка с запятой.</span></div></div>
+
+    <h3><span class="sub">2.3</span>Этап 1 — сортировка простыми вставками</h3>
+    <p>Работу функции на наборе из ФИО показывает таблица в пункте 1.2: 11 шагов, 30 сдвигов.</p>
+    <div class="listing"><div class="block-label">main.cpp · строки 11–23 · sortArray</div><div class="lrow"><span class="ln">11</span><code class="src">void sortArray(int A[], int n) {</code><span class="ex">Этап 1 построения ИСДП — сортировка <code>A[1..n]</code> простыми вставками. Массив в C передаётся как указатель на первый элемент, поэтому функция сортирует сам массив вызывающей функции, а не копию.</span></div><div class="lrow"><span class="ln">12</span><code class="src">  int i, j, x;</code><span class="ex">Как принято в C, переменные объявлены в начале функции: <code>i</code> — номер вставляемого элемента, <code>j</code> — бегунок по отсортированной части, <code>x</code> — вставляемое значение.</span></div><div class="lrow blank"><span class="ln">13</span><span class="src"></span><span class="ex"></span></div><div class="lrow"><span class="ln">14</span><code class="src">  for (i = 2; i &lt;= n; i++) {</code><span class="ex">Часть из одного элемента <code>A[1]</code> уже отсортирована, поэтому по очереди вставляем <code>A[2]</code>, …, <code>A[n]</code>.</span></div><div class="lrow"><span class="ln">15</span><code class="src">    x = A[i];</code><span class="ex">Запоминаем вставляемый элемент: его ячейку затрёт сдвиг.</span></div><div class="lrow"><span class="ln">16</span><code class="src">    j = i - 1;</code><span class="ex">Сравнение начинаем с последнего элемента отсортированной части.</span></div><div class="lrow"><span class="ln">17</span><code class="src">    while (j &gt;= 1 &amp;&amp; A[j] &gt; x) {</code><span class="ex">Пока не дошли до начала массива и текущий элемент больше <code>x</code>… Оператор <code>&amp;&amp;</code> — логическое «И»: если <code>j &gt;= 1</code> ложно, <code>A[j]</code> уже не проверяется.</span></div><div class="lrow"><span class="ln">18</span><code class="src">      A[j + 1] = A[j];</code><span class="ex">…сдвигаем его на одну позицию вправо, освобождая место…</span></div><div class="lrow"><span class="ln">19</span><code class="src">      j--;</code><span class="ex">…и переходим к предыдущему элементу (<code>j--</code> уменьшает <code>j</code> на 1).</span></div><div class="lrow"><span class="ln">20</span><code class="src">    }</code><span class="ex">Выход из цикла: либо <code>A[j] ≤ x</code>, либо <code>j = 0</code>.</span></div><div class="lrow"><span class="ln">21</span><code class="src">    A[j + 1] = x;</code><span class="ex">Ставим <code>x</code> в освободившуюся ячейку сразу за <code>A[j]</code>.</span></div><div class="lrow"><span class="ln">22</span><code class="src">  }</code><span class="ex">Конец шага вставки, переход к следующему <code>i</code>.</span></div><div class="lrow"><span class="ln">23</span><code class="src">}</code><span class="ex">Конец функции: массив <code>A[1..n]</code> упорядочен по неубыванию.</span></div></div>
+
+    <h3><span class="sub">2.4</span>Этап 2 — построение ИСДП</h3>
+    <p>Функция — прямой перевод псевдокода из пособия: строки 29–30 соответствуют <code>IF (L &gt; R) ИСДП := NIL</code>, строка 32 — <code>m := [(L+R)/2]</code>, строка 34 — <code>&lt;Выделяем память для p&gt;</code> через <code>malloc</code>, строки 35–37 — заполнению полей <code>Data</code>, <code>Left</code>, <code>Right</code>. Каждая вершина создаётся ровно один раз, поэтому построение выполняется за <code>O(n)</code>.</p>
+    <div class="listing"><div class="block-label">main.cpp · строки 25–40 · buildISDP</div><div class="lrow"><span class="ln">25</span><code class="src">struct Vertex *buildISDP(int A[], int L, int R) {</code><span class="ex">Этап 2 — функция ИСДП(L, R) из пособия. Строит дерево из элементов <code>A[L..R]</code> и возвращает указатель на его корень (тип <code>struct Vertex *</code>).</span></div><div class="lrow"><span class="ln">26</span><code class="src">  int m;</code><span class="ex">Индекс середины отрезка; объявлен в начале функции.</span></div><div class="lrow"><span class="ln">27</span><code class="src">  struct Vertex *p;</code><span class="ex">Указатель на создаваемую вершину.</span></div><div class="lrow blank"><span class="ln">28</span><span class="src"></span><span class="ex"></span></div><div class="lrow"><span class="ln">29</span><code class="src">  if (L &gt; R)</code><span class="ex">Если отрезок пуст (левая граница правее правой)…</span></div><div class="lrow"><span class="ln">30</span><code class="src">    return NULL;</code><span class="ex">…поддерево пустое: возвращаем пустой указатель <code>NULL</code> (в псевдокоде — <code>ИСДП := NIL</code>). Это условие выхода из рекурсии.</span></div><div class="lrow blank"><span class="ln">31</span><span class="src"></span><span class="ex"></span></div><div class="lrow"><span class="ln">32</span><code class="src">  m = (L + R) / 2;</code><span class="ex">Середина отрезка. <code>L</code> и <code>R</code> имеют тип <code>int</code>, поэтому деление целочисленное и дробная часть отбрасывается: <code>(1 + 12) / 2 = 6</code>. Это <code>[(L+R)/2]</code> из псевдокода.</span></div><div class="lrow blank"><span class="ln">33</span><span class="src"></span><span class="ex"></span></div><div class="lrow"><span class="ln">34</span><code class="src">  p = (struct Vertex *)malloc(sizeof(struct Vertex));</code><span class="ex">«Выделяем память для p». <code>sizeof(struct Vertex)</code> — размер вершины в байтах; <code>malloc</code> выделяет столько байт в динамической памяти и возвращает указатель <code>void *</code>; приведение <code>(struct Vertex *)</code> делает его указателем на вершину.</span></div><div class="lrow"><span class="ln">35</span><code class="src">  p-&gt;data = A[m];</code><span class="ex">Средний элемент становится ключом вершины. Оператор <code>-&gt;</code> — доступ к полю структуры через указатель, то же, что <code>(*p).data</code>.</span></div><div class="lrow"><span class="ln">36</span><code class="src">  p-&gt;left = buildISDP(A, L, m - 1);</code><span class="ex">Из элементов левее середины (они меньше) рекурсивно строим левое поддерево.</span></div><div class="lrow"><span class="ln">37</span><code class="src">  p-&gt;right = buildISDP(A, m + 1, R);</code><span class="ex">Из элементов правее середины (они больше) — правое поддерево.</span></div><div class="lrow blank"><span class="ln">38</span><span class="src"></span><span class="ex"></span></div><div class="lrow"><span class="ln">39</span><code class="src">  return p;</code><span class="ex">Возвращаем указатель на корень построенного поддерева.</span></div><div class="lrow"><span class="ln">40</span><code class="src">}</code><span class="ex">Конец функции.</span></div></div>
+
+    <h3><span class="sub">2.5</span>Обход слева направо</h3>
+    <p>Порядок «левое поддерево → вершина → правое поддерево» в дереве поиска выводит ключи по возрастанию. Для дерева из задания 1 рекурсия спускается от L к E и A; у A левое поддерево пустое, поэтому первой печатается A, затем её правый сын B, затем E и так далее: A → B → E → G → K → L → M → O → R → S → V → Y.</p>
+    <div class="listing"><div class="block-label">main.cpp · строки 42–56 · leftRight, leftRightChar</div><div class="lrow"><span class="ln">42</span><code class="src">void leftRight(struct Vertex *p) {</code><span class="ex">Обход дерева слева направо для числовых ключей (задание 2). Тип <code>void</code> — функция ничего не возвращает.</span></div><div class="lrow"><span class="ln">43</span><code class="src">  if (p != NULL) {</code><span class="ex">Пустое поддерево (<code>p == NULL</code>) пропускаем — это условие выхода из рекурсии.</span></div><div class="lrow"><span class="ln">44</span><code class="src">    leftRight(p-&gt;left);</code><span class="ex">Сначала полностью обходим левое поддерево — все меньшие ключи.</span></div><div class="lrow"><span class="ln">45</span><code class="src">    printf(&quot;%d &quot;, p-&gt;data);</code><span class="ex">Печатаем ключ вершины: спецификатор <code>%d</code> выводит целое число, за ним пробел.</span></div><div class="lrow"><span class="ln">46</span><code class="src">    leftRight(p-&gt;right);</code><span class="ex">Затем обходим правое поддерево — все большие ключи. В итоге ключи печатаются по возрастанию.</span></div><div class="lrow"><span class="ln">47</span><code class="src">  }</code><span class="ex">Конец условия.</span></div><div class="lrow"><span class="ln">48</span><code class="src">}</code><span class="ex">Конец функции.</span></div><div class="lrow blank"><span class="ln">49</span><span class="src"></span><span class="ex"></span></div><div class="lrow"><span class="ln">50</span><code class="src">void leftRightChar(struct Vertex *p) {</code><span class="ex">Тот же обход слева направо, но для дерева из символов (задание 1).</span></div><div class="lrow"><span class="ln">51</span><code class="src">  if (p != NULL) {</code><span class="ex">Пустое поддерево пропускаем.</span></div><div class="lrow"><span class="ln">52</span><code class="src">    leftRightChar(p-&gt;left);</code><span class="ex">Обходим левое поддерево.</span></div><div class="lrow"><span class="ln">53</span><code class="src">    printf(&quot;%c &quot;, p-&gt;data);</code><span class="ex">Спецификатор <code>%c</code> выводит целое значение как символ: печатается буква <code>L</code>, а не код <code>76</code>.</span></div><div class="lrow"><span class="ln">54</span><code class="src">    leftRightChar(p-&gt;right);</code><span class="ex">Обходим правое поддерево.</span></div><div class="lrow"><span class="ln">55</span><code class="src">  }</code><span class="ex">Конец условия.</span></div><div class="lrow"><span class="ln">56</span><code class="src">}</code><span class="ex">Конец функции.</span></div></div>
+
+    <h3><span class="sub">2.6</span>Функции task2 и main</h3>
+    <div class="listing"><div class="block-label">main.cpp · строки 142–173 · task2, main</div><div class="lrow"><span class="ln">142</span><code class="src">void task2(void) {</code><span class="ex">Задания 2 и 3: ИСДП из 100 вершин.</span></div><div class="lrow"><span class="ln">143</span><code class="src">  int A[101];</code><span class="ex">Массив на 101 ячейку: <code>A[0]</code> не используется, данные лежат в <code>A[1..100]</code>.</span></div><div class="lrow"><span class="ln">144</span><code class="src">  int n = 100;</code><span class="ex">Количество вершин.</span></div><div class="lrow"><span class="ln">145</span><code class="src">  int i;</code><span class="ex">Счётчик цикла.</span></div><div class="lrow"><span class="ln">146</span><code class="src">  struct Vertex *root;</code><span class="ex">Указатель на корень дерева.</span></div><div class="lrow blank"><span class="ln">147</span><span class="src"></span><span class="ex"></span></div><div class="lrow"><span class="ln">148</span><code class="src">  printf(&quot;===== Задания 2-3: ИСДП из 100 вершин =====\n&quot;);</code><span class="ex">Заголовок заданий.</span></div><div class="lrow blank"><span class="ln">149</span><span class="src"></span><span class="ex"></span></div><div class="lrow"><span class="ln">150</span><code class="src">  for (i = 1; i &lt;= n; i++)</code><span class="ex">Заполняем <code>A[1]</code> … <code>A[100]</code>.</span></div><div class="lrow"><span class="ln">151</span><code class="src">    A[i] = rand() % 999 + 1;</code><span class="ex"><code>rand() % 999</code> — остаток от деления на 999, число от 0 до 998; после <code>+ 1</code> — от 1 до 999.</span></div><div class="lrow blank"><span class="ln">152</span><span class="src"></span><span class="ex"></span></div><div class="lrow"><span class="ln">153</span><code class="src">  sortArray(A, n);</code><span class="ex">Этап 1: сортируем 100 чисел.</span></div><div class="lrow blank"><span class="ln">154</span><span class="src"></span><span class="ex"></span></div><div class="lrow"><span class="ln">155</span><code class="src">  root = buildISDP(A, 1, n);</code><span class="ex">Этап 2: строим ИСДП из <code>A[1..100]</code>.</span></div><div class="lrow blank"><span class="ln">156</span><span class="src"></span><span class="ex"></span></div><div class="lrow"><span class="ln">157</span><code class="src">  printf(&quot;Обход дерева слева направо:\n&quot;);</code><span class="ex">Подпись перед обходом.</span></div><div class="lrow"><span class="ln">158</span><code class="src">  leftRight(root);</code><span class="ex">Задание 2: печатаем обход слева направо.</span></div><div class="lrow"><span class="ln">159</span><code class="src">  printf(&quot;\n\n&quot;);</code><span class="ex">Конец строки обхода и пустая строка.</span></div><div class="lrow blank"><span class="ln">160</span><span class="src"></span><span class="ex"></span></div><div class="lrow"><span class="ln">161</span><code class="src">  printStats(root);</code><span class="ex">Задание 3: размер, контрольная сумма, высота, средняя высота.</span></div><div class="lrow blank"><span class="ln">162</span><span class="src"></span><span class="ex"></span></div><div class="lrow"><span class="ln">163</span><code class="src">  deleteTree(root);</code><span class="ex">Освобождаем память.</span></div><div class="lrow"><span class="ln">164</span><code class="src">}</code><span class="ex">Конец функции.</span></div><div class="lrow blank"><span class="ln">165</span><span class="src"></span><span class="ex"></span></div><div class="lrow"><span class="ln">166</span><code class="src">int main(void) {</code><span class="ex">Главная функция — точка входа в программу; <code>(void)</code> — без параметров.</span></div><div class="lrow"><span class="ln">167</span><code class="src">  srand(time(NULL));</code><span class="ex"><code>time(NULL)</code> возвращает текущее время в секундах, <code>srand</code> задаёт им начальное значение генератора. Иначе при каждом запуске получались бы одни и те же «случайные» числа.</span></div><div class="lrow blank"><span class="ln">168</span><span class="src"></span><span class="ex"></span></div><div class="lrow"><span class="ln">169</span><code class="src">  task1();</code><span class="ex">Выполняем задание 1.</span></div><div class="lrow"><span class="ln">170</span><code class="src">  task2();</code><span class="ex">Выполняем задания 2 и 3.</span></div><div class="lrow blank"><span class="ln">171</span><span class="src"></span><span class="ex"></span></div><div class="lrow"><span class="ln">172</span><code class="src">  return 0;</code><span class="ex">Код возврата 0 — программа завершилась успешно.</span></div><div class="lrow"><span class="ln">173</span><code class="src">}</code><span class="ex">Конец функции <code>main</code>.</span></div></div>
+
+    <h3><span class="sub">2.7</span>Расчёт: как делится массив из 100 элементов</h3>
+
+    <p>После сортировки <code>buildISDP(A, 1, 100)</code> делит отрезки пополам. Первые три уровня с ключами из запуска, приведённого ниже:</p>
+
+    <div class="tablebox">
+      <table>
+        <thead><tr><th class="num">Уровень</th><th>Вызов</th><th class="num">Длина</th><th class="num">m</th><th class="num">Ключ A[m]</th></tr></thead>
+        <tbody><tr><td class="num">1</td><td class="mono">ИСДП(1, 100)</td><td class="num">100</td><td class="num">(1 + 100) / 2 = 50.5 → 50</td><td class="num"><b>485</b></td></tr><tr><td class="num">2</td><td class="mono">ИСДП(1, 49)</td><td class="num">49</td><td class="num">(1 + 49) / 2 = 25</td><td class="num"><b>296</b></td></tr><tr><td class="num">2</td><td class="mono">ИСДП(51, 100)</td><td class="num">50</td><td class="num">(51 + 100) / 2 = 75.5 → 75</td><td class="num"><b>713</b></td></tr><tr><td class="num">3</td><td class="mono">ИСДП(1, 24)</td><td class="num">24</td><td class="num">(1 + 24) / 2 = 12.5 → 12</td><td class="num"><b>135</b></td></tr><tr><td class="num">3</td><td class="mono">ИСДП(26, 49)</td><td class="num">24</td><td class="num">(26 + 49) / 2 = 37.5 → 37</td><td class="num"><b>381</b></td></tr><tr><td class="num">3</td><td class="mono">ИСДП(51, 74)</td><td class="num">24</td><td class="num">(51 + 74) / 2 = 62.5 → 62</td><td class="num"><b>601</b></td></tr><tr><td class="num">3</td><td class="mono">ИСДП(76, 100)</td><td class="num">25</td><td class="num">(76 + 100) / 2 = 88</td><td class="num"><b>866</b></td></tr></tbody>
+      </table>
+    </div>
+
+    <p>Из отрезка длины <i>k</i> одна вершина уходит в корень, остальные <i>k</i> − 1 делятся на две половины: <code>(k − 1) / 2</code>, округлённое вниз, и <code>(k − 1) / 2</code>, округлённое вверх. Например, 100 → 49 и 50, 49 → 24 и 24. Длины отрезков по всем уровням:</p>
+
+    <div class="tablebox">
+      <table>
+        <thead><tr><th class="num">Уровень</th><th class="num">Вершин</th><th class="num">Длины отрезков (длина × кол-во)</th><th class="num">Уровень · вершин</th></tr></thead>
+        <tbody><tr><td class="num">1</td><td class="num">1</td><td class="num">100 × 1</td><td class="num">1 · 1 = <b>1</b></td></tr><tr><td class="num">2</td><td class="num">2</td><td class="num">50 × 1, 49 × 1</td><td class="num">2 · 2 = <b>4</b></td></tr><tr><td class="num">3</td><td class="num">4</td><td class="num">25 × 1, 24 × 3</td><td class="num">3 · 4 = <b>12</b></td></tr><tr><td class="num">4</td><td class="num">8</td><td class="num">12 × 5, 11 × 3</td><td class="num">4 · 8 = <b>32</b></td></tr><tr><td class="num">5</td><td class="num">16</td><td class="num">6 × 5, 5 × 11</td><td class="num">5 · 16 = <b>80</b></td></tr><tr><td class="num">6</td><td class="num">32</td><td class="num">3 × 5, 2 × 27</td><td class="num">6 · 32 = <b>192</b></td></tr><tr><td class="num">7</td><td class="num">37</td><td class="num">1 × 37</td><td class="num">7 · 37 = <b>259</b></td></tr>
+          <tr class="accent"><td class="num">Σ</td><td class="num">100</td><td></td><td class="num"><b>580</b></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>На 6-м уровне 27 отрезков длины 2 дают по одному сыну, а 5 отрезков длины 3 — по два. Поэтому на 7-м уровне 27 + 5·2 = 37 вершин, и дерево заканчивается: уровни 1–6 вмещают 1 + 2 + 4 + 8 + 16 + 32 = 63 вершины, оставшиеся 100 − 63 = 37 стоят на 7-м.</p>
+
+    <h3><span class="sub">2.8</span>Результат — обход дерева слева направо</h3>
+
+    <div class="block">
+      <div class="block-label">Консоль · обход дерева слева направо (один запуск)</div>
+      <pre class="wrap">3 25 33 36 56 106 109 120 122 124 129 135 140 149 153 157 158 178 197 201 205 278 291 296 296 317 318 331 334 334 365 366 367 372 375 379 381 391 403 421 431 431 442 453 455 463 469 480 482 485 488 500 508 508 519 530 547 557 569 572 595 601 617 623 626 633 636 648 649 650 657 683 690 691 713 725 729 740 744 749 753 755 774 779 790 799 863 866 881 896 906 916 949 953 961 967 972 982 996 999</pre>
+    </div>
+
+    <p>Числа идут по неубыванию — обход слева направо дерева поиска и должен давать упорядоченный ряд. Числа случайные, поэтому возможны повторы: в этом запуске повторились 296, 334, 431 и 508. При повторах дерево остаётся деревом поиска в нестрогом смысле: <code>левое ≤ корень ≤ правое</code>.</p>
+  </section>
+
+  <!-- ================= ЗАДАНИЕ 3 ================= -->
+  <section id="t3">
+    <div class="task-head">
+      <span class="task-num">3</span>
+      <h2>Размер, контрольная сумма, высота и средняя высота</h2>
+    </div>
+
+    <p class="lead">Разбираем функции характеристик, печати и освобождения памяти, затем считаем все величины для дерева из 100 вершин вручную и сверяем с программой.</p>
+
+    <h3><span class="sub">3.1</span>Размер и контрольная сумма</h3>
+    <div class="listing"><div class="block-label">main.cpp · строки 58–68 · treeSize, checkSum</div><div class="lrow"><span class="ln">58</span><code class="src">int treeSize(struct Vertex *p) {</code><span class="ex">Размер дерева — количество вершин.</span></div><div class="lrow"><span class="ln">59</span><code class="src">  if (p == NULL)</code><span class="ex">Если дерево пустое…</span></div><div class="lrow"><span class="ln">60</span><code class="src">    return 0;</code><span class="ex">…в нём 0 вершин.</span></div><div class="lrow"><span class="ln">61</span><code class="src">  return 1 + treeSize(p-&gt;left) + treeSize(p-&gt;right);</code><span class="ex">Иначе: сама вершина (1) плюс размеры левого и правого поддеревьев.</span></div><div class="lrow"><span class="ln">62</span><code class="src">}</code><span class="ex">Конец функции.</span></div><div class="lrow blank"><span class="ln">63</span><span class="src"></span><span class="ex"></span></div><div class="lrow"><span class="ln">64</span><code class="src">int checkSum(struct Vertex *p) {</code><span class="ex">Контрольная сумма — сумма ключей всех вершин.</span></div><div class="lrow"><span class="ln">65</span><code class="src">  if (p == NULL)</code><span class="ex">Если дерево пустое…</span></div><div class="lrow"><span class="ln">66</span><code class="src">    return 0;</code><span class="ex">…его сумма равна 0.</span></div><div class="lrow"><span class="ln">67</span><code class="src">  return p-&gt;data + checkSum(p-&gt;left) + checkSum(p-&gt;right);</code><span class="ex">Иначе: ключ вершины плюс суммы левого и правого поддеревьев.</span></div><div class="lrow"><span class="ln">68</span><code class="src">}</code><span class="ex">Конец функции.</span></div></div>
+
+    <h3><span class="sub">3.2</span>Высота</h3>
+    <div class="listing"><div class="block-label">main.cpp · строки 70–83 · treeHeight</div><div class="lrow"><span class="ln">70</span><code class="src">int treeHeight(struct Vertex *p) {</code><span class="ex">Высота дерева — число уровней, то есть число вершин на самом длинном пути от корня до листа.</span></div><div class="lrow"><span class="ln">71</span><code class="src">  int hLeft, hRight;</code><span class="ex">Высоты левого и правого поддеревьев; переменные объявлены в начале функции.</span></div><div class="lrow blank"><span class="ln">72</span><span class="src"></span><span class="ex"></span></div><div class="lrow"><span class="ln">73</span><code class="src">  if (p == NULL)</code><span class="ex">Если дерево пустое…</span></div><div class="lrow"><span class="ln">74</span><code class="src">    return 0;</code><span class="ex">…его высота 0.</span></div><div class="lrow blank"><span class="ln">75</span><span class="src"></span><span class="ex"></span></div><div class="lrow"><span class="ln">76</span><code class="src">  hLeft = treeHeight(p-&gt;left);</code><span class="ex">Рекурсивно находим высоту левого поддерева.</span></div><div class="lrow"><span class="ln">77</span><code class="src">  hRight = treeHeight(p-&gt;right);</code><span class="ex">И высоту правого поддерева.</span></div><div class="lrow blank"><span class="ln">78</span><span class="src"></span><span class="ex"></span></div><div class="lrow"><span class="ln">79</span><code class="src">  if (hLeft &gt; hRight)</code><span class="ex">Если левое поддерево выше…</span></div><div class="lrow"><span class="ln">80</span><code class="src">    return 1 + hLeft;</code><span class="ex">…высота дерева на 1 больше высоты левого: добавляется уровень текущей вершины.</span></div><div class="lrow"><span class="ln">81</span><code class="src">  else</code><span class="ex">Иначе правое поддерево не ниже левого…</span></div><div class="lrow"><span class="ln">82</span><code class="src">    return 1 + hRight;</code><span class="ex">…и высота на 1 больше высоты правого. Строки 79–82 вместе вычисляют <code>1 + max(hLeft, hRight)</code>.</span></div><div class="lrow"><span class="ln">83</span><code class="src">}</code><span class="ex">Конец функции.</span></div></div>
+
+    <h3><span class="sub">3.3</span>Сумма длин путей и средняя высота</h3>
+    <p>Для дерева из задания 1 вызов <code>sumOfPaths(root, 1)</code> прибавляет 1 за L, по 2 за E и R, по 3 за A, G, M, V и по 4 за B, K, O, S, Y — всего 37.</p>
+    <div class="listing"><div class="block-label">main.cpp · строки 85–93 · sumOfPaths, averageHeight</div><div class="lrow"><span class="ln">85</span><code class="src">int sumOfPaths(struct Vertex *p, int L) {</code><span class="ex">Сумма длин путей от корня до всех вершин. <code>L</code> — уровень вершины <code>p</code>: у корня 1, у его сыновей 2 и так далее.</span></div><div class="lrow"><span class="ln">86</span><code class="src">  if (p == NULL)</code><span class="ex">Если дерево пустое…</span></div><div class="lrow"><span class="ln">87</span><code class="src">    return 0;</code><span class="ex">…оно ничего не добавляет к сумме.</span></div><div class="lrow"><span class="ln">88</span><code class="src">  return L + sumOfPaths(p-&gt;left, L + 1) + sumOfPaths(p-&gt;right, L + 1);</code><span class="ex">Длина пути до текущей вершины равна её уровню <code>L</code>. К ней прибавляем суммы для поддеревьев: их вершины лежат на уровень ниже, поэтому передаём <code>L + 1</code>.</span></div><div class="lrow"><span class="ln">89</span><code class="src">}</code><span class="ex">Конец функции.</span></div><div class="lrow blank"><span class="ln">90</span><span class="src"></span><span class="ex"></span></div><div class="lrow"><span class="ln">91</span><code class="src">double averageHeight(struct Vertex *root) {</code><span class="ex">Средняя высота дерева; тип <code>double</code> — вещественное число двойной точности.</span></div><div class="lrow"><span class="ln">92</span><code class="src">  return (double)sumOfPaths(root, 1) / treeSize(root);</code><span class="ex">Сумма длин путей делится на размер. Приведение <code>(double)</code> делает деление вещественным: без него два <code>int</code> дали бы целое <code>37 / 12 = 3</code>, а не 3.0833.</span></div><div class="lrow"><span class="ln">93</span><code class="src">}</code><span class="ex">Конец функции.</span></div></div>
+
+    <h3><span class="sub">3.4</span>Печать характеристик и освобождение памяти</h3>
+    <div class="listing"><div class="block-label">main.cpp · строки 95–108 · printStats, deleteTree</div><div class="lrow"><span class="ln">95</span><code class="src">void printStats(struct Vertex *root) {</code><span class="ex">Печатает все четыре характеристики дерева (задание 3).</span></div><div class="lrow"><span class="ln">96</span><code class="src">  printf(&quot;Размер дерева:         %d\n&quot;, treeSize(root));</code><span class="ex">Размер: <code>%d</code> заменяется значением <code>treeSize(root)</code>, <code>\n</code> — перевод строки.</span></div><div class="lrow"><span class="ln">97</span><code class="src">  printf(&quot;Контрольная сумма:     %d\n&quot;, checkSum(root));</code><span class="ex">Контрольная сумма.</span></div><div class="lrow"><span class="ln">98</span><code class="src">  printf(&quot;Высота дерева:         %d\n&quot;, treeHeight(root));</code><span class="ex">Высота дерева.</span></div><div class="lrow"><span class="ln">99</span><code class="src">  printf(&quot;Средняя высота дерева: %.2f\n&quot;, averageHeight(root));</code><span class="ex">Спецификатор <code>%.2f</code> выводит <code>double</code> ровно с двумя знаками после запятой: 3.0833 → <code>3.08</code>.</span></div><div class="lrow"><span class="ln">100</span><code class="src">}</code><span class="ex">Конец функции.</span></div><div class="lrow blank"><span class="ln">101</span><span class="src"></span><span class="ex"></span></div><div class="lrow"><span class="ln">102</span><code class="src">void deleteTree(struct Vertex *p) {</code><span class="ex">Освобождение памяти, занятой деревом.</span></div><div class="lrow"><span class="ln">103</span><code class="src">  if (p != NULL) {</code><span class="ex">Пустое поддерево пропускаем.</span></div><div class="lrow"><span class="ln">104</span><code class="src">    deleteTree(p-&gt;left);</code><span class="ex">Сначала освобождаем левое поддерево,</span></div><div class="lrow"><span class="ln">105</span><code class="src">    deleteTree(p-&gt;right);</code><span class="ex">затем правое,</span></div><div class="lrow"><span class="ln">106</span><code class="src">    free(p);</code><span class="ex">и только потом саму вершину: <code>free</code> возвращает память, выделенную <code>malloc</code>. Если освободить вершину раньше, указатели на сыновей будут потеряны и их память не вернётся.</span></div><div class="lrow"><span class="ln">107</span><code class="src">  }</code><span class="ex">Конец условия.</span></div><div class="lrow"><span class="ln">108</span><code class="src">}</code><span class="ex">Конец функции.</span></div></div>
+
+    <h3><span class="sub">3.5</span>Расчёт для дерева из 100 вершин</h3>
+
+    <p><b>Размер.</b> Каждый элемент <code>A[1..100]</code> становится ровно одной вершиной (таблица уровней в пункте 2.7), значит, размер 100.</p>
+
+    <p><b>Контрольная сумма.</b> Обход печатает все ключи ровно по одному разу, поэтому контрольная сумма равна сумме напечатанных чисел. Складываем их по десять:</p>
+
+    <div class="tablebox">
+      <table>
+        <thead><tr><th class="num">Номера</th><th class="num">Слагаемые</th><th class="num">Сумма</th><th class="num">Нарастающий итог</th></tr></thead>
+        <tbody><tr><td class="num">1–10</td><td class="num nums">3 + 25 + 33 + 36 + 56 + 106 + 109 + 120 + 122 + 124</td><td class="num">734</td><td class="num"><b>734</b></td></tr><tr><td class="num">11–20</td><td class="num nums">129 + 135 + 140 + 149 + 153 + 157 + 158 + 178 + 197 + 201</td><td class="num">1597</td><td class="num"><b>2331</b></td></tr><tr><td class="num">21–30</td><td class="num nums">205 + 278 + 291 + 296 + 296 + 317 + 318 + 331 + 334 + 334</td><td class="num">3000</td><td class="num"><b>5331</b></td></tr><tr><td class="num">31–40</td><td class="num nums">365 + 366 + 367 + 372 + 375 + 379 + 381 + 391 + 403 + 421</td><td class="num">3820</td><td class="num"><b>9151</b></td></tr><tr><td class="num">41–50</td><td class="num nums">431 + 431 + 442 + 453 + 455 + 463 + 469 + 480 + 482 + 485</td><td class="num">4591</td><td class="num"><b>13742</b></td></tr><tr><td class="num">51–60</td><td class="num nums">488 + 500 + 508 + 508 + 519 + 530 + 547 + 557 + 569 + 572</td><td class="num">5298</td><td class="num"><b>19040</b></td></tr><tr><td class="num">61–70</td><td class="num nums">595 + 601 + 617 + 623 + 626 + 633 + 636 + 648 + 649 + 650</td><td class="num">6278</td><td class="num"><b>25318</b></td></tr><tr><td class="num">71–80</td><td class="num nums">657 + 683 + 690 + 691 + 713 + 725 + 729 + 740 + 744 + 749</td><td class="num">7121</td><td class="num"><b>32439</b></td></tr><tr><td class="num">81–90</td><td class="num nums">753 + 755 + 774 + 779 + 790 + 799 + 863 + 866 + 881 + 896</td><td class="num">8156</td><td class="num"><b>40595</b></td></tr><tr><td class="num">91–100</td><td class="num nums">906 + 916 + 949 + 953 + 961 + 967 + 972 + 982 + 996 + 999</td><td class="num">9601</td><td class="num"><b>50196</b></td></tr></tbody>
+      </table>
+    </div>
+
+    <p><b>Высота и средняя высота.</b> Уровней 7. Сумма длин путей взята из таблицы уровней в пункте 2.7:</p>
+
+    <div class="calc">Размер          = <b>100</b>
+Контрольная сумма = <b>50196</b>
+
+Высота          = <b>7</b>
+  теория: 2⁶ = 64 &lt; n+1 = 101 ≤ 128 = 2⁷  →  log₂101 = 6.66, округляем вверх  →  <b>7</b>  ✓ минимальная
+
+Сумма путей     = 1·1 + 2·2 + 3·4 + 4·8 + 5·16 + 6·32 + 7·37
+                = 1 + 4 + 12 + 32 + 80 + 192 + 259 = <b>580</b>
+
+Средняя высота  = 580 / 100 = <b>5.80</b></div>
+
+    <p>Высота, размер и средняя высота зависят только от числа вершин: при любых 100 числах дерево имеет одну и ту же форму. От данных зависит лишь контрольная сумма, поэтому при каждом запуске она своя.</p>
+
+    <h3><span class="sub">3.6</span>Результаты</h3>
+
+    <div class="block">
+      <div class="block-label">Консоль · задания 2–3</div>
+      <pre>===== Задания 2-3: ИСДП из 100 вершин =====
+Обход дерева слева направо:
+3 25 33 … 982 996 999
+
+Размер дерева:         100
+Контрольная сумма:     50196
+Высота дерева:         7
+Средняя высота дерева: 5.80</pre>
+    </div>
+
+    <div class="tablebox">
+      <table class="cmp">
+        <thead><tr><th>Показатель</th><th class="num">12 символов: вручную / программа</th><th class="num">100 вершин: вручную / программа</th></tr></thead>
+        <tbody>
+          <tr><td>Размер</td><td class="num">12 / 12 <span class="match">✓</span></td><td class="num">100 / 100 <span class="match">✓</span></td></tr>
+          <tr><td>Контрольная сумма</td><td class="num">918 / 918 <span class="match">✓</span></td><td class="num">50196 / 50196 <span class="match">✓</span></td></tr>
+          <tr><td>Высота</td><td class="num">4 / 4 <span class="match">✓</span></td><td class="num">7 / 7 <span class="match">✓</span></td></tr>
+          <tr><td>Теоретическая оценка log₂(n + 1), округлённая вверх</td><td class="num">4</td><td class="num">7</td></tr>
+          <tr><td>Сумма длин путей</td><td class="num">37</td><td class="num">580</td></tr>
+          <tr><td>Средняя высота</td><td class="num">3.08 / 3.08 <span class="match">✓</span></td><td class="num">5.80 / 5.80 <span class="match">✓</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ================= ВЫВОДЫ ================= -->
+  <section class="closing" id="end">
+    <h2 style="margin-bottom:16px">Выводы</h2>
+    <ol>
+      <li>ИСДП строится в два этапа: сортировка массива и рекурсивное деление пополам — средний элемент становится вершиной, половины становятся поддеревьями. Функция <code>buildISDP</code> повторяет псевдокод пособия строка в строку.</li>
+      <li>Для набора <code>OBERMKSGYVLA</code> ручное построение и расчёт (размер 12, контрольная сумма 918, высота 4, средняя высота 3.08) полностью совпали с выводом программы.</li>
+      <li>Обход слева направо даёт упорядоченную последовательность и для 12, и для 100 вершин — построенные деревья являются деревьями поиска.</li>
+      <li>Для каждой вершины размеры поддеревьев отличаются не более чем на 1, а высоты (4 и 7) равны теоретическому минимуму <code>log₂(n + 1)</code>, округлённому вверх.</li>
+      <li>Средняя высота меньше высоты: большинство вершин лежит на нижних уровнях. Размер, высота и средняя высота зависят только от <i>n</i>, контрольная сумма — от данных.</li>
+      <li>Платой за минимальную высоту является статичность: при добавлении нового элемента ИСДП приходится строить заново.</li>
+    </ol>
+  </section>
+
+</div>
