@@ -14,6 +14,7 @@
 | 07 | Удаление из АВЛ-дерева | `avl_delete.cpp` | [README](07-avl-delete/README.md) | [THEORY](07-avl-delete/THEORY.md) |
 | 08 | Дерево поиска (СДП) и ИСДП | `sdp.cpp` | [README](08-sdp/README.md) | [THEORY](08-sdp/THEORY.md) |
 | 09 | Удаление из СДП | `sdp_delete.cpp` | [README](09-sdp-delete/README.md) | [THEORY](09-sdp-delete/THEORY.md) |
+| 10 | Приближённые алгоритмы A1 и A2 | `a1_a2.cpp` | [README](10-a1-a2/README.md) | [THEORY](10-a1-a2/THEORY.md) |
 
 Учебное пособие: [Пособие_СиАОД.pdf](Пособие_СиАОД.pdf).
 

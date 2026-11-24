@@ -7,7 +7,7 @@
 ![C](https://img.shields.io/badge/C-00599C?style=for-the-badge&logo=c&logoColor=white)
 ![C++](https://img.shields.io/badge/C++-00599C?style=for-the-badge&logo=cplusplus&logoColor=white)
 ![SFML](https://img.shields.io/badge/SFML%203-8CC445?style=for-the-badge&logo=sfml&logoColor=white)
-![Labs](https://img.shields.io/badge/лабораторных-24-blueviolet?style=for-the-badge)
+![Labs](https://img.shields.io/badge/лабораторных-25-blueviolet?style=for-the-badge)
 
 </div>
 
@@ -28,7 +28,7 @@
 | Семестр | Что внутри | Работ | Открыть |
 |---|---|---|---|
 | **1 семестр** | Сортировки, поиск, линейные списки, хеширование | 15 | [1семестр/README.md](1семестр/README.md) |
-| **2 семестр** | Деревья: ДОП, ИСДП, АВЛ, СДП, удаление из деревьев, поиск подстроки | 9 | [2семестр/README.md](2семестр/README.md) |
+| **2 семестр** | Деревья: ДОП, A1 и A2, ИСДП, АВЛ, СДП, удаление из деревьев, поиск подстроки | 10 | [2семестр/README.md](2семестр/README.md) |
 
 Сайт-витрина проекта: [index.html](index.html). Откройте файл в браузере.
 
@@ -37,7 +37,7 @@
 ```
 Saod_1course.sem2/
 ├── 1семестр/          лабораторные 01–15 (сортировки, поиск, списки, хеширование)
-├── 2семестр/          лабораторные 01–09 (деревья и поиск) + Пособие_СиАОД.pdf
+├── 2семестр/          лабораторные 01–10 (деревья и поиск) + Пособие_СиАОД.pdf
 ├── index.html         витрина проекта
 ├── style.css          оформление витрины
 ├── .clang-format      правила форматирования кода
