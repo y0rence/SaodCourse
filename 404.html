@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>404 — страница не найдена</title>
+  <meta name="robots" content="noindex">
+  <link rel="stylesheet" href="/SaodCourse/style.css">
+  <style>
+    .lost {
+      min-height: 70vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 40px 16px;
+    }
+    .lost-code {
+      font-family: var(--mono, "JetBrains Mono", ui-monospace, monospace);
+      font-size: clamp(4rem, 16vw, 8rem);
+      font-weight: 800;
+      letter-spacing: -0.05em;
+      line-height: 1;
+      color: var(--accent);
+    }
+    .lost h1 {
+      font-size: clamp(1.3rem, 3vw, 1.8rem);
+      letter-spacing: -0.03em;
+      margin: 20px 0 8px;
+    }
+    .lost p {
+      color: var(--muted);
+      max-width: 44ch;
+      margin: 0 0 28px;
+    }
+    .lost .actions { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
+    .lost code {
+      background: var(--code);
+      border: 1px solid var(--border);
+      padding: 0.1em 0.4em;
+      border-radius: 6px;
+    }
+  </style>
+</head>
+<body>
+  <main class="lost">
+    <div class="lost-code">404</div>
+    <h1>Страница не найдена</h1>
+    <p>Возможно, ссылка устарела или в адресе опечатка. Все работы лежат на главной странице витрины.</p>
+    <div class="actions">
+      <a class="btn btn-light" href="/SaodCourse/">На главную</a>
+      <a class="btn btn-ghost" href="/SaodCourse/index.html#sem1">1 семестр</a>
+      <a class="btn btn-ghost" href="/SaodCourse/index.html#sem2">2 семестр</a>
+      <a class="btn btn-ghost" href="/SaodCourse/index.html#curs">Курсовая</a>
+    </div>
+  </main>
+  <footer>
+    <div class="container">Структуры и алгоритмы обработки данных · лабораторные работы</div>
+  </footer>
+</body>
+</html>
