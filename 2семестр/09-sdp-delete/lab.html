@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>09 · Удаление из СДП — лабораторная работа</title>
+  <meta name="description" content="Пошаговое удаление вершины из случайного дерева поиска: лист, один потомок и два потомка (замена предшественником).">
+  <link rel="stylesheet" href="../../assets/lab.css">
+</head>
+<body>
+<script src="../../assets/gens/g4-trees-b.js"></script>
+<script>
+window.LAB = {
+  base: '../../',
+  num: '09',
+  title: 'Удаление из СДП',
+  algo: 'DeleteSDP',
+  crumb: '2 семестр · Деревья поиска',
+  lead: 'Удаление — это поиск вершины и одна из трёх схем: нет одного из поддеревьев, один потомок или два потомка (на место удаляемой встаёт предшественник — самая правая вершина левого поддерева).',
+  task: [
+    'Выбрать источник данных: СДП из букв ФИО или из неповторяющихся случайных чисел от 1 до 100 (количество задаётся пользователем).',
+    '10 раз запросить вершину для удаления и выполнить удаление из СДП; если ключа в дереве нет — сообщить об этом.',
+    'После каждого удаления выводить обход слева направо и проверять, что порядок ключей сохранился.',
+    'Разобрать три случая удаления, включая частный случай: предшественник оказался непосредственным левым потомком.'
+  ],
+  chips: [{ t: 'Cср = O(log n)', cls: 'plain' }, { t: 'три случая удаления', cls: 'plain' }, { t: 'замена — предшественник', cls: 'plain' }],
+  hint: 'Два поля: ключи дерева и ключи для удаления (через пробел). В примере показаны все три случая и ключ, которого в дереве нет.',
+  inputs: [
+    { id: 'keys', label: 'Ключи дерева', value: '50 30 70 20 40 60 80 25 75', example: '50 30 70 20 40 60 80 25 75', placeholder: '50 30 70 20 40 60 80' },
+    { id: 'del', label: 'Удалять', value: '20 25 80 70 50 999', example: '20 25 80 70 50 999', placeholder: '20 25 80 70 50' }
+  ],
+  example: true,
+  max: 16,
+  primaryLabel: 'Удалить',
+  parse: function (vals) {
+    function nums(s) {
+      s = String(s == null ? '' : s).trim();
+      if (!s) return [];
+      return s.split(/[\s,;]+/).filter(Boolean).map(Number).filter(function (x) { return !isNaN(x); });
+    }
+    return { keys: nums(vals.keys).slice(0, 16), del: nums(vals.del).slice(0, 12) };
+  },
+  pseudo: [
+    ['Удаление из СДП (Х, *Root) — п. 11.3, с. 50–51', 'sig'],
+    ['p := @Root', 'find'],
+    ['DO (*p ≠ NIL)', 'find'],
+    ['    IF ((*p)→Data < X) p := @((*p)→Right)', 'goright'],
+    ['    ELSEIF ((*p)→Data > X) p := @((*p)→Left)', 'goleft'],
+    ['    ELSE OD', 'found'],
+    ['OD', 'find'],
+    ['IF (*p ≠ NIL)', 'found'],
+    ['    q := *p', 'found'],
+    ['    IF (q→Left = NIL) *p := q→Right', 'noleft'],
+    ['    ELSEIF (q→Right = NIL) *p := q→Left', 'noright'],
+    ['    ELSE r := q→Left, s := q', 'two'],
+    ['        DO (r→Right ≠ NIL) s := r, r := r→Right OD', 'pred'],
+    ['        s→Right := r→Left          1)', 'cut'],
+    ['        r→Left := q→Left           2)', 'cut'],
+    ['        r→Right := q→Right         3)', 'join'],
+    ['        *p := r                    4)', 'join'],
+    ['    FI', 'two'],
+    ['    dispose(q)', 'gone'],
+    ['FI', 'found'],
+    ['ELSE  «Вершины X в дереве нет» → return 0', 'none']
+  ],
+  file: {
+    name: 'sdp_delete.cpp',
+    url: '2семестр/09-sdp-delete/sdp_delete.cpp',
+    lines: [
+      ['int DeleteSDP(int X, Vertex **Root) {', 'sig'],
+      ['    p = Root;', 'find'],
+      ['    while (*p != NULL) {', 'find'],
+      ['        if ((*p)->Data < X)', 'goright'],
+      ['            p = &((*p)->Right);', 'goright'],
+      ['        else if ((*p)->Data > X)', 'goleft'],
+      ['            p = &((*p)->Left);', 'goleft'],
+      ['        else', 'found'],
+      ['            break;', 'found'],
+      ['    }', 'find'],
+      ['    if (*p != NULL) {', 'found'],
+      ['        q = *p;', 'found'],
+      ['        if (q->Left == NULL)', 'noleft'],
+      ['            *p = q->Right;', 'noleft'],
+      ['        else if (q->Right == NULL)', 'noright'],
+      ['            *p = q->Left;', 'noright'],
+      ['        else {', 'two'],
+      ['            r = q->Left;', 'pred'],
+      ['            s = q;', 'pred'],
+      ['            while (r->Right != NULL) {', 'pred'],
+      ['                s = r;', 'pred'],
+      ['                r = r->Right;', 'pred'],
+      ['            }', 'pred'],
+      ['            if (s != q) {', 'cut'],
+      ['                s->Right = r->Left;', 'cut'],
+      ['                r->Left = q->Left;', 'cut'],
+      ['            }', 'cut'],
+      ['            r->Right = q->Right;', 'join'],
+      ['            *p = r;', 'join'],
+      ['        }', 'two']
+    ]
+  },
+  details: [
+    { s: 'Трудоёмкость', h: '<p>Складывается из конечного числа сравнений и присваиваний на каждом шаге поиска — так же, как добавление: <code>Cср = O(log n)</code> при n→∞. Замена при двух потомках добавляет конечный объём работы: цикл по правым ссылкам левого поддерева и четыре присваивания.</p>' },
+    { s: 'Три случая', h: '<p><b>Нет левого потомка</b> — <code>*p := q→Right</code> (для листа оба поддерева NIL, вершина просто отсоединяется). <b>Нет правого потомка</b> — <code>*p := q→Left</code>. <b>Два потомка</b> — предшественник <code>r</code> (самая правая вершина левого поддерева) занимает место <code>q</code>.</p><p><b>Частный случай:</b> если <code>r</code> — непосредственный левый потомок <code>q</code> (<code>s = q</code>), шаги 1) и 2) пропускаются: иначе <code>r→Left = r</code> — цикл. В программе поэтому стоит проверка <code>if (s != q)</code>.</p>' },
+    { s: 'Проверка правильности', h: '<p>После каждого удаления обход слева направо остаётся возрастающим, размер уменьшается ровно на 1, ключи не теряются. Если ключа нет — <code>return 0</code> и дерево не меняется.</p>' }
+  ],
+  links: [
+    { href: 'README.md', label: 'README' },
+    { href: 'sdp_delete.cpp', label: 'Исходный код' },
+    { href: 'THEORY.md', label: 'Теория' },
+    { href: '../../2семестр/README.md', label: 'Все работы 2 семестра' }
+  ],
+  dockTitle: 'DeleteSDP',
+  dockDesc: 'Псевдокод из пособия и настоящий исходник — переключайтесь вкладками',
+  steps: function (data) { return Lab.gen.sdpDelete(data); }
+};
+</script>
+<script src="../../assets/lab.js"></script>
+</body>
+</html>

@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>07 · Удаление из АВЛ-дерева — лабораторная работа</title>
+  <meta name="description" content="Пошаговое удаление ключей из АВЛ-дерева: лист, один потомок, замена предшественником и балансировка BL/BR с поворотами.">
+  <link rel="stylesheet" href="../../assets/lab.css">
+</head>
+<body>
+<script src="../../assets/gens/g3-trees-a.js"></script>
+<script>
+window.LAB = {
+  base: '../../',
+  num: '07',
+  title: 'Удаление из АВЛ-дерева поиска',
+  algo: 'AVLDelete',
+  crumb: '2 семестр · Деревья поиска',
+  lead: 'Удаляем ключи так же, как в дереве поиска: <b>лист</b>, <b>один потомок</b>, <b>два потомка</b> — замена предшественником (самой правой вершиной левого поддерева). Затем поднимаемся к корню: процедуры <b>BL</b> и <b>BR</b> восстанавливают баланс поворотами LL1, RR1, LR, RL.',
+  task: [
+    'Удалить все вершины из АВЛ-дерева, построенного из 12 первых неповторяющихся символов ФИО, — вручную (пункт 1 отчёта).',
+    'Удалить вершину с заданным ключом (пункт 2 меню программы).',
+    'Удалить 10 введённых вершин, печатая обход слева направо после каждого удаления (пункт 3 меню программы).'
+  ],
+  chips: [{ t: 'O(log n)', cls: 'plain' }, { t: 'повороты вдоль пути', cls: 'plain' }, { t: 'BL / BR', cls: 'plain' }],
+  hint: 'Ключи дерева и удаляемые ключи — числа через пробел, до 16 и 8 соответственно.',
+  inputs: [
+    { id: 'keys', label: 'Ключи дерева', value: '30 20 40 10 25 35 50 15 27 45', example: '30 20 40 10 25 35 50 15 27 45', placeholder: '30 20 40 10 25 35 50 15 27 45' },
+    { id: 'dels', label: 'Удаляемые ключи', value: '25 40 30', example: '25 40 30', placeholder: '25 40 30' }
+  ],
+  kind: 'numbers',
+  max: 16,
+  example: true,
+  parse: function (vals) {
+    function nums(s) {
+      return String(s == null ? '' : s).trim().split(/[\s,;]+/).filter(Boolean)
+        .map(Number).filter(function (x) { return !isNaN(x); });
+    }
+    return { keys: nums(vals.keys).slice(0, 16), dels: nums(vals.dels).slice(0, 8) };
+  },
+  pseudo: [
+    ['Удаление из АВЛ-дерево (x: Данные, p: pVertex, Уменьшение: boolean)', 'sig'],
+    ['IF (p = NIL) {ключа в дереве нет}', 'sig'],
+    ['ELSE IF (p→Data > x) Удаление (x, p→Left, Уменьшение)', 'find'],
+    ['    IF Уменьшение BL (p, Уменьшение) FI', 'bl'],
+    ['ELSE IF (p→Data < x) Удаление (x, p→Right, Уменьшение)', 'find'],
+    ['    IF Уменьшение BR (p, Уменьшение) FI', 'br'],
+    ['ELSE {удаление вершины по адресу p}', 'rem'],
+    ['    IF (q→Left = NIL) p := q→Right, Уменьшение := ИСТИНА', 'rem'],
+    ['    ELSE IF (q→Right = NIL) p := q→Left, Уменьшение := ИСТИНА', 'rem'],
+    ['    ELSE del (q→Left, q, Уменьшение); IF Уменьшение BL (p, Уменьшение) FI', 'delx bl'],
+    ['FI', ''],
+    ['del (r, q, Уменьшение): IF (r→Right ≠ NIL)', 'delx'],
+    ['    del (r→Right, q, Уменьшение); IF Уменьшение BR (r, Уменьшение) FI', 'delx br'],
+    ['ELSE q→Data := r→Data; q := r; r := r→Left; Уменьшение := ИСТИНА', 'delx'],
+    ['BL (p, Уменьшение): IF (p→Bal = -1) p→Bal := 0', 'bl'],
+    ['    ELSEIF (p→Bal = 0) p→Bal := 1, Уменьшение := ЛОЖЬ', 'bl'],
+    ['    ELSEIF (p→Bal = 1) IF (p→Right→Bal ≥ 0) <RR1> ELSE <RL> FI', 'bl rot'],
+    ['BR (p, Уменьшение): IF (p→Bal = 1) p→Bal := 0', 'br'],
+    ['    ELSEIF (p→Bal = 0) p→Bal := -1, Уменьшение := ЛОЖЬ', 'br'],
+    ['    ELSEIF (p→Bal = -1) IF (p→Left→Bal ≤ 0) <LL1> ELSE <LR> FI', 'br rot'],
+    ['LL1 / RR1 — одинарные повороты с учётом q→Bal = 0 (возможен только при удалении)', 'rot'],
+    ['LR / RL — двойные повороты, как при добавлении (п. 12.2)', 'rot'],
+    ['Добавление в АВЛ-дерево (D; Var p) — построение исходного дерева', 'add'],
+    ['IF (p = NIL) Balance := 0; Рост := ИСТИНА', 'add'],
+    ['ELSE ... (п. 12.3, подробно — работа 06)', 'add'],
+    ['Размер(p) = 1 + Размер(p→Left) + Размер(p→Right)', 'stats']
+  ],
+  file: {
+    name: 'avl_delete.cpp',
+    url: 'avl_delete.cpp',
+    lines: [
+      ['void DeleteAVL(int x, Vertex *&p, bool &umen) {', 'sig'],
+      ['    else if (x < p->Data) {', 'find'],
+      ['        DeleteAVL(x, p->Left, umen);', 'find'],
+      ['            BL(p, umen);', 'bl'],
+      ['    else if (x > p->Data) {', 'find'],
+      ['            BR(p, umen);', 'br'],
+      ['        Vertex *q = p;', 'rem'],
+      ['        if (q->Left == NULL) {', 'rem'],
+      ['            p = q->Right;', 'rem'],
+      ['        } else if (q->Right == NULL) {', 'rem'],
+      ['            p = q->Left;', 'rem'],
+      ['            del(q->Left, q, umen);', 'delx'],
+      ['void del(Vertex *&r, Vertex *&q, bool &umen) {', 'delx'],
+      ['    if (r->Right != NULL) {', 'delx'],
+      ['        del(r->Right, q, umen);', 'delx'],
+      ['            BR(r, umen);', 'br'],
+      ['        q->Data = r->Data;', 'delx'],
+      ['        r = r->Left;', 'delx'],
+      ['void BL(Vertex *&p, bool &umen) {', 'bl'],
+      ['    if (p->Balance == -1)', 'bl'],
+      ['        p->Balance = 0;', 'bl'],
+      ['    else if (p->Balance == 0) {', 'bl'],
+      ['        p->Balance = 1;', 'bl'],
+      ['        umen = false;', 'bl'],
+      ['        if (p->Right->Balance >= 0) {', 'bl'],
+      ['            RR1Turn(p, umen);', 'rot'],
+      ['        } else', 'bl'],
+      ['            RLTurn(p);', 'rot'],
+      ['void BR(Vertex *&p, bool &umen) {', 'br'],
+      ['        if (p->Left->Balance <= 0) {', 'br']
+    ]
+  },
+  details: [
+    { s: 'Трудоёмкость', h: '<p>Удаление — <code>O(log n)</code>: спуск к ключу и подъём вверх по пути поиска. В отличие от включения, где нужен <b>не более чем один</b> поворот, при удалении поворот может потребоваться во всех вершинах пути; по экспериментам пособия поворот выполняется примерно в одном случае из пяти.</p>' },
+    { s: 'Проверка правильности', h: '<p>После каждого удаления обход слева направо печатает ключи <b>по возрастанию</b>. Если ключа нет в дереве, <code>Уменьшение</code> остаётся ЛОЖЬ и дерево не меняется. Вершина с двумя потомками заменяется <b>предшественником</b> — самой правой вершиной левого поддерева (процедура <code>del</code>).</p>' },
+    { s: 'Почему LL1 отличается от LL', h: '<p>При удалении впервые возможен случай <code>q→Bal = 0</code> (при добавлении он не возникает): одинарный поворот LL1/RR1 при балансы сына 0 даёт балансы ±1 и <code>Уменьшение := ЛОЖЬ</code> — высота поддерева не уменьшается, подъём вверх прекращается.</p>' }
+  ],
+  links: [
+    { href: 'README.md', label: 'README' },
+    { href: 'avl_delete.cpp', label: 'Исходный код' },
+    { href: 'THEORY.md', label: 'Теория' },
+    { href: '../../2семестр/README.md', label: 'Все работы 2 семестра' }
+  ],
+  dockTitle: 'AVLDelete',
+  dockDesc: 'Псевдокод пособия (п. 12.4) и настоящий avl_delete.cpp — переключайтесь вкладками',
+  steps: function (data) { return Lab.gen.avlDel(data); }
+};
+</script>
+<script src="../../assets/lab.js"></script>
+</body>
+</html>

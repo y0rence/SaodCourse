@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>11 · Линейные списки: стек и очередь — лабораторная работа</title>
+  <meta name="description" content="Пошаговый разбор операций над связным списком: push/pop стека, enqueue/dequeue очереди, перемещение элемента из начала в конец без копирования.">
+  <link rel="stylesheet" href="../../../assets/lab.css">
+</head>
+<body>
+<script src="../../../assets/gens/g1-mid.js"></script>
+<script>
+window.LAB = {
+  base: '../../../',
+  num: '11',
+  title: 'Линейные списки: стек и очередь',
+  algo: 'StackQueue',
+  crumb: '1 семестр · Линейные списки',
+  lead: 'Один и тот же связный список работает и стеком (LIFO: всё в голову, <code>Head</code>), и очередью (FIFO: добавление в конец через <code>Tail</code>, удаление из начала). Приём <b>Tail ← @Head</b> делает пустую очередь частным случаем, а элемент можно <b>переместить</b> из начала в конец тремя присвылениями указателей — без копирования данных.',
+  task: [
+    'Написать функции создания стека: заполнение возрастающими, убывающими и случайными числами.',
+    'Написать функции создания очереди: заполнение возрастающими, убывающими и случайными числами.',
+    'Написать функции работы со списком: печать элементов, подсчёт контрольной суммы, подсчёт числа серий.',
+    '4*. Написать функцию удаления всех элементов из списка.',
+    '5*. Написать рекурсивную функцию печати элементов в прямом и обратном порядке.'
+  ],
+  chips: [{ t: 'O(1) на операцию', cls: 'plain' }, { t: 'LIFO / FIFO', cls: 'plain' }],
+  hint: 'До 16 чисел через пробел — из них соберутся стек и очередь.',
+  example: true,
+  max: 16,
+  inputs: [{ id: 'data', label: 'Числа', value: '4 7 2 9 6', example: '4 7 2 9 6', placeholder: '4 7 2 9 6' }],
+  parse: function (vals) {
+    var a = String(vals.data == null ? '' : vals.data).trim();
+    if (!a) return null;
+    var nums = a.split(/[\s,;]+/).map(Number).filter(function (v) { return !isNaN(v); });
+    if (nums.length > 16) nums = nums.slice(0, 16);
+    return nums.length ? nums : null;
+  },
+  pseudo: [
+    ['Добавление в стек и удаление из него:', ''],
+    ['p→Next ← Head;  Head ← p', 'push'],
+    ['p ← Head;  Head ← p→Next;  <освободить память по адресу p>', 'pop'],
+    ['', ''],
+    ['Добавление в очередь:', ''],
+    ['p→Next ← NIL', 'qpush'],
+    ['IF Head ≠ NIL THEN Tail→Next ← p ELSE Head ← p FI', 'qpush'],
+    ['Tail ← p', 'qpush'],
+    ['', ''],
+    ['Перемещение элемента из начала списка в конец очереди:', ''],
+    ['Queue.Tail→Next ← List', 'move'],
+    ['Queue.Tail ← List', 'move'],
+    ['List ← List→Next', 'move'],
+    ['', ''],
+    ['Рекурсивная печать:', ''],
+    ['Печать(p):     IF p ≠ NIL THEN вывод p→Data; Печать(p→Next) FI', 'rec'],
+    ['ПечатьОбр(p):  IF p ≠ NIL THEN ПечатьОбр(p→Next); вывод p→Data FI', 'rec']
+  ],
+  file: {
+    name: 'lists.cpp',
+    url: '1семестр/04-lists/11-stack-queue/lists.cpp',
+    lines: [
+      ['void initQueue(struct Queue *p) {', 'sig'],
+      ['    p->head = NULL;', 'sig'],
+      ['    p->tail = NULL;', 'sig'],
+      ['}', 'sig'],
+      ['', ''],
+      ['struct List *createStackAscending(int n) {', 'push'],
+      ['    struct List *head = NULL;', 'push'],
+      ['    for (int i = n; i >= 1; i--) {', 'push'],
+      ['        struct List *p = new List;', 'push'],
+      ['        p->data = i;', 'push'],
+      ['        p->next = head;', 'push'],
+      ['        head = p;', 'push'],
+      ['    }', 'push'],
+      ['    return head;', 'push'],
+      ['}', ''],
+      ['', ''],
+      ['void insertInQueue(struct Queue *q, int n) {', 'qpush'],
+      ['    struct List *p = new List;', 'qpush'],
+      ['    p->data = n;', 'qpush'],
+      ['    p->next = NULL;', 'qpush'],
+      ['    if (q->head != NULL) {', 'qpush'],
+      ['        q->tail->next = p;', 'qpush'],
+      ['    } else {', 'qpush'],
+      ['        q->head = p;', 'qpush'],
+      ['    }', 'qpush'],
+      ['    q->tail = p;', 'qpush'],
+      ['}', ''],
+      ['', ''],
+      ['void printListForward(struct List *head) {', 'rec'],
+      ['    if (head == NULL)', 'rec'],
+      ['        return;', 'rec'],
+      ['    cout << head->data << " ";', 'rec'],
+      ['    printListForward(head->next);', 'rec'],
+      ['}', 'rec'],
+      ['', ''],
+      ['void printListReverse(struct List *head) {', 'rec'],
+      ['    if (head == NULL)', 'rec'],
+      ['        return;', 'rec'],
+      ['    printListReverse(head->next);', 'rec'],
+      ['    cout << head->data << " ";', 'rec'],
+      ['}', 'rec']
+    ]
+  },
+  details: [
+    { s: 'Трудоёмкость', h: '<p>Добавление в стек / очередь <code>O(1)</code>, удаление из начала <code>O(1)</code>, печать, контрольная сумма и число серий <code>O(n)</code>, удаление всего списка <code>O(n)</code>, рекурсивная печать <code>O(n)</code> времени и <code>O(n)</code> кадров стека. Для очереди нужен дополнительный указатель <code>Tail</code>. Доступ к элементам списка только последовательный, поэтому методы сортировки массивов для списков не годятся.</p>' },
+    { s: 'Проверка правильности', h: '<p>Контрольная сумма списка. Число серий: у возрастающего списка ровно одна серия, у убывающего — <code>n</code>. После удаления список должен стать пустым. Контрольная сумма и серии считаются <code>sumList</code> и <code>countSeries</code> из <code>lists.cpp</code>.</p>' }
+  ],
+  links: [
+    { href: 'README.md', label: 'README' },
+    { href: 'lists.cpp', label: 'Исходный код' },
+    { href: '../../../1семестр/README.md', label: 'Все работы 1 семестра' }
+  ],
+  dockTitle: 'StackQueue',
+  dockDesc: 'Операции стека и очереди на одном связном списке — псевдокод и lists.cpp',
+  steps: function (data) { return Lab.gen.stackQueue(data); }
+};
+</script>
+<script src="../../../assets/lab.js"></script>
+</body>
+</html>

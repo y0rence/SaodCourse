@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>02 · Дерево оптимального поиска — лабораторная работа</title>
+  <meta name="description" content="Пошаговое построение дерева оптимального поиска: матрицы AW, AP, AR и дерево по матрице корней.">
+  <link rel="stylesheet" href="../../assets/lab.css">
+</head>
+<body>
+<script src="../../assets/gens/g2-substr.js"></script>
+<script>
+window.LAB = {
+  base: '../../',
+  num: '02',
+  title: 'Дерево оптимального поиска',
+  algo: 'OptimalSearch',
+  crumb: '2 семестр · Оптимальный поиск',
+  lead: 'Точный алгоритм из пособия (п. 14.2): матрица весов <b>AW</b>, матрица взвешенных высот <b>AP</b> и матрица корней <b>AR</b>, затем дерево строится по <code>AR</code>. Средневзвешенная высота — <code>AP[0][n]/AW[0][n]</code>.',
+  task: [
+    'Тест из пособия: веса 60, 30, 10 — получить матрицы AW, AP, AR, обход слева направо и среднюю высоту 1.50.',
+    'Вычислить матрицы точным алгоритмом (п. 14.2) и построить дерево по матрице корней AR.',
+    'n = 100, случайные веса от 1 до 100 (<code>srand(2024)</code>): обход слева направо и сверка <code>AP[0][n]</code> со средневзвешенной высотой построенного дерева.',
+    'Составить таблицу: размер, контрольная сумма (сумма ключей), высота, средневзвешенная высота.'
+  ],
+  chips: [{ t: 'точный O(n³)', cls: 'plain' }, { t: 'память O(n²)', cls: 'plain' }, { t: 'AP/AW — ср. высота', cls: 'm' }],
+  hint: 'Веса — положительные числа через пробел (частоты обращений), не больше 8. Пример из пособия: 60 30 10.',
+  inputs: [
+    { id: 'w', label: 'Веса w₁…wₙ', value: '60 30 10 40 25 15', example: '60 30 10', placeholder: '60 30 10' }
+  ],
+  parse: function (v) {
+    var w = Lab.parseDefault(v.w) || [];
+    w = w.filter(function (x) { return typeof x === 'number' && x > 0; });
+    if (w.length > 8) w = w.slice(0, 8);
+    return { w: w };
+  },
+  pseudo: [
+    ['AW[i][i] = 0;  DO (j = i+1 … n)  AW[i][j] := AW[i][j−1] + wⱼ  OD', 'sig aw'],
+    ['DO (i = 0 … n−1)   AP[i][i+1] := AW[i][i+1];  AR[i][i+1] := i+1   OD', 'ap ar'],
+    ['DO (h = 2 … n)', 'ap'],
+    ['    DO (i = 0 … n−h)   j := i + h', 'ap'],
+    ['        m := AR[i][j−1];  min := AP[i][m−1] + AP[m][j]', 'ap'],
+    ['        DO (k = m+1 … AR[i+1][j])', 'ap'],
+    ['            x := AP[i][k−1] + AP[k][j]', 'ap'],
+    ['            IF (x < min)  m := k, min := x FI', 'ap'],
+    ['        OD', 'ap'],
+    ['        AP[i][j] := min + AW[i][j];  AR[i][j] := m', 'ap ar'],
+    ['    OD', 'ap'],
+    ['OD', 'ap'],
+    ['IF (L < R)', 'add'],
+    ['    k := AR[L][R];  Добавить (Root, V_k)', 'add'],
+    ['    Создание дерева (L, k−1);  Создание дерева (k, R)', 'add'],
+    ['FI', 'add'],
+    ['проверка: AP[0][n] = Σ wᵢ·hᵢ;  средняя высота = AP[0][n] / AW[0][n]', 'done check']
+  ],
+  file: {
+    name: 'optimal_search.cpp',
+    url: 'optimal_search.cpp',
+    lines: [
+      ['void ComputeAPAR(int n) {', 'ap'],
+      ['    for (int i = 0; i <= n - 1; i++) {', 'ap'],
+      ['        Ap[i][i + 1] = Aw[i][i + 1];', 'ap'],
+      ['        Ar[i][i + 1] = i + 1;', 'ar'],
+      ['    }', ''],
+      ['    for (int h = 2; h <= n; h++) {', 'ap'],
+      ['        for (int i = 0; i <= n - h; i++) {', 'ap'],
+      ['            int j = i + h;', 'ap'],
+      ['            int m = Ar[i][j - 1];', 'ap ar'],
+      ['            int min = Ap[i][m - 1] + Ap[m][j];', 'ap'],
+      ['            for (int k = m + 1; k <= Ar[i + 1][j]; k++) {', 'ap'],
+      ['                int x = Ap[i][k - 1] + Ap[k][j];', 'ap'],
+      ['                if (x < min) {', 'ap'],
+      ['                    m = k;', 'ap'],
+      ['                    min = x;', 'ap'],
+      ['                }', ''],
+      ['            }', ''],
+      ['            Ap[i][j] = min + Aw[i][j];', 'ap'],
+      ['            Ar[i][j] = m;', 'ar'],
+      ['        }', ''],
+      ['    }', ''],
+      ['}', ''],
+      ['void CreateTree(int L, int R, struct Node **root) {', 'add'],
+      ['    if (L < R) {', 'add'],
+      ['        int k = Ar[L][R];', 'add'],
+      ['        AddToTree(root, k, W[k]);', 'add'],
+      ['        CreateTree(L, k - 1, root);', 'add'],
+      ['        CreateTree(k, R, root);', 'add'],
+      ['    }', ''],
+      ['}', '']
+    ]
+  },
+  details: [
+    { s: 'Трудоёмкость', h: '<p><code>AW</code> — <code>O(n²)</code>, <code>AP/AR</code> — <code>O(n³)</code> (перебор корней <code>k</code> с ограничением <code>AR[i][j−1] … AR[i+1][j]</code>), дерево — <code>O(n)</code>. Память: три матрицы <code>(n+1)²</code> и массив весов. Средневзвешенная высота <code>AP[0][n] / AW[0][n]</code>.</p>' },
+    { s: 'Проверка правильности', h: '<p>Для построенного дерева должно выполняться <code>AP[0][n] = Σ wᵢ·hᵢ</code> (корень на уровне 1), поэтому <code>AP[0][n] / AW[0][n]</code> совпадает со средневзвешенной высотой дерева — программа сравнивает обе величины. Для весов 60, 30, 10 получается 1.50.</p>' }
+  ],
+  links: [
+    { href: 'README.md', label: 'README' },
+    { href: 'optimal_search.cpp', label: 'Исходник' },
+    { href: '../../2семестр/README.md', label: 'Все работы 2 семестра' }
+  ],
+  dockTitle: 'OptimalSearch',
+  dockDesc: 'Псевдокод из пособия и настоящий optimal_search.cpp — переключайтесь вкладками',
+  steps: function (data) { return Lab.gen.optimalTree(data); }
+};
+</script>
+<script src="../../assets/lab.js"></script>
+</body>
+</html>

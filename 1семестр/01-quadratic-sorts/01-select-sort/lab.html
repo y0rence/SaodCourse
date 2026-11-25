@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>01 · Сортировка прямого выбора — лабораторная работа</title>
+  <meta name="description" content="Пошаговый разбор сортировки прямого выбора: задание, псевдокод и исходный код с подсветкой текущей строки.">
+  <link rel="stylesheet" href="../../../assets/lab.css">
+</head>
+<body>
+<script>
+window.LAB = {
+  base: '../../../',
+  num: '01',
+  title: 'Сортировка прямого выбора',
+  algo: 'SelectSort',
+  crumb: '1 семестр · Квадратичные сортировки',
+  lead: 'На каждом проходе ищем минимум в неотсортированной части и меняем его с первым её элементом. Счётчики <b>C</b> и <b>M</b> обновляются на каждом шаге.',
+  task: [
+    'Для 8 первых символов ФИО выполнить сортировку прямого выбора вручную и использовать этот пример как тест.',
+    'Написать сортировку массива целых чисел по возрастанию методом прямого выбора; проверить контрольной суммой и числом серий, считать <code>Мф</code> и <code>Сф</code>.',
+    'Исследовать метод на убывающих, возрастающих и случайных массивах, сделать вывод о зависимости от исходной упорядоченности.',
+    '4*. Предложить способ устранения фиктивных перестановок и оценить влияние на <code>Мф</code> и <code>Сф</code>.',
+    'Составить таблицу трудоёмкости для N = 10 и N = 100.'
+  ],
+  chips: [{ t: 'O(n²)', cls: 'plain' }, { t: 'неустойчивая', cls: 'plain' }],
+  hint: 'До 16 элементов: буквы подряд (KDBACFGE) или числа через пробел (12 5 99).',
+  inputs: [{ id: 'data', label: 'Массив', value: 'KDBACFGE', example: 'KDBACFGE', placeholder: 'KDBACFGE или 12 5 99' }],
+  pseudo: [
+    ['DO i = 1 … n−1', 'loop sig'],
+    ['    k ← индекс минимума среди aᵢ … aₙ', 'init scan'],
+    ['        IF aⱼ < aₖ THEN k ← j', 'cmp newk'],
+    ['    aᵢ ↔ aₖ', 'swap chk'],
+    ['OD', 'loop'],
+    ['  (улучшение: обмен только при k ≠ i)', 'chk done']
+  ],
+  file: {
+    name: 'select_sort.c',
+    url: 'select_sort.c',
+    lines: [
+      ['void SelectSort(int a[], int n, int *countC, int *countM) {', 'sig'],
+      ['    int temp = 0;', ''],
+      ['    *countM = 0;', 'sig'],
+      ['    *countC = 0;', 'sig'],
+      ['    for (int i = 0; i < n - 1; i++) {', 'loop'],
+      ['        int k = i;', 'init'],
+      ['        for (int j = i + 1; j < n; j++) {', 'scan'],
+      ['            if (a[j] < a[k]) {', 'cmp'],
+      ['                k = j;', 'newk'],
+      ['            }', 'cmp'],
+      ['            (*countC)++;', 'scan cmp'],
+      ['        }', 'scan'],
+      ['        temp = a[k];', 'swap'],
+      ['        a[k] = a[i];', 'swap'],
+      ['        a[i] = temp;', 'swap'],
+      ['        (*countM) += 3;', 'swap'],
+      ['    }', 'loop'],
+      ['}', 'sig'],
+      ['/* улучшенная версия: обмен только при k != i */', 'chk'],
+      ['/* она же в программе: SelectSortEnhaced */', 'chk done'],
+      ['/* последний элемент всегда уже на месте — done */', 'done']
+    ]
+  },
+  details: [
+    { s: 'Трудоёмкость', h: '<p><code>C = (n² − n)/2</code>, <code>M = 3(n − 1)</code>. <b>От упорядоченности не зависит</b> — M и C одинаковы на убывающем, случайном и возрастающем массивах. Неустойчивая.</p>' },
+    { s: 'Проверка правильности', h: '<p><b>Контрольная сумма</b> до и после должна совпасть, <b>число серий</b> у отсортированного по возрастанию массива равно 1.</p>' }
+  ],
+  links: [
+    { href: 'README.md', label: 'README' },
+    { href: 'select_sort.c', label: 'Исходный код' },
+    { href: '../../../1семестр/README.md', label: 'Все работы 1 семестра' }
+  ],
+  dockTitle: 'SelectSort',
+  dockDesc: 'Псевдокод из пособия и настоящий исходник — переключайтесь вкладками',
+  steps: function (data) { return Lab.gen.select(data); }
+};
+</script>
+<script src="../../../assets/lab.js"></script>
+</body>
+</html>

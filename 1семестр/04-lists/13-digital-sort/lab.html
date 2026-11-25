@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>13 · Цифровая сортировка — лабораторная работа</title>
+  <meta name="description" content="Пошаговый разбор цифровой сортировки (RadixSort): раскладка по карманам Q0..Q9 по разрядам, склейка карманов, пересылки Mf без единого сравнения.">
+  <link rel="stylesheet" href="../../../assets/lab.css">
+</head>
+<body>
+<script src="../../../assets/gens/g1-mid.js"></script>
+<script>
+window.LAB = {
+  base: '../../../',
+  num: '13',
+  title: 'Цифровая сортировка',
+  algo: 'DigitalSort',
+  crumb: '1 семестр · Линейные списки',
+  lead: 'Элементы раскладываются по 10 карманам <code>Q0…Q9</code> по разряду <code>d ← p→Digit[j]</code>, карманы склеиваются в порядке Q0…Q9 — и так <b>L раз</b>, от младшего разряда к старшему. Сравнений нет вообще: только пересылки <b>Mf = L·n</b>.',
+  task: [
+    'Для 12 трёхзначных чисел в 6-ичной системе счисления выполнить цифровую сортировку вручную.',
+    'Написать цифровую сортировку списка целых чисел по возрастанию; проверить контрольной суммой и числом серий; считать <code>Мф</code> и сравнить с теоретической оценкой.',
+    'Применить DigitalSort к спискам двухбайтовых и четырёхбайтовых чисел в прямом и обратном порядке.',
+    'Сравнить работу метода на убывающих, возрастающих и случайных списках, составить таблицу для <code>N = 100 … 500</code>.',
+    '5*. Построить графики трудоёмкости для HeapSort, QuickSort, MergeSort и DigitalSort.',
+    '6*. Применить DigitalSort для упорядочивания списка фамилий по возрастанию и убыванию.',
+    '7*. Определить, при каком количестве байтов в числах DigitalSort начинает работать медленнее QuickSort.'
+  ],
+  chips: [{ t: 'O(n·L)', cls: 'plain' }, { t: 'без сравнений', cls: 'plain' }],
+  hint: 'До 16 неотрицательных чисел через пробел: 271 53 908 14 66 305 7 482',
+  example: true,
+  max: 16,
+  inputs: [
+    {
+      id: 'data',
+      label: 'Список S',
+      value: '271 53 908 14 66 305 7 482',
+      example: '271 53 908 14 66 305 7 482',
+      placeholder: '271 53 908 14 66 305 7 482'
+    }
+  ],
+  parse: function (vals) {
+    var a = Lab.parseDefault(vals.data);
+    if (!Array.isArray(a)) return null;
+    var nums = a.filter(function (v) { return typeof v === 'number' && isFinite(v); });
+    if (nums.length > 16) nums = nums.slice(0, 16);
+    return nums.length ? nums : null;
+  },
+  pseudo: [
+    ['DO j = L, L−1 … 1', 'pass'],
+    ['    DO i = 0 … m−1:  Qᵢ.Tail ← @Qᵢ.Head  OD', 'init'],
+    ['    p ← S', 'dist'],
+    ['    DO пока p ≠ NIL', 'dist'],
+    ['        d ← p→Digit[j]', 'dist'],
+    ['        Q_d.Tail→Next ← p;  Q_d.Tail ← p;  p ← p→Next', 'dist'],
+    ['    OD', 'dist'],
+    ['    p ← @S', 'concat'],
+    ['    DO i = 0 … m−1', 'concat'],
+    ['        IF Qᵢ.Tail ≠ @Qᵢ.Head THEN p→Next ← Qᵢ.Head;  p ← Qᵢ.Tail FI', 'concat'],
+    ['    OD', 'concat'],
+    ['    p→Next ← NIL', 'concat'],
+    ['OD', 'pass']
+  ],
+  file: {
+    name: 'digital_sort.cpp',
+    url: '1семестр/04-lists/13-digital-sort/digital_sort.cpp',
+    lines: [
+      ['void DigitalSort(tLE **S, int L, int KDI[], bool reverse) {', 'sig pass'],
+      ['    Mf_global = 0;', 'sig'],
+      ['    int m = 256;', 'sig'],
+      ['    Queue Q[256];', 'init'],
+      ['    for (int j = 0; j < L; j++) {', 'pass'],
+      ['        for (int i = 0; i < m; i++)', 'init'],
+      ['            initQueue(Q[i]);', 'init'],
+      ['        tLE *p = *S;', 'dist'],
+      ['        int k = KDI[j];', 'dist'],
+      ['        while (p) {', 'dist'],
+      ['            unsigned char d = p->Digit[k];', 'dist'],
+      ['            Q[d].Tail->Next = p;', 'dist'],
+      ['            Q[d].Tail = p;', 'dist'],
+      ['            p = p->Next;', 'dist'],
+      ['            Mf_global++;', 'dist'],
+      ['        }', 'dist'],
+      ['        tLE *tempHead = NULL;', 'concat'],
+      ['        tLE *lastTail = (tLE *)&tempHead;', 'concat'],
+      ['        if (!reverse) {', 'concat'],
+      ['            for (int i = 0; i < m; i++) {', 'concat'],
+      ['                if (Q[i].Tail != (tLE *)&Q[i].Head) {', 'concat'],
+      ['                    lastTail->Next = Q[i].Head;', 'concat'],
+      ['                    lastTail = Q[i].Tail;', 'concat'],
+      ['                }', 'concat'],
+      ['            }', 'concat'],
+      ['        }', 'concat'],
+      ['        lastTail->Next = NULL;', 'concat'],
+      ['        *S = tempHead;', 'concat done'],
+      ['    }', 'pass'],
+      ['}', '']
+    ]
+  },
+  details: [
+    { s: 'Трудоёмкость', h: '<p>Пересылки <code>M &lt; const · L · (m + n)</code>, асимптотика <code>O(n)</code> при фиксированных <code>L</code> и <code>m</code>; <b>сравнения отсутствуют</b>; дополнительная память — <code>m</code> очередей. Зависимость от упорядоченности <b>нет</b> — выполняется ровно <code>L</code> проходов по списку независимо от данных. Устойчивая. Сортировка по убыванию — очереди склеиваются в обратном порядке (<code>m−1 … 0</code>). В <code>digital_sort.cpp</code> для произвольных данных цифрой считается <b>байт</b> ключа (<code>m = 256</code>), здесь для наглядности — десятичная цифра (<code>m = 10</code>), порядок разрядов задаёт массив <code>KDI = {0, 1, 2, 3}</code> — от младшего к старшему.</p>' },
+    { s: 'Проверка правильности', h: '<p>Контрольная сумма списка до и после сортировки. Число серий после сортировки равно 1. Количество элементов в списке сохраняется. Метод обходит нижнюю границу <code>n log n</code>, потому что не сравнивает элементы.</p>' }
+  ],
+  links: [
+    { href: 'README.md', label: 'README' },
+    { href: 'digital_sort.cpp', label: 'Исходный код' },
+    { href: '../../../1семестр/README.md', label: 'Все работы 1 семестра' }
+  ],
+  dockTitle: 'DigitalSort',
+  dockDesc: 'Раскладка по карманам Q0..Q9 и склейка — псевдокод и digital_sort.cpp',
+  steps: function (data) { return Lab.gen.digitalSort(data); }
+};
+</script>
+<script src="../../../assets/lab.js"></script>
+</body>
+</html>

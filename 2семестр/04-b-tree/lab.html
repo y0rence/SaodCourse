@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>04 · Сравнение ДБД и АВЛ — лабораторная работа</title>
+  <meta name="description" content="Пошаговое сравнение двоичного Б-дерева (ДБД) и АВЛ-дерева: одни и те же ключи вставляются по одному, видны повороты, высоты и средние высоты обоих деревьев.">
+  <link rel="stylesheet" href="../../assets/lab.css">
+</head>
+<body>
+<script src="../../assets/gens/g3-trees-a.js"></script>
+<script>
+window.LAB = {
+  base: '../../',
+  num: '04',
+  title: 'Сравнение ДБД и АВЛ при добавлении вершин',
+  algo: 'BTree',
+  crumb: '2 семестр · Деревья поиска',
+  lead: 'Одни и те же ключи вставляются по одному в <b>ДБД</b> (двоичное Б-дерево: показатель баланса 0/1, признаки роста VR и HR) и в <b>АВЛ</b> (баланс −1/0/+1, повороты LL/LR/RR/RL). Оба дерева сбалансированы — но высоты и средние высоты могут различаться.',
+  task: [
+    'Сформировать последовательность ключей и добавить их по одному в ДБД-дерево и в АВЛ-дерево (случайная перестановка чисел 1…100 в программе).',
+    'Выполнить обход ДБД слева направо.',
+    'Сравнить характеристики обоих деревьев: размер, контрольную сумму, высоту и среднюю высоту — сделать выводы.'
+  ],
+  chips: [{ t: 'O(log n) вставка', cls: 'plain' }, { t: 'АВЛ: h < 1,44·log n', cls: 'plain' }, { t: 'ДБД: h ≈ log(n+1)', cls: 'plain' }],
+  hint: 'До 16 ключей — числа через пробел (30 20 40 10 25 35 50 45 55 42 48).',
+  inputs: [{ id: 'data', label: 'Ключи', value: '30 20 40 10 25 35 50 45 55 42 48', example: '30 20 40 10 25 35 50 45 55 42 48', placeholder: '30 20 40 10 25 35 50 45 55 42 48' }],
+  kind: 'numbers',
+  max: 16,
+  example: true,
+  pseudo: [
+    ['Добавление в ДБ-дерево (D: Данные, p: pVertex)', 'dbd'],
+    ['IF (p = NIL) p→Data := D; Balance := 0; VR := ИСТИНА', 'dbdleaf'],
+    ['ELSE IF (p→Data > D) Добавление (D, p→Left)', 'dbdleft'],
+    ['    IF (VR) IF (p→Balance = 0) <правый поворот; VR := ЛОЖЬ; HR := ИСТИНА>', 'dbdrotr'],
+    ['    ELSE p→Balance := 0; HR := ИСТИНА', 'dbdleft'],
+    ['    ELSE HR := ЛОЖЬ', 'dbdleft'],
+    ['ELSE IF (p→Data < D) Добавление (D, p→Right)', 'dbdright'],
+    ['    IF (VR) p→Balance := 1; VR := ЛОЖЬ; HR := ИСТИНА', 'dbdright'],
+    ['    ELSE IF (HR) IF (p→Balance > 0) <левый поворот; VR := ИСТИНА; HR := ЛОЖЬ>', 'dbdrotl'],
+    ['FI', ''],
+    ['Добавление в АВЛ-дерево (D; Var p: pVertex)', 'avl'],
+    ['IF (p = NIL) Balance := 0; Рост := ИСТИНА', 'avlleaf'],
+    ['ELSE IF (p→Data > D) Добавление (D, p→Left)', 'avlwalk'],
+    ['    IF (Рост) IF (p→Balance > 0) Balance := 0, Рост := ЛОЖЬ', 'avlwalk'],
+    ['    ELSE IF (p→Balance = 0) Balance := -1', 'avlwalk'],
+    ['    ELSE IF (p→Left→Balance < 0) <LL-поворот> ELSE <LR-поворот> FI', 'avlrot'],
+    ['ELSE IF (p→Data < D) <право: Balance := 1 или RR / RL>', 'avlwalk'],
+    ['FI', ''],
+    ['Размер(p) = 1 + Размер(p→Left) + Размер(p→Right)', 'stats'],
+    ['Высота(p) = 1 + max(Высота(p→Left), Высота(p→Right))', 'stats'],
+    ['hср := СДП(Root, 1) / Размер(Root)', 'stats']
+  ],
+  file: {
+    name: 'b_tree.cpp',
+    url: 'b_tree.cpp',
+    lines: [
+      ['void addDBD(int D, Vertex *&p) {', 'dbd'],
+      ['        p->balance = 0;', 'dbdleaf'],
+      ['        if (p->data > D) {', 'dbdleft'],
+      ['            addDBD(D, p->left);', 'dbdleft'],
+      ['            if (VR) {', 'dbdleft'],
+      ['                if (p->balance == 0) {', 'dbdrotr'],
+      ['                    Vertex *q = p->left;', 'dbdrotr'],
+      ['                    p->left = q->right;', 'dbdrotr'],
+      ['                    q->right = p;', 'dbdrotr'],
+      ['                    p = q;', 'dbdrotr'],
+      ['                    q->balance = 1;', 'dbdrotr'],
+      ['                } else {', 'dbdleft'],
+      ['                    p->balance = 0;', 'dbdleft'],
+      ['        } else if (p->data < D) {', 'dbdright'],
+      ['            if (VR) {', 'dbdright'],
+      ['                p->balance = 1;', 'dbdright'],
+      ['            } else if (HR) {', 'dbdrotl'],
+      ['                if (p->balance > 0) {', 'dbdrotl'],
+      ['                    Vertex *q = p->right;', 'dbdrotl'],
+      ['                    p->right = q->left;', 'dbdrotl'],
+      ['                    q->left = p;', 'dbdrotl'],
+      ['                    p = q;', 'dbdrotl'],
+      ['void AddAVL(int D, Vertex *&p, bool &rost) {', 'avl'],
+      ['        rost = true;', 'avlleaf'],
+      ['    } else if (p->data > D) {', 'avlwalk'],
+      ['        AddAVL(D, p->left, rost);', 'avlwalk'],
+      ['                LLTurn(p);', 'avlrot'],
+      ['                LRTurn(p);', 'avlrot'],
+      ['int treeHeight(Vertex *p) {', 'stats'],
+      ['double averageHeight(Vertex *root) {', 'stats']
+    ]
+  },
+  details: [
+    { s: 'Трудоёмкость', h: '<p>Добавление в ДБД и в АВЛ — <code>O(log n)</code>: спуск по пути поиска и подъём вверх, поворот меняет лишь несколько ссылок. Поиск в обоих деревьях тоже <code>O(log n)</code>; высота АВЛ не превышает <code>1,44·log(n+2) − 0,328</code>, высота ДБД около <code>log(n+1)</code> (как у Б-дерева с m = 1).</p>' },
+    { s: 'Проверка правильности', h: '<p><b>Размер</b> и <b>контрольная сумма</b> обоих деревьев должны совпасть — они построены из одних и тех же ключей, ни одна вершина не потерялась. <b>Средняя высота</b> = сумма уровней вершин / размер — столько сравнений нужно в среднем для успешного поиска; чем она меньше, тем быстрее поиск.</p>' },
+    { s: 'Зачем нужны VR и HR', h: '<p><b>VR</b> — вертикальный рост: страница переполнилась, средняя вершина поднимается на уровень выше. <b>HR</b> — горизонтальный рост: новый элемент размещается на этой же условной странице. В начале алгоритма <code>VR = HR = ИСТИНА</code> (п. 13.5 пособия); показатель баланса ДБД принимает значения 0 и 1.</p>' }
+  ],
+  links: [
+    { href: 'README.md', label: 'README' },
+    { href: 'b_tree.cpp', label: 'Исходный код' },
+    { href: 'THEORY.md', label: 'Теория' },
+    { href: '../../2семестр/README.md', label: 'Все работы 2 семестра' }
+  ],
+  dockTitle: 'BTree',
+  dockDesc: 'Псевдокод пособия (п. 13.5 и 12.3) и настоящий b_tree.cpp — переключайтесь вкладками',
+  steps: function (data) { return Lab.gen.btree(data); }
+};
+</script>
+<script src="../../assets/lab.js"></script>
+</body>
+</html>

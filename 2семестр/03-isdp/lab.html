@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>03 · Идеально сбалансированное дерево поиска — лабораторная работа</title>
+  <meta name="description" content="Пошаговое построение ИСДП из отсортированного массива: выбор корня отрезка, обход слева направо, размер, высота и средняя высота.">
+  <link rel="stylesheet" href="../../assets/lab.css">
+</head>
+<body>
+<script src="../../assets/gens/g3-trees-a.js"></script>
+<script>
+window.LAB = {
+  base: '../../',
+  num: '03',
+  title: 'Идеально сбалансированное дерево поиска',
+  algo: 'ISDP',
+  crumb: '2 семестр · Деревья поиска',
+  lead: 'ИСДП — дерево поиска, в котором для каждой вершины размеры левого и правого поддеревьев отличаются не более чем на 1. Строим его из <b>отсортированного</b> массива: корень отрезка — средний элемент, поддеревья рекурсивно.',
+  task: [
+    'Построить ИСДП из 12 неповторяющихся символов ФИО: массив отсортировать вставками, дерево построить рекурсивно (корень — средний элемент отрезка), вывести обход слева направо и характеристики.',
+    'Построить ИСДП из 100 случайных чисел от 1 до 999 и напечатать обход и характеристики дерева.',
+    'Вычислить размер, контрольную сумму, высоту и среднюю высоту дерева; проверить, что обход слева направо даёт ключи по возрастанию.'
+  ],
+  chips: [{ t: 'O(n) построение', cls: 'plain' }, { t: 'высота ⌈log₂(n+1)⌉', cls: 'plain' }, { t: 'поиск O(log n)', cls: 'plain' }],
+  hint: 'До 16 ключей — числа через пробел (30 20 40 10 25 35 50 5).',
+  inputs: [{ id: 'data', label: 'Ключи', value: '30 20 40 10 25 35 50 5', example: '30 20 40 10 25 35 50 5', placeholder: '30 20 40 10 25 35 50 5' }],
+  kind: 'numbers',
+  max: 16,
+  example: true,
+  pseudo: [
+    ['ИСДП (L, R)', 'sig'],
+    ['IF (L > R) ИСДП := NIL', 'empty'],
+    ['ELSE m := [(L+R) / 2]', 'mid'],
+    ['    <Выделяем память для p>', 'alloc'],
+    ['    p→Data := A[m]', 'set'],
+    ['    p→Left := ИСДП (L, m-1)', 'rec'],
+    ['    p→Right := ИСДП (m+1, R)', 'rec'],
+    ['    ИСДП := p', 'ret'],
+    ['FI', ''],
+    ['Обход слева направо (p: pVertex)', 'trav'],
+    ['IF (p ≠ NIL)', 'trav'],
+    ['    Обход слева направо (p→Left)', 'trav'],
+    ['    Печать (p→Data)', 'visit'],
+    ['    Обход слева направо (p→Right)', 'trav'],
+    ['FI', ''],
+    ['Размер(p) = 1 + Размер(p→Left) + Размер(p→Right)', 'stats'],
+    ['Высота(p) = 1 + max(Высота(p→Left), Высота(p→Right))', 'stats'],
+    ['hср := СДП(Root, 1) / Размер(Root)', 'stats']
+  ],
+  file: {
+    name: 'isdp.c',
+    url: 'isdp.c',
+    lines: [
+      ['void sortArray(int A[], int n) {', 'sort'],
+      ['    while (j >= 1 && A[j] > x) {', 'sort'],
+      ['        A[j + 1] = A[j];', 'sort'],
+      ['struct Vertex *buildISDP(int A[], int L, int R) {', 'sig'],
+      ['    if (L > R)', 'empty'],
+      ['        return NULL;', 'empty'],
+      ['    m = (L + R) / 2;', 'mid'],
+      ['    p = (struct Vertex *)malloc(sizeof(struct Vertex));', 'alloc'],
+      ['    p->data = A[m];', 'set'],
+      ['    p->left = buildISDP(A, L, m - 1);', 'rec'],
+      ['    p->right = buildISDP(A, m + 1, R);', 'rec'],
+      ['    return p;', 'ret'],
+      ['void leftRight(struct Vertex *p) {', 'trav'],
+      ['    if (p != NULL) {', 'trav'],
+      ['        leftRight(p->left);', 'trav'],
+      ['        printf("%d ", p->data);', 'visit'],
+      ['        leftRight(p->right);', 'trav'],
+      ['int treeSize(struct Vertex *p) {', 'stats'],
+      ['    return 1 + treeSize(p->left) + treeSize(p->right);', 'stats'],
+      ['int treeHeight(struct Vertex *p) {', 'stats'],
+      ['    return 1 + hRight;', 'stats'],
+      ['double averageHeight(struct Vertex *root) {', 'stats'],
+      ['    return (double)sumOfPaths(root, 1) / treeSize(root);', 'stats'],
+      ['void printStats(struct Vertex *root) {', 'stats'],
+      ['    printf("Размер дерева:         %d\\n", treeSize(root));', 'stats']
+    ]
+  },
+  details: [
+    { s: 'Трудоёмкость', h: '<p>Сортировка массива вставками — <code>O(n²)</code>, само построение ИСДП — <code>O(n)</code>: каждая вершина создаётся одним рекурсивным вызовом. Высота <code>h = ⌈log₂(n+1)⌉</code> минимально возможна для n вершин, максимальное число сравнений при поиске <code>Cmax = 2·log(n+1)</code>.</p>' },
+    { s: 'Проверка правильности', h: '<p>Обход слева направо печатает ключи <b>по возрастанию</b>; контрольная сумма дерева совпадает с суммой массива — ни один ключ не потерялся. Недостаток ИСДП: при добавлении новой вершины дерево приходится <b>строить заново</b> (п. 10.2 пособия).</p>' }
+  ],
+  links: [
+    { href: 'README.md', label: 'README' },
+    { href: 'isdp.c', label: 'Исходный код' },
+    { href: 'THEORY.md', label: 'Теория' },
+    { href: '../../2семестр/README.md', label: 'Все работы 2 семестра' }
+  ],
+  dockTitle: 'ISDP',
+  dockDesc: 'Псевдокод из пособия (п. 10.2) и настоящий isdp.c — переключайтесь вкладками',
+  steps: function (data) { return Lab.gen.isdp(data); }
+};
+</script>
+<script src="../../assets/lab.js"></script>
+</body>
+</html>

@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>08 · Сортировка массивов структур — лабораторная работа</title>
+  <meta name="description" content="Пошаговый разбор сортировки записей включением по ключу «фамилия + имя» и двоичного поиска по фамилии: задание, псевдокод и исходный код с подсветкой текущей строки.">
+  <link rel="stylesheet" href="../../../assets/lab.css">
+</head>
+<body>
+<script src="../../../assets/gens/g1-mid.js"></script>
+<script>
+window.LAB = {
+  base: '../../../',
+  num: '08',
+  title: 'Сортировка массивов структур',
+  algo: 'StructSort',
+  crumb: '1 семестр · Поиск и записи',
+  lead: 'Сортировка записей <b>включением</b> по сложному ключу «<b>фамилия + имя</b>» и быстрый двоичный поиск по фамилии — как в <code>task2_phonebook.c</code>. Ключ сравнивается двумя <code>strcmp</code>: сначала фамилия, при равенстве — имя. Сравнения копятся в <b>C</b>, пересылки записей — в <b>M</b>.',
+  task: [
+    'Для набора из четырёх ФИО выполнить вручную сортировку по сложному ключу «фамилия + имя».',
+    'Написать сортировку телефонного справочника по сложному ключу любым методом, кроме пузырькового; запись должна содержать минимум четыре поля.',
+    'Реализовать функцию сравнения абонентов по ключу минимум из двух полей записи.',
+    'Вывести на экран исходный и отсортированный справочник; предусмотреть смену ключа и направления сортировки через функцию сравнения.',
+    '6*. Реализовать быстрый двоичный поиск по старшей части сложного ключа.'
+  ],
+  chips: [{ t: 'O(n²)', cls: 'plain' }, { t: 'устойчивая', cls: 'plain' }],
+  hint: 'Записи через запятую: «Фамилия Имя, Фамилия Имя, …» — до 16 записей; второе поле — фамилия для поиска.',
+  example: true,
+  inputs: [
+    {
+      id: 'data',
+      label: 'Справочник',
+      value: 'Иванов Андрей, Петров Борис, Сидоров Илья, Иванов Алексей, Кузнецов Олег',
+      example: 'Иванов Андрей, Петров Борис, Сидоров Илья, Иванов Алексей, Кузнецов Олег',
+      placeholder: 'Иванов Андрей, Петров Борис, …'
+    },
+    { id: 'x', label: 'Поиск: фамилия', value: 'Петров', example: 'Петров', placeholder: 'Петров' }
+  ],
+  parse: function (vals) {
+    var recs = String(vals.data == null ? '' : vals.data)
+      .split(',').map(function (s) { return s.trim(); }).filter(Boolean)
+      .map(function (s) {
+        var p = s.split(/\s+/);
+        return { last: p[0], first: p.slice(1).join(' ') };
+      })
+      .filter(function (r) { return !!r.last; });
+    if (recs.length > 16) recs = recs.slice(0, 16);
+    var x = String(vals.x == null ? '' : vals.x).trim();
+    if (!recs.length || !x) return null;
+    return { recs: recs, x: x };
+  },
+  pseudo: [
+    ['function Less(x, y)', 'less'],
+    ['    IF x.Фамилия < y.Фамилия THEN Less ← истина', 'less cmp'],
+    ['    ELSEIF x.Фамилия > y.Фамилия THEN Less ← ложь', 'less cmp'],
+    ['    ELSE Less ← (x.Имя < y.Имя)', 'less cmp2'],
+    ['    FI', 'less'],
+    ['', ''],
+    ['DO i = 2 … n', 'ins'],
+    ['    t ← aᵢ,  j ← i−1', 'take'],
+    ['    DO пока j > 0 и Less(t, aⱼ)', 'scan cmp'],
+    ['        aⱼ₊₁ ← aⱼ,  j ← j−1', 'shift'],
+    ['    OD', 'scan'],
+    ['    aⱼ₊₁ ← t', 'put'],
+    ['OD', 'ins']
+  ],
+  file: {
+    name: 'task2_phonebook.c',
+    url: '1семестр/03-search/08-struct-sort/task2_phonebook.c',
+    lines: [
+      ['typedef struct {', 'sig'],
+      ['    char last_name[kTextSize];', 'sig'],
+      ['    char first_name[kTextSize];', 'sig'],
+      ['    char street[kTextSize];', 'sig'],
+      ['    char phone[kTextSize];', 'sig'],
+      ['} Subscriber;', 'sig'],
+      ['', ''],
+      ['int CompareSubscribers(const Subscriber *left, const Subscriber *right) {', 'less'],
+      ['    int result = strcmp(left->last_name, right->last_name);', 'less cmp'],
+      ['    if (result != 0) {', 'less cmp'],
+      ['        return result;', 'less cmp'],
+      ['    }', 'less cmp'],
+      ['    return strcmp(left->first_name, right->first_name);', 'less cmp2'],
+      ['}', 'less'],
+      ['', ''],
+      ['void InsertionSort(Subscriber directory[], int size) {', 'ins'],
+      ['    for (int i = 1; i < size; ++i) {', 'ins'],
+      ['        Subscriber current = directory[i];', 'take'],
+      ['        int j = i - 1;', 'take'],
+      ['', ''],
+      ['        while (j >= 0 && CompareSubscribers(&directory[j], &current) > 0) {', 'scan cmp'],
+      ['            directory[j + 1] = directory[j];', 'shift'],
+      ['            --j;', 'shift'],
+      ['        }', 'scan'],
+      ['', ''],
+      ['        directory[j + 1] = current;', 'put'],
+      ['    }', 'ins'],
+      ['}', ''],
+      ['', ''],
+      ['int BinarySearchByLastName(const Subscriber directory[], int size, const char *last_name) {', 'bsig'],
+      ['    int left = 0;', 'bsig'],
+      ['    int right = size - 1;', 'bsig'],
+      ['    if (size <= 0) {', ''],
+      ['        return -1;', ''],
+      ['    }', ''],
+      ['', ''],
+      ['    while (left < right) {', 'bloop'],
+      ['        int middle = (left + right) / 2;', 'bmid'],
+      ['', ''],
+      ['        if (strcmp(directory[middle].last_name, last_name) < 0) {', 'bright'],
+      ['            left = middle + 1;', 'bright'],
+      ['        } else {', 'bleft'],
+      ['            right = middle;', 'bleft'],
+      ['        }', ''],
+      ['    }', 'bloop'],
+      ['', ''],
+      ['    return strcmp(directory[right].last_name, last_name) == 0 ? right : -1;', 'bfound'],
+      ['}', ''],
+      ['', ''],
+      ['    printf("\\nТелефонный справочник после сортировки:\\n");', 'done'],
+      ['    PrintDirectory(directory, kSubscribersCount);', 'done']
+    ]
+  },
+  details: [
+    { s: 'Трудоёмкость', h: '<p><b>Сортировка включением:</b> <code>C = O(n²)</code>, <code>M = O(n²)</code> — сильная зависимость от упорядоченности, устойчивая. <b>Двоичный поиск:</b> <code>C = O(log n)</code>. Направление сортировки меняется заменой <code>&lt;</code> на <code>&gt;</code> внутри функции сравнения; пересылка записи — обычное копирование, переопределять её не нужно.</p>' },
+    { s: 'Проверка правильности', h: '<p>Справочник печатается до и после сортировки. Поиск проверяется на существующей фамилии (выводятся все однофамильцы) и на отсутствующей. В <code>task2_phonebook.c</code> счётчиков нет: <b>C</b> — число <code>strcmp</code> ключей, <b>M</b> — число пересылок записей.</p>' },
+    { s: 'task1_fio.c', h: '<p>Второй вариант работы — ручная сортировка четырёх ФИО шестью сравнениями-обменами (<code>ManualSort</code>) и тот же двоичный поиск по фамилии. Здесь показан вариант справочника из <code>task2_phonebook.c</code>: сортировка включением + поиск.</p>' }
+  ],
+  links: [
+    { href: 'README.md', label: 'README' },
+    { href: 'task2_phonebook.c', label: 'Исходный код' },
+    { href: 'task1_fio.c', label: 'task1_fio.c' },
+    { href: '../../../1семестр/README.md', label: 'Все работы 1 семестра' }
+  ],
+  dockTitle: 'StructSort',
+  dockDesc: 'Сравнение по сложному ключу, сортировка включением и двоичный поиск — псевдокод и настоящий исходник',
+  steps: function (data) { return Lab.gen.structSort(data); }
+};
+</script>
+<script src="../../../assets/lab.js"></script>
+</body>
+</html>

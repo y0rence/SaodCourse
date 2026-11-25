@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>06 · АВЛ-дерево поиска — лабораторная работа</title>
+  <meta name="description" content="Пошаговая вставка ключей в АВЛ-дерево: пересчёт баланса, нарушение ±2 и повороты LL, LR, RR, RL с подписями балансов.">
+  <link rel="stylesheet" href="../../assets/lab.css">
+</head>
+<body>
+<script src="../../assets/gens/g3-trees-a.js"></script>
+<script>
+window.LAB = {
+  base: '../../',
+  num: '06',
+  title: 'АВЛ-дерево поиска',
+  algo: 'AddAVL',
+  crumb: '2 семестр · Деревья поиска',
+  lead: 'Ключи добавляются по одному: спуск до пустого места, затем пересчёт баланса снизу вверх. При балансе ±2 выполняется <b>малый</b> (LL, RR) или <b>двойной</b> (LR, RL) поворот. Подписи под вершинами — показатель баланса.',
+  task: [
+    'Для 12 первых неповторяющихся символов ФИО построить вручную АВЛ-дерево поиска и использовать эти данные как тест для программы.',
+    'Разработать функцию добавления вершины в АВЛ-дерево поиска (вставка + балансировка поворотами).',
+    'Для последовательности из 100 вершин, заданных случайно, построить АВЛ-дерево и распечатать обход слева направо.',
+    'Вычислить размер, контрольную сумму, высоту и среднюю высоту, сравнить их с характеристиками ИСДП и составить таблицу.'
+  ],
+  chips: [{ t: 'O(log n)', cls: 'plain' }, { t: 'поворот O(1)', cls: 'plain' }, { t: 'h < 1,44·log n', cls: 'plain' }],
+  hint: 'До 16 ключей — числа через пробел (16 2 6 18 14 12 19 4 11 3 13 1).',
+  inputs: [{ id: 'data', label: 'Ключи', value: '16 2 6 18 14 12 19 4 11 3 13 1', example: '16 2 6 18 14 12 19 4 11 3 13 1', placeholder: '16 2 6 18 14 12 19 4 11 3 13 1' }],
+  kind: 'numbers',
+  max: 16,
+  example: true,
+  pseudo: [
+    ['Добавление в АВЛ-дерево (D; Var p: pVertex)', 'sig'],
+    ['IF (p = NIL) new(p); Balance := 0; Рост := ИСТИНА', 'leaf'],
+    ['ELSE IF (p→Data > D) Добавление (D, p→Left)', 'walk'],
+    ['    IF (Рост = ИСТИНА) IF (p→Balance > 0) Balance := 0, Рост := ЛОЖЬ', 'walk'],
+    ['    ELSE IF (p→Balance = 0) Balance := -1', 'walk'],
+    ['    ELSE IF (p→Left→Balance < 0) <LL-поворот> ELSE <LR-поворот> FI', 'walk'],
+    ['ELSE IF (p→Data < D) <право: Balance := 1 или RR / RL>', 'walk'],
+    ['FI', ''],
+    ['LL - поворот: q := p→Left', 'll'],
+    ['    q→Balance := 0; p→Balance := 0', 'll'],
+    ['    p→Left := q→Right; q→Right := p; p := q', 'll'],
+    ['LR - поворот: q := p→Left, r := q→Right', 'lr'],
+    ['    IF (r→Balance < 0) p→Balance := +1 ELSE p→Balance := 0 FI', 'lr'],
+    ['    p→Left := r→Right; q→Right := r→Left; r→Left := q; r→Right := p; p := r', 'lr'],
+    ['RR - поворот: q := p→Right', 'rr'],
+    ['    q→Balance := 0; p→Balance := 0', 'rr'],
+    ['    p→Right := q→Left; q→Left := p; p := q', 'rr'],
+    ['RL - поворот: q := p→Right, r := q→Left', 'rl'],
+    ['    IF (r→Balance > 0) p→Balance := -1 ELSE p→Balance := 0 FI', 'rl'],
+    ['    p→Right := r→Left; q→Left := r→Right; r→Left := p; r→Right := q; p := r', 'rl'],
+    ['Размер(p) = 1 + Размер(p→Left) + Размер(p→Right)', 'stats'],
+    ['Высота(p) = 1 + max(Высота(p→Left), Высота(p→Right))', 'stats'],
+    ['hср := СДП(Root, 1) / Размер(Root)', 'stats']
+  ],
+  file: {
+    name: 'avl_tree.cpp',
+    url: 'avl_tree.cpp',
+    lines: [
+      ['void LL(Vertex *&p) {', 'll'],
+      ['    Vertex *q = p->Left;', 'll'],
+      ['    q->Balance = 0;', 'll'],
+      ['    p->Balance = 0;', 'll'],
+      ['    p->Left = q->Right;', 'll'],
+      ['    q->Right = p;', 'll'],
+      ['void LR(Vertex *&p) {', 'lr'],
+      ['    Vertex *r = q->Right;', 'lr'],
+      ['    p->Left = r->Right;', 'lr'],
+      ['    q->Right = r->Left;', 'lr'],
+      ['    r->Left = q;', 'lr'],
+      ['    r->Right = p;', 'lr'],
+      ['void RR(Vertex *&p) {', 'rr'],
+      ['    p->Right = q->Left;', 'rr'],
+      ['    q->Left = p;', 'rr'],
+      ['void RL(Vertex *&p) {', 'rl'],
+      ['    Vertex *r = q->Left;', 'rl'],
+      ['    p->Right = r->Left;', 'rl'],
+      ['    q->Left = r->Right;', 'rl'],
+      ['    r->Left = p;', 'rl'],
+      ['    r->Right = q;', 'rl'],
+      ['void AddAVL(int D, Vertex *&p) {', 'sig'],
+      ['        Rost = true;', 'leaf'],
+      ['    } else if (p->Data > D) {', 'walk'],
+      ['        AddAVL(D, p->Left);', 'walk'],
+      ['                LL(p);', 'll'],
+      ['                LR(p);', 'lr'],
+      ['                RR(p);', 'rr'],
+      ['                RL(p);', 'rl'],
+      ['int Size(Vertex *p) {', 'stats']
+    ]
+  },
+  details: [
+    { s: 'Трудоёмкость', h: '<p>Добавление — <code>O(log n)</code>: спуск вниз по пути поиска и подъём вверх; поворот меняет лишь несколько ссылок — <code>O(1)</code>. По теореме Адельсона-Вельского и Ландиса высота АВЛ <code>log(n+1) ≤ h &lt; 1,44·log(n+2) − 0,328</code>.</p>' },
+    { s: 'Проверка правильности', h: '<p>Обход слева направо печатает ключи <b>по возрастанию</b>. Для примера ФИО <code>16 2 6 18 14 12 19 4 11 3 13 1</code> получается дерево размера 12 и высоты 4 с корнем 6. ИСДП всегда является АВЛ-деревом, обратное неверно.</p>' },
+    { s: 'Как выбрать поворот', h: '<p>Нарушен баланс слева (выросла левая ветвь): у левого сына баланс &lt; 0 → <b>LL</b>, &gt; 0 → <b>LR</b>. Нарушен баланс справа: у правого сына &gt; 0 → <b>RR</b>, &lt; 0 → <b>RL</b>. После поворота высота поддерева не меняется — <code>Рост := ЛОЖЬ</code>, выше по пути ничего пересчитывать не нужно.</p>' }
+  ],
+  links: [
+    { href: 'README.md', label: 'README' },
+    { href: 'avl_tree.cpp', label: 'Исходный код' },
+    { href: 'THEORY.md', label: 'Теория' },
+    { href: '../../2семестр/README.md', label: 'Все работы 2 семестра' }
+  ],
+  dockTitle: 'AddAVL',
+  dockDesc: 'Псевдокод пособия (п. 12.2–12.3) и настоящий avl_tree.cpp — переключайтесь вкладками',
+  steps: function (data) { return Lab.gen.avl(data); }
+};
+</script>
+<script src="../../assets/lab.js"></script>
+</body>
+</html>
