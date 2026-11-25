@@ -1,0 +1,941 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>Пояснение к курсовой — вариант 74 (построчно, по категориям)</title>
+<style>
+  body {
+    font-family: Georgia, "Times New Roman", serif;
+    max-width: 980px;
+    margin: 0 auto;
+    padding: 20px 24px 80px;
+    line-height: 1.55;
+    color: #222;
+    background: #fdfdfb;
+  }
+  h1 { font-size: 26px; border-bottom: 3px solid #333; padding-bottom: 8px; }
+  h2 {
+    font-size: 21px;
+    margin-top: 56px;
+    padding: 10px 14px;
+    border-radius: 6px;
+    color: #fff;
+  }
+  h2.cat-file { background: #8d5524; }
+  h2.cat-enc  { background: #6a4c93; }
+  h2.cat-cmp  { background: #1b6b93; }
+  h2.cat-sort { background: #2e7d32; }
+  h2.cat-out  { background: #ad6800; }
+  h2.cat-queue{ background: #c62828; }
+  h2.cat-search{ background: #00838f; }
+  h2.cat-main { background: #333; }
+  h3 {
+    font-size: 15px;
+    margin-top: 30px;
+    color: #333;
+    font-family: "SF Mono", Consolas, Menlo, monospace;
+    border-bottom: 2px dashed #ccc;
+    padding-bottom: 4px;
+  }
+  code, pre { font-family: "SF Mono", Consolas, Menlo, monospace; font-size: 13px; }
+  pre {
+    background: #1e1e2e; color: #e6e6e6; padding: 12px 14px;
+    border-radius: 6px; overflow-x: auto; margin: 10px 0 16px;
+  }
+  p code, li code, td code { background: #eee; padding: 1px 5px; border-radius: 4px; }
+  table { border-collapse: collapse; margin: 10px 0 20px; width: 100%; }
+  th, td { border: 1px solid #ccc; padding: 5px 9px; text-align: left; font-size: 13.5px; vertical-align: top; }
+  th { background: #eee; }
+  td:first-child { white-space: nowrap; font-family: "SF Mono", Consolas, Menlo, monospace; background: #f7f7f7; }
+  .box { background: #fff8e1; border-left: 4px solid #e6b800; padding: 10px 16px; margin: 16px 0; }
+  .pseudo {
+    background: #eef2ff; border-left: 4px solid #5b6fd6; padding: 10px 16px;
+    margin: 16px 0; font-family: "SF Mono", Consolas, Menlo, monospace;
+    white-space: pre; font-size: 13px;
+  }
+  .toc { background: #f4f4f4; border-radius: 6px; padding: 14px 20px; column-count: 2; }
+  .toc a { color: #333; display: block; margin-bottom: 4px; font-size: 14px; }
+  .overview td:first-child { background: inherit; white-space: normal; font-family: Georgia, serif; font-weight: bold; }
+  .tag {
+    display: inline-block; font-size: 11.5px; font-family: "SF Mono", Consolas, Menlo, monospace;
+    padding: 1px 7px; border-radius: 10px; color: #fff; margin-left: 6px; vertical-align: middle;
+  }
+  .tag-file { background: #8d5524; }
+  .tag-enc  { background: #6a4c93; }
+  .tag-cmp  { background: #1b6b93; }
+  .tag-sort { background: #2e7d32; }
+  .tag-out  { background: #ad6800; }
+  .tag-queue{ background: #c62828; }
+  .tag-search{ background: #00838f; }
+</style>
+</head>
+<body>
+
+<h1>Пояснение к курсовой работе — вариант 74 (построчно, по категориям)</h1>
+
+<p>
+Вариант: <b>B=2</b> (база «Предприятие»), <b>C=3</b> (упорядочение по дате
+рождения, ключ поиска — год рождения), <b>S=2</b> (метод Хоара, индексный
+массив указателей). D и E (дерево и кодирование) пока не сделаны.
+</p>
+
+<h2 style="background:#444; color:#fff;">Карта кода: что за что отвечает</h2>
+
+<p>Весь файл <code>main.cpp</code> (и <code>db.h</code>) делится на 7 смысловых групп. Вот что входит в каждую, одной строкой:</p>
+
+<table class="overview">
+<tr><th>Группа</th><th>Функции</th><th>Чем занимается</th></tr>
+<tr>
+  <td><span class="tag tag-file">ЧТЕНИЕ ФАЙЛА</span></td>
+  <td><code>rtrim</code>, <code>load_database</code></td>
+  <td>открыть <code>testBase2.dat</code> на диске и превратить его байты в массив структур <code>Worker</code> в памяти. Это единственное место, где программа общается с файловой системой.</td>
+</tr>
+<tr>
+  <td><span class="tag tag-enc">КОДИРОВКА</span></td>
+  <td><code>cp866_to_utf8</code>, <code>utf8_to_cp866</code></td>
+  <td>перевод текста между кодировкой базы (CP866) и кодировкой терминала (UTF-8). Не имеет отношения ни к чтению файла, ни к сортировке — только к тому, что человек <i>видит</i> и <i>вводит</i>.</td>
+</tr>
+<tr>
+  <td><span class="tag tag-cmp">СРАВНЕНИЕ / КЛЮЧИ</span></td>
+  <td><code>get_day</code>, <code>get_month</code>, <code>get_year</code>, <code>cmp_workers</code>, <code>my_strcmp</code>, <code>my_strstr</code></td>
+  <td>«правила», по которым решается, что меньше/больше или что где встречается. Сами ничего не сортируют и не ищут — их вызывают сортировка и поиск.</td>
+</tr>
+<tr>
+  <td><span class="tag tag-sort">СОРТИРОВКА</span></td>
+  <td><code>swap_ptr</code>, <code>quick_sort_hoare</code></td>
+  <td>упорядочивает индексный массив указателей по дате рождения методом Хоара (требование S=2). Сами записи в памяти не трогает, переставляет только указатели.</td>
+</tr>
+<tr>
+  <td><span class="tag tag-out">ВЫВОД НА ЭКРАН</span></td>
+  <td><code>utf8_len</code>, <code>print_padded</code>, <code>print_header</code>, <code>print_worker</code>, <code>flush_stdin</code>, <code>view_pages</code></td>
+  <td>рисует таблицу в терминале и постраничную навигацию (<code>n</code>/<code>p</code>/<code>q</code>). Не знает, что такое очередь или сортировка — просто показывает ЛЮБОЙ переданный ей массив указателей.</td>
+</tr>
+<tr>
+  <td><span class="tag tag-queue">ОЧЕРЕДЬ</span></td>
+  <td><code>QueueNode</code>, <code>Queue</code>, <code>queue_init</code>, <code>queue_push</code>, <code>queue_count</code>, <code>queue_free</code>, <code>show_queue_result</code></td>
+  <td>структура данных по методичке (связный список Head/Tail) для хранения результатов поиска + вспомогательная функция, которая показывает готовую очередь через <code>view_pages</code>.</td>
+</tr>
+<tr>
+  <td><span class="tag tag-search">ПОИСК</span></td>
+  <td><code>binary_search_year</code>, <code>search_by_date</code>, <code>search_by_fio</code>, <code>search_by_position</code>, <code>search_by_dept</code></td>
+  <td>5 разных видов поиска. Каждый собирает подходящие записи в очередь (группа ОЧЕРЕДЬ) и показывает её (группа ВЫВОД).</td>
+</tr>
+<tr>
+  <td><b>main</b></td>
+  <td><code>main</code></td>
+  <td>склеивает всё вместе: один раз читает файл (группа ЧТЕНИЕ), показывает меню, по выбору вызывает сортировку, просмотр или нужный поиск.</td>
+</tr>
+</table>
+
+<div class="box">
+<b>Как группы связаны между собой</b> (кто кого вызывает):
+<pre>ЧТЕНИЕ ФАЙЛА  --дает массив Worker-->  main
+СОРТИРОВКА    --нужно сравнение-->  СРАВНЕНИЕ/КЛЮЧИ
+ПОИСК         --нужно сравнение-->  СРАВНЕНИЕ/КЛЮЧИ
+ПОИСК         --складывает результат в-->  ОЧЕРЕДЬ
+ОЧЕРЕДЬ (show_queue_result)  --показывает через-->  ВЫВОД НА ЭКРАН
+ВЫВОД НА ЭКРАН  --переводит текст через-->  КОДИРОВКА
+ПОИСК (по ФИО/должности)  --переводит ввод через-->  КОДИРОВКА</pre>
+Группа ВЫВОД НА ЭКРАН не знает про группу ОЧЕРЕДЬ: <code>view_pages</code>
+принимает просто массив указателей <code>Worker**</code> — ей всё равно,
+собран этот массив из очереди после поиска или это вся база целиком.
+Это и позволяет одной функцией <code>view_pages</code> показывать и базу,
+и любой результат поиска.
+</div>
+
+<div class="toc">
+<a href="#db">0. db.h — структура записи</a>
+<a href="#f1">1. rtrim <span class="tag tag-file">файл</span></a>
+<a href="#f8">2. load_database <span class="tag tag-file">файл</span></a>
+<a href="#f2">3. cp866_to_utf8 <span class="tag tag-enc">кодировка</span></a>
+<a href="#f3">4. utf8_to_cp866 <span class="tag tag-enc">кодировка</span></a>
+<a href="#f6">5. get_day/month/year <span class="tag tag-cmp">ключи</span></a>
+<a href="#f7">6. cmp_workers <span class="tag tag-cmp">ключи</span></a>
+<a href="#f4">7. my_strcmp <span class="tag tag-cmp">ключи</span></a>
+<a href="#f5">8. my_strstr <span class="tag tag-cmp">ключи</span></a>
+<a href="#f9">9. swap_ptr <span class="tag tag-sort">сортировка</span></a>
+<a href="#f10">10. quick_sort_hoare <span class="tag tag-sort">сортировка</span></a>
+<a href="#f11">11. utf8_len <span class="tag tag-out">вывод</span></a>
+<a href="#f12">12. print_padded <span class="tag tag-out">вывод</span></a>
+<a href="#f13">13. print_header <span class="tag tag-out">вывод</span></a>
+<a href="#f14">14. print_worker <span class="tag tag-out">вывод</span></a>
+<a href="#f15">15. flush_stdin <span class="tag tag-out">вывод</span></a>
+<a href="#f16">16. view_pages <span class="tag tag-out">вывод</span></a>
+<a href="#f17">17. QueueNode/Queue/queue_init <span class="tag tag-queue">очередь</span></a>
+<a href="#f18">18. queue_push <span class="tag tag-queue">очередь</span></a>
+<a href="#f19">19. queue_count <span class="tag tag-queue">очередь</span></a>
+<a href="#f20">20. queue_free <span class="tag tag-queue">очередь</span></a>
+<a href="#f20b">21. show_queue_result <span class="tag tag-queue">очередь</span></a>
+<a href="#f21">22. binary_search_year <span class="tag tag-search">поиск</span></a>
+<a href="#f22">23. search_by_date <span class="tag tag-search">поиск</span></a>
+<a href="#f23">24. search_by_fio <span class="tag tag-search">поиск</span></a>
+<a href="#f25">25. search_by_position <span class="tag tag-search">поиск</span></a>
+<a href="#f26">26. search_by_dept <span class="tag tag-search">поиск</span></a>
+<a href="#f24">27. main</a>
+</div>
+
+<h2 id="db" class="cat-file">0. db.h — структура записи <span class="tag tag-file">файл</span></h2>
+<pre>#define FIO_LEN 30
+#define POS_LEN 22
+#define BIRTH_LEN 10
+#define DB_FILE "testBase2.dat"
+
+struct Worker {
+  char fio[FIO_LEN + 1];
+  short dept;
+  char position[POS_LEN + 1];
+  char birth[BIRTH_LEN + 1];
+};</pre>
+<table>
+<tr><th>Строка</th><th>Что делает</th></tr>
+<tr><td>#define FIO_LEN 30</td><td>ширина поля ФИО в файле базы — 30 байт</td></tr>
+<tr><td>#define POS_LEN 22</td><td>ширина поля Должность — 22 байта</td></tr>
+<tr><td>#define BIRTH_LEN 10</td><td>ширина поля Дата рождения — 10 байт</td></tr>
+<tr><td>#define DB_FILE ...</td><td>имя файла базы, чтобы не писать строку вручную в нескольких местах</td></tr>
+<tr><td>char fio[FIO_LEN + 1]</td><td>+1 — место под завершающий <code>'\0'</code>, которого нет в самом файле</td></tr>
+<tr><td>short dept</td><td>номер отдела — готовое число, не текст, поэтому без <code>+1</code></td></tr>
+<tr><td>char position[POS_LEN + 1]</td><td>то же самое, что и fio, для должности</td></tr>
+<tr><td>char birth[BIRTH_LEN + 1]</td><td>то же самое для даты рождения (текст «дд-мм-гг»)</td></tr>
+</table>
+
+<h2 class="cat-file">Группа 1: ЧТЕНИЕ ФАЙЛА</h2>
+<p>Эти функции — единственное место программы, которое открывает файл на диске и читает из него байты. Сортировка, поиск и вывод уже работают только с памятью, с файлом больше никогда не взаимодействуют.</p>
+
+<h3 id="f1">rtrim <span class="tag tag-file">файл</span></h3>
+<pre>void rtrim(char *s) {
+  int len = (int)strlen(s);
+  while (len &gt; 0 && s[len - 1] == ' ')
+    len--;
+  s[len] = '\0';
+}</pre>
+<table>
+<tr><th>Строка</th><th>Что делает</th></tr>
+<tr><td>int len = strlen(s)</td><td>узнаём текущую длину строки</td></tr>
+<tr><td>while (len &gt; 0 && ...)</td><td>пока строка не пустая и последний символ — пробел</td></tr>
+<tr><td>len--</td><td>«укорачиваем» длину на 1</td></tr>
+<tr><td>s[len] = '\0'</td><td>ставим конец строки в новое место — пробелы справа обрезаны</td></tr>
+</table>
+<p>Используется сразу после чтения каждого текстового поля из файла — убирает пробелы-заполнители, которыми в базе выровнены все поля до фиксированной ширины.</p>
+
+<h3 id="f8">load_database <span class="tag tag-file">файл</span></h3>
+<pre>Worker *load_database(const char *filename, int *count) {
+  FILE *f = fopen(filename, "rb");
+  if (f == NULL) { *count = 0; return NULL; }
+
+  fseek(f, 0, SEEK_END);
+  long size = ftell(f);
+  fseek(f, 0, SEEK_SET);
+
+  int record_size = FIO_LEN + sizeof(short) + POS_LEN + BIRTH_LEN;
+  int n = size / record_size;
+
+  Worker *db = (Worker *)malloc(n * sizeof(Worker));
+
+  for (i = 0; i &lt; n; i++) {
+    fread(db[i].fio, 1, FIO_LEN, f);
+    db[i].fio[FIO_LEN] = '\0';
+
+    fread(&db[i].dept, sizeof(short), 1, f);
+
+    fread(db[i].position, 1, POS_LEN, f);
+    db[i].position[POS_LEN] = '\0';
+
+    fread(db[i].birth, 1, BIRTH_LEN, f);
+    db[i].birth[BIRTH_LEN] = '\0';
+
+    rtrim(db[i].fio);
+    rtrim(db[i].position);
+  }
+
+  fclose(f);
+  *count = n;
+  return db;
+}</pre>
+<table>
+<tr><th>Строка</th><th>Что делает</th></tr>
+<tr><td>fopen(filename, "rb")</td><td>открываем файл; "rb" — read binary, как бинарный, а не текстовый</td></tr>
+<tr><td>if (f == NULL) ...</td><td>файл не открылся — сообщаем через *count=0 и возвращаем NULL</td></tr>
+<tr><td>fseek(f,0,SEEK_END)</td><td>перематываем указатель чтения в конец файла</td></tr>
+<tr><td>size = ftell(f)</td><td>спрашиваем текущую позицию — это и есть размер файла в байтах</td></tr>
+<tr><td>fseek(f,0,SEEK_SET)</td><td>перематываем обратно в начало</td></tr>
+<tr><td>record_size = ...</td><td>размер одной записи: 30+2+22+10 = 64 байта</td></tr>
+<tr><td>n = size / record_size</td><td>сколько записей в файле: 256000/64 = 4000</td></tr>
+<tr><td>malloc(n * sizeof(Worker))</td><td>выделяем в динамической памяти массив из n структур Worker</td></tr>
+<tr><td>fread(db[i].fio, 1, FIO_LEN, f)</td><td>читаем 30 байт прямо в поле fio текущей записи</td></tr>
+<tr><td>db[i].fio[FIO_LEN]='\0'</td><td>в файле после этих 30 байт нет завершающего нуля — дописываем сами</td></tr>
+<tr><td>fread(&amp;db[i].dept, sizeof(short), 1, f)</td><td>номер отдела — готовое число (2 байта), без '\0'</td></tr>
+<tr><td>fread(db[i].position,...) + '\0'</td><td>то же, что с fio, для должности</td></tr>
+<tr><td>fread(db[i].birth,...) + '\0'</td><td>то же для даты рождения</td></tr>
+<tr><td>rtrim(db[i].fio) / rtrim(db[i].position)</td><td>убираем пробелы-заполнители справа</td></tr>
+<tr><td>fclose(f)</td><td>файл прочитан целиком, закрываем</td></tr>
+<tr><td>*count = n; return db</td><td>возвращаем количество записей через count и указатель на весь массив</td></tr>
+</table>
+<div class="box">Это <b>единственная</b> функция во всей программе, где встречаются <code>fopen</code>/<code>fread</code>/<code>fclose</code>. Дальше весь код работает с уже загруженным в память массивом <code>db</code> — ни сортировка, ни поиск к файлу больше не обращаются.</div>
+
+<h2 class="cat-enc">Группа 2: КОДИРОВКА (CP866 ↔ UTF-8)</h2>
+<p>
+Эти функции не читают файл и не сравнивают данные — они только переводят
+текст между двумя разными представлениями кириллицы. База хранит текст
+в CP866 (1 буква = 1 байт, старая кодировка DOS), а терминал на маке
+показывает и принимает текст в UTF-8 (1 кириллическая буква = 2 байта).
+</p>
+
+<h3 id="f2">cp866_to_utf8 <span class="tag tag-enc">кодировка</span></h3>
+<pre>void cp866_to_utf8(const char *src, char *dst, int dst_size) {
+  iconv_t cd = iconv_open("UTF-8", "CP866");
+
+  size_t inbytesleft = strlen(src);
+  size_t outbytesleft = dst_size - 1;
+  char *inbuf = (char *)src;
+  char *outbuf = dst;
+
+  iconv(cd, &inbuf, &inbytesleft, &outbuf, &outbytesleft);
+  *outbuf = '\0';
+
+  iconv_close(cd);
+}</pre>
+<table>
+<tr><th>Строка</th><th>Что делает</th></tr>
+<tr><td>src, dst, dst_size</td><td>src — исходный текст в CP866; dst/dst_size — куда и сколько места под результат</td></tr>
+<tr><td>iconv_open("UTF-8","CP866")</td><td>«настраиваем переводчик»: переводим ИЗ CP866 В UTF-8</td></tr>
+<tr><td>inbytesleft = strlen(src)</td><td>сколько байт ещё осталось прочитать из src</td></tr>
+<tr><td>outbytesleft = dst_size - 1</td><td>сколько места осталось в dst (минус 1 — под завершающий '\0')</td></tr>
+<tr><td>inbuf, outbuf</td><td>рабочие указатели — iconv двигает их сама по мере перевода</td></tr>
+<tr><td>iconv(cd, &amp;inbuf, ...)</td><td>сам перевод: читает из inbuf, пишет в outbuf</td></tr>
+<tr><td>*outbuf = '\0'</td><td>outbuf теперь указывает сразу за последним записанным байтом — там ставим конец строки</td></tr>
+<tr><td>iconv_close(cd)</td><td>«закрываем переводчик»</td></tr>
+</table>
+<p><b>Кто вызывает:</b> только функции группы ВЫВОД (<code>print_worker</code>) — перед тем, как напечатать ФИО и должность на экране.</p>
+
+<h3 id="f3">utf8_to_cp866 <span class="tag tag-enc">кодировка</span></h3>
+<p>Устроена так же, как <code>cp866_to_utf8</code>, только наоборот — <code>iconv_open("CP866", "UTF-8")</code>.</p>
+<p><b>Кто вызывает:</b> функции группы ПОИСК, которые принимают текстовый ввод от человека (<code>search_by_fio</code>, <code>search_by_position</code>) — то, что набрали в терминале (UTF-8), нужно перевести в CP866 перед сравнением с базой.</p>
+
+<h2 class="cat-cmp">Группа 3: СРАВНЕНИЕ / КЛЮЧИ</h2>
+<p>
+Эти функции ничего не читают из файла, никуда не выводят и сами не
+сортируют — они просто отвечают на вопрос «что меньше?» или «встречается
+ли это здесь?». Их вызывают СОРТИРОВКА (<code>cmp_workers</code>) и
+ПОИСК (<code>my_strstr</code>, <code>get_year</code> и другие).
+</p>
+
+<h3 id="f6">get_day / get_month / get_year <span class="tag tag-cmp">ключи</span></h3>
+<pre>int get_day(const char *birth)   { return (birth[0]-'0')*10 + (birth[1]-'0'); }
+int get_month(const char *birth) { return (birth[3]-'0')*10 + (birth[4]-'0'); }
+int get_year(const char *birth)  { return (birth[6]-'0')*10 + (birth[7]-'0'); }</pre>
+<p>Дата хранится как текст «дд-мм-гг» (индексы 0-1 — день, 3-4 — месяц, 6-7 — год). <code>символ - '0'</code> превращает цифру-символ в цифру-число. Первая цифра поля — десятки, вторая — единицы.</p>
+<p><b>Кто вызывает:</b> <code>cmp_workers</code> (для сортировки), <code>binary_search_year</code> и <code>search_by_date</code> (для поиска).</p>
+
+<h3 id="f7">cmp_workers <span class="tag tag-cmp">ключи</span></h3>
+<pre>int cmp_workers(Worker *a, Worker *b) {
+  int y1 = get_year(a-&gt;birth), y2 = get_year(b-&gt;birth);
+  if (y1 != y2) return y1 - y2;
+
+  int m1 = get_month(a-&gt;birth), m2 = get_month(b-&gt;birth);
+  if (m1 != m2) return m1 - m2;
+
+  int d1 = get_day(a-&gt;birth), d2 = get_day(b-&gt;birth);
+  if (d1 != d2) return d1 - d2;
+
+  return my_strcmp(a-&gt;fio, b-&gt;fio);
+}</pre>
+<table>
+<tr><th>Строка</th><th>Что делает</th></tr>
+<tr><td>y1, y2 = get_year(...)</td><td>сравниваем года рождения</td></tr>
+<tr><td>if (y1 != y2) return y1-y2</td><td>года разные — этого достаточно (реализация ключа C=3)</td></tr>
+<tr><td>m1, m2 = get_month(...)</td><td>года совпали — сравниваем месяцы</td></tr>
+<tr><td>if (m1 != m2) return m1-m2</td><td>месяцы разные — хватит</td></tr>
+<tr><td>d1, d2 = get_day(...)</td><td>месяцы совпали — сравниваем дни</td></tr>
+<tr><td>if (d1 != d2) return d1-d2</td><td>дни разные — хватит</td></tr>
+<tr><td>return my_strcmp(a-&gt;fio, b-&gt;fio)</td><td>дата совпала у двух людей — сравниваем по ФИО, чтобы порядок был однозначным</td></tr>
+</table>
+<div class="box">
+<b>Это и есть «правило сортировки».</b> Сама функция ничего не
+переставляет — она только ОТВЕЧАЕТ на вопрос «кто из двух меньше».
+Переставляет указатели <code>quick_sort_hoare</code> (группа
+СОРТИРОВКА), вызывая <code>cmp_workers</code> на каждом шаге.
+</div>
+
+<h3 id="f4">my_strcmp <span class="tag tag-cmp">ключи</span></h3>
+<pre>int my_strcmp(const char *a, const char *b) {
+  int i = 0;
+  while (a[i] != '\0' && b[i] != '\0') {
+    if (a[i] != b[i]) return a[i] - b[i];
+    i++;
+  }
+  return a[i] - b[i];
+}</pre>
+<p>Своя версия <code>strcmp</code> (задание запрещает пользоваться готовой). Сравнивает символ за символом, возвращает отрицательное/0/положительное число. Используется в <code>cmp_workers</code> как последний критерий при равных датах.</p>
+
+<h3 id="f5">my_strstr <span class="tag tag-cmp">ключи</span></h3>
+<pre>int my_strstr(const char *text, const char *pattern) {
+  for (i = 0; text[i] != '\0'; i++) {
+    j = 0;
+    while (pattern[j] != '\0' && text[i + j] == pattern[j]) j++;
+    if (pattern[j] == '\0') return i;
+  }
+  return -1;
+}</pre>
+<p>Своя версия <code>strstr</code> — ищет <code>pattern</code> где угодно внутри <code>text</code>, возвращает позицию первого совпадения или -1. Для каждой стартовой позиции <code>i</code> пробует сопоставить <code>pattern</code> посимвольно; если дошли до конца <code>pattern</code> — совпадение найдено.</p>
+<p><b>Кто вызывает:</b> <code>search_by_fio</code> (ищет по ФИО) и <code>search_by_position</code> (ищет по должности) — оба текстовых поиска «по вхождению», это их общий строительный блок.</p>
+
+<h2 class="cat-sort">Группа 4: СОРТИРОВКА</h2>
+<p>
+Эта группа отвечает на требование <b>S=2</b> методички. Она НЕ умеет
+сравнивать записи сама — для этого вызывает <code>cmp_workers</code> из
+группы СРАВНЕНИЕ. И она НЕ умеет читать файл — работает уже с готовым
+массивом указателей, который ей передали.
+</p>
+
+<h3 id="f9">swap_ptr <span class="tag tag-sort">сортировка</span></h3>
+<pre>void swap_ptr(Worker **a, Worker **b) {
+  Worker *t = *a;
+  *a = *b;
+  *b = t;
+}</pre>
+<table>
+<tr><th>Строка</th><th>Что делает</th></tr>
+<tr><td>Worker *t = *a</td><td>запоминаем, на что указывал a</td></tr>
+<tr><td>*a = *b</td><td>a теперь указывает туда же, куда b</td></tr>
+<tr><td>*b = t</td><td>b теперь указывает туда, куда раньше указывал a</td></tr>
+</table>
+<p>Параметры — <code>Worker**</code> (указатель на указатель), иначе функция поменяла бы местами свои локальные копии, а в массиве <code>idx</code> снаружи ничего бы не изменилось.</p>
+
+<h3 id="f10">quick_sort_hoare <span class="tag tag-sort">сортировка</span></h3>
+<p>Псевдокод из методички «СиАОД» (стр. 24):</p>
+<div class="pseudo">x:=a<sub>L</sub>, i:=L, j:=R
+DO (i&lt;=j)
+    DO (a<sub>i</sub>&lt;x) i:=i+1 OD
+    DO (a<sub>j</sub>&gt;x) j:=j-1 OD
+    IF (i&lt;=j) a<sub>i</sub>&lt;-&gt;a<sub>j</sub>, i:=i+1, j:=j-1 FI
+OD
+IF (L&lt;j) &lt;сортировка (L,j)&gt; FI
+IF (i&lt;R) &lt;сортировка (i,R)&gt; FI</div>
+<pre>void quick_sort_hoare(Worker **idx, int L, int R) {
+  Worker *x = idx[(L + R) / 2];
+  int i = L, j = R;
+
+  do {
+    while (cmp_workers(idx[i], x) &lt; 0) i++;
+    while (cmp_workers(idx[j], x) &gt; 0) j--;
+
+    if (i &lt;= j) {
+      swap_ptr(&idx[i], &idx[j]);
+      i++;
+      j--;
+    }
+  } while (i &lt;= j);
+
+  if (L &lt; j) quick_sort_hoare(idx, L, j);
+  if (i &lt; R) quick_sort_hoare(idx, i, R);
+}</pre>
+<table>
+<tr><th>Строка</th><th>Что делает</th></tr>
+<tr><td>idx, L, R</td><td>idx — индексный массив указателей; L, R — границы участка (в первом вызове — весь массив)</td></tr>
+<tr><td>x = idx[(L+R)/2]</td><td>опорный элемент (pivot) — запись из середины участка</td></tr>
+<tr><td>i = L, j = R</td><td>два «бегунка»: i — от начала вправо, j — от конца влево</td></tr>
+<tr><td>while (cmp_workers(idx[i],x)&lt;0) i++</td><td>двигаем i вправо, пока idx[i] «меньше» опорной</td></tr>
+<tr><td>while (cmp_workers(idx[j],x)&gt;0) j--</td><td>двигаем j влево, пока idx[j] «больше» опорной</td></tr>
+<tr><td>if (i&lt;=j) { swap_ptr(...); i++; j--; }</td><td>меняем местами указатели idx[i], idx[j], сдвигаем оба бегунка</td></tr>
+<tr><td>} while (i &lt;= j)</td><td>повторяем, пока бегунки не пересекутся</td></tr>
+<tr><td>if (L&lt;j) quick_sort_hoare(idx,L,j)</td><td>рекурсивно сортируем левую часть</td></tr>
+<tr><td>if (i&lt;R) quick_sort_hoare(idx,i,R)</td><td>рекурсивно сортируем правую часть</td></tr>
+</table>
+<p>Сортируются указатели <code>idx[i]</code> (<code>Worker*</code>), а не сами записи — требование S=2, «индексный массив указателей». Сравнение на каждом шаге делегируется в <code>cmp_workers</code> (группа СРАВНЕНИЕ) — сама функция не знает, что такое «дата рождения».</p>
+
+<h2 class="cat-out">Группа 5: ВЫВОД НА ЭКРАН</h2>
+<p>
+Эта группа не знает, что такое база данных, очередь или поиск — она
+умеет только одно: красиво напечатать переданный ей массив указателей
+<code>Worker**</code> постранично. Именно поэтому её можно использовать
+и для всей базы, и для любого результата поиска.
+</p>
+
+<h3 id="f11">utf8_len <span class="tag tag-out">вывод</span></h3>
+<pre>int utf8_len(const char *s) {
+  int len = 0;
+  for (i = 0; s[i] != '\0'; i++)
+    if (((unsigned char)s[i] & 0xC0) != 0x80)
+      len++;
+  return len;
+}</pre>
+<p>Считает количество настоящих символов в UTF-8 строке, а не байт. В UTF-8 байт-«продолжение» символа всегда начинается с битов <code>10xxxxxx</code> (<code>0x80</code> в старших двух битах); условие истинно только для байта, с которого НАЧИНАЕТСЯ символ. Без этого колонки таблицы съезжали бы, потому что одна кириллическая буква — это 2 байта.</p>
+
+<h3 id="f12">print_padded <span class="tag tag-out">вывод</span></h3>
+<pre>void print_padded(const char *s, int width) {
+  int len = utf8_len(s);
+  printf("%s", s);
+  for (i = len; i &lt; width; i++) printf(" ");
+}</pre>
+<p>Печатает строку, затем дописывает пробелы до <code>width</code> символов (используя <code>utf8_len</code>, а не байтовую длину) — так колонка выравнивается правильно независимо от того, кириллица там или латиница.</p>
+
+<h3 id="f13">print_header <span class="tag tag-out">вывод</span></h3>
+<p>Печатает шапку таблицы (названия колонок «#», «ФИО сотрудника», «Отд», «Должность», «Дата рожд.») и строку-разделитель из дефисов нужной ширины.</p>
+
+<h3 id="f14">print_worker <span class="tag tag-out">вывод</span></h3>
+<pre>void print_worker(int num, Worker *w) {
+  char fio_utf8[128];
+  char pos_utf8[128];
+
+  cp866_to_utf8(w-&gt;fio, fio_utf8, sizeof(fio_utf8));
+  cp866_to_utf8(w-&gt;position, pos_utf8, sizeof(pos_utf8));
+
+  printf("%3d | ", num);
+  print_padded(fio_utf8, FIO_COL);
+  printf(" | %4d | ", w-&gt;dept);
+  print_padded(pos_utf8, POS_COL);
+  printf(" | %s\n", w-&gt;birth);
+}</pre>
+<table>
+<tr><th>Строка</th><th>Что делает</th></tr>
+<tr><td>cp866_to_utf8(w-&gt;fio, ...)</td><td>переводим ФИО из CP866 (как хранится) в UTF-8 (как показывает терминал) — единственное место в группе ВЫВОД, которое обращается к группе КОДИРОВКА</td></tr>
+<tr><td>printf("%3d | ", num)</td><td>порядковый номер, минимум 3 символа</td></tr>
+<tr><td>print_padded(fio_utf8, FIO_COL)</td><td>ФИО с выравниванием</td></tr>
+<tr><td>printf(" | %4d | ", w-&gt;dept)</td><td>номер отдела</td></tr>
+<tr><td>print_padded(pos_utf8, POS_COL)</td><td>должность с выравниванием</td></tr>
+<tr><td>printf(" | %s\n", w-&gt;birth)</td><td>дата рождения — не переводится, там только цифры/дефисы</td></tr>
+</table>
+
+<h3 id="f15">flush_stdin <span class="tag tag-out">вывод</span></h3>
+<pre>void flush_stdin(void) {
+  int c;
+  while ((c = getchar()) != '\n' && c != EOF) ;
+}</pre>
+<p>Вычитывает всё до конца строки (или до EOF), чтобы следующий ввод не споткнулся об оставшийся «мусор» после <code>getchar()</code>.</p>
+
+<h3 id="f16">view_pages <span class="tag tag-out">вывод</span></h3>
+<pre>void view_pages(Worker **idx, int n, const char *title, const char *key_info) {
+  int pages = (n + PAGE_SIZE - 1) / PAGE_SIZE;
+  int page = 0;
+
+  while (1) {
+    int start = page * PAGE_SIZE;
+    int end = start + PAGE_SIZE;
+    if (end &gt; n) end = n;
+
+    printf("\n%s\n", title);
+    if (key_info[0] != '\0') printf("%s\n", key_info);
+    print_header();
+
+    for (i = start; i &lt; end; i++) print_worker(i + 1, idx[i]);
+
+    printf("\nn - вперёд, p - назад, q - выход: ");
+    int cmd = getchar();
+    flush_stdin();
+
+    if (cmd == 'q' || cmd == 'Q' || cmd == EOF) break;
+    if ((cmd == 'n' || cmd == 'N') && page + 1 &lt; pages) page++;
+    if ((cmd == 'p' || cmd == 'P') && page &gt; 0) page--;
+  }
+}</pre>
+<table>
+<tr><th>Параметр</th><th>Зачем</th></tr>
+<tr><td><code>idx</code>, <code>n</code></td><td>какой массив указателей показываем и сколько в нём записей — одна и та же функция используется и для всей базы (4000 записей), и для результата поиска (может быть всего 1 запись)</td></tr>
+<tr><td><code>title</code></td><td>заголовок страницы</td></tr>
+<tr><td><code>key_info</code></td><td>необязательная подсказка про ключ сортировки; пустая строка — не печатается</td></tr>
+</table>
+<table>
+<tr><th>Строка</th><th>Что делает</th></tr>
+<tr><td>pages = (n+PAGE_SIZE-1)/PAGE_SIZE</td><td>количество страниц с округлением вверх</td></tr>
+<tr><td>start, end</td><td>индексы первой и «после последней» записи текущей страницы, с защитой от выхода за n (последняя неполная страница)</td></tr>
+<tr><td>if (cmd=='q'||'Q'||EOF) break</td><td>выход (EOF — защита от зависания, если ввод неожиданно закончился)</td></tr>
+<tr><td>if (cmd=='n'...) page++</td><td>вперёд, но не дальше последней страницы</td></tr>
+<tr><td>if (cmd=='p'...) page--</td><td>назад, но не раньше первой</td></tr>
+</table>
+
+<h2 class="cat-queue">Группа 6: ОЧЕРЕДЬ</h2>
+<p>
+Задание требует: «из записей с одинаковым ключом формируется очередь,
+содержимое очереди выводится на экран». Эта группа — именно про
+структуру данных <b>очередь</b> (связный список Head/Tail по методичке)
+и про то, как её содержимое попадает на экран через группу ВЫВОД.
+</p>
+
+<h3 id="f17">QueueNode / Queue / queue_init <span class="tag tag-queue">очередь</span></h3>
+<pre>struct QueueNode {
+  Worker *rec;
+  QueueNode *next;
+};
+
+struct Queue {
+  QueueNode *head;
+  QueueNode *tail;
+};
+
+void queue_init(Queue *q) {
+  q-&gt;head = NULL;
+  q-&gt;tail = NULL;
+}</pre>
+<table>
+<tr><th>Строка</th><th>Что делает</th></tr>
+<tr><td>QueueNode { Worker *rec; QueueNode *next; }</td><td>один узел очереди: указатель на найденную запись + указатель на следующий узел</td></tr>
+<tr><td>Queue { QueueNode *head; QueueNode *tail; }</td><td>сама очередь — указатель на первый узел (head) и на последний (tail)</td></tr>
+<tr><td>q-&gt;head = NULL; q-&gt;tail = NULL</td><td>пустая очередь — оба указателя никуда не указывают</td></tr>
+</table>
+<p>Структура по методичке «СиАОД» (стр. 28): новый элемент добавляется в конец (через <code>tail</code>) — в отличие от стека, где добавление и снятие идут с одного конца.</p>
+
+<h3 id="f18">queue_push <span class="tag tag-queue">очередь</span></h3>
+<div class="pseudo">1) p-&gt;Next := NIL
+2) IF (Head &lt;&gt; NIL) Tail-&gt;Next := p
+       ELSE Head := p
+   FI
+3) Tail := p</div>
+<pre>void queue_push(Queue *q, Worker *rec) {
+  QueueNode *p = (QueueNode *)malloc(sizeof(QueueNode));
+  p-&gt;rec = rec;
+  p-&gt;next = NULL;
+
+  if (q-&gt;head != NULL)
+    q-&gt;tail-&gt;next = p;
+  else
+    q-&gt;head = p;
+
+  q-&gt;tail = p;
+}</pre>
+<table>
+<tr><th>Строка</th><th>Что делает</th></tr>
+<tr><td>p = malloc(sizeof(QueueNode))</td><td>выделяем память под новый узел</td></tr>
+<tr><td>p-&gt;rec = rec</td><td>сохраняем указатель на найденную запись</td></tr>
+<tr><td>p-&gt;next = NULL</td><td>шаг 1: новый узел пока последний</td></tr>
+<tr><td>if (q-&gt;head != NULL) q-&gt;tail-&gt;next = p</td><td>шаг 2 (IF): очередь не пуста — цепляем после текущего последнего</td></tr>
+<tr><td>else q-&gt;head = p</td><td>шаг 2 (ELSE): очередь была пуста — новый узел становится и первым</td></tr>
+<tr><td>q-&gt;tail = p</td><td>шаг 3: новый узел теперь последний</td></tr>
+</table>
+<p><b>Кто вызывает:</b> все пять функций группы ПОИСК — каждая, найдя подходящую запись, кладёт её в очередь этим вызовом.</p>
+
+<h3 id="f19">queue_count <span class="tag tag-queue">очередь</span></h3>
+<pre>int queue_count(Queue *q) {
+  int count = 0;
+  QueueNode *p = q-&gt;head;
+  while (p != NULL) { count++; p = p-&gt;next; }
+  return count;
+}</pre>
+<p>Идёт по всем узлам и считает их — используется, чтобы узнать, сколько записей нашлось (и чтобы понять, пустая очередь или нет).</p>
+
+<h3 id="f20">queue_free <span class="tag tag-queue">очередь</span></h3>
+<pre>void queue_free(Queue *q) {
+  QueueNode *p = q-&gt;head;
+  while (p != NULL) {
+    QueueNode *next = p-&gt;next;
+    free(p);
+    p = next;
+  }
+  q-&gt;head = NULL;
+  q-&gt;tail = NULL;
+}</pre>
+<p>Освобождает всю память очереди. Важно сначала сохранить <code>p-&gt;next</code> в <code>next</code>, а уже потом вызывать <code>free(p)</code> — после <code>free(p)</code> читать <code>p-&gt;next</code> нельзя (память уже отдана).</p>
+
+<h3 id="f20b">show_queue_result <span class="tag tag-queue">очередь</span></h3>
+<pre>void show_queue_result(Queue *q, const char *title, const char *not_found_msg) {
+  int count = queue_count(q);
+
+  if (count == 0) {
+    printf("%s\n", not_found_msg);
+    queue_free(q);
+    return;
+  }
+
+  printf("Найдено записей: %d\n", count);
+
+  Worker **q_idx = (Worker **)malloc(count * sizeof(Worker *));
+  QueueNode *node = q-&gt;head;
+  int i = 0;
+  while (node != NULL) {
+    q_idx[i] = node-&gt;rec;
+    i++;
+    node = node-&gt;next;
+  }
+
+  view_pages(q_idx, count, title, "");
+
+  free(q_idx);
+  queue_free(q);
+}</pre>
+<table>
+<tr><th>Строка</th><th>Что делает</th></tr>
+<tr><td>count = queue_count(q)</td><td>сколько записей в очереди</td></tr>
+<tr><td>if (count == 0) { ...; return; }</td><td>ничего не нашли — печатаем сообщение про «не найдено» (своё для каждого вида поиска), освобождаем пустую очередь, выходим</td></tr>
+<tr><td>q_idx = malloc(count * sizeof(Worker*))</td><td>временный массив указателей — только он умеет «ходить назад», в отличие от очереди</td></tr>
+<tr><td>node = q-&gt;head; while (node != NULL) {...}</td><td>проходим по очереди один раз и копируем указатели на записи в q_idx по порядку</td></tr>
+<tr><td>view_pages(q_idx, count, title, "")</td><td>передаём результат в группу ВЫВОД — дальше это уже обычный постраничный просмотр</td></tr>
+<tr><td>free(q_idx); queue_free(q)</td><td>освобождаем и временный массив, и саму очередь</td></tr>
+</table>
+<div class="box">
+<b>Это «мост» между группами ОЧЕРЕДЬ и ВЫВОД.</b> Очередь — связный
+список, по которому можно идти только вперёд; чтобы в <code>view_pages</code>
+можно было листать результат и вперёд, и назад (<code>n</code>/<code>p</code>),
+очередь один раз копируется в обычный массив. Сама очередь при этом
+по-прежнему построена и использована по правилам методички — массив
+нужен только для удобного постраничного показа уже готового результата.
+Добавлена эта функция, чтобы не повторять один и тот же код «сосчитать
+→ проверить на пустоту → скопировать в массив → показать → освободить»
+в каждой из пяти функций поиска — теперь они вызывают её одной строкой.
+</div>
+
+<h2 class="cat-search">Группа 7: ПОИСК</h2>
+<p>
+Все пять функций этой группы устроены по одной схеме: <b>найти</b>
+подходящие записи → <b>queue_push</b> каждую в очередь → <b>show_queue_result</b>
+показать итог. Разница только в том, ПО КАКОМУ полю и КАК ищем.
+</p>
+
+<h3 id="f21">binary_search_year <span class="tag tag-search">поиск</span></h3>
+<p>Псевдокод (методичка, стр. 37, версия 1):</p>
+<div class="pseudo">L:=1, R:=n, Найден:=нет
+DO (L&lt;=R)
+    m:=(L+R)/2
+    IF (a<sub>m</sub>=X) Найден:=да OD FI
+    IF (a<sub>m</sub>&lt;X) L:=m+1
+        ELSE R:=m-1
+    FI
+OD</div>
+<pre>Worker **binary_search_year(Worker **idx, int n, int year) {
+  Worker **lo = idx;
+  Worker **hi = idx + n - 1;
+
+  while (lo &lt;= hi) {
+    Worker **mid = lo + (hi - lo) / 2;
+    int y = get_year((*mid)-&gt;birth);
+
+    if (y == year)
+      return mid;
+
+    if (y &lt; year)
+      lo = mid + 1;
+    else
+      hi = mid - 1;
+  }
+
+  return NULL;
+}</pre>
+<table>
+<tr><th>Строка</th><th>Что делает</th></tr>
+<tr><td>L = 0, R = n - 1</td><td>границы участка поиска — сначала весь массив</td></tr>
+<tr><td>m = (L + R) / 2</td><td>середина текущего участка</td></tr>
+<tr><td>y = get_year(idx[m]-&gt;birth)</td><td>год рождения записи в середине</td></tr>
+<tr><td>if (y == year) return m</td><td>нашли — какую-то одну подходящую запись</td></tr>
+<tr><td>if (y &lt; year) L = m+1 / else R = m-1</td><td>сужаем участок поиска в нужную сторону</td></tr>
+<tr><td>return -1</td><td>участок сузился до пустого — такого года нет</td></tr>
+</table>
+<div class="box">
+Работает БЫСТРО (логарифм от n), но только потому, что база
+отсортирована именно по году (требование C=3). Поэтому используется
+только в <code>search_by_date</code> — для поиска по должности, отделу
+и ФИО такой приём не годится: база по ним не отсортирована.
+</div>
+
+<h3 id="f22">search_by_date <span class="tag tag-search">поиск</span></h3>
+<p>Можно ввести: <code>46</code> (только год), <code>08 46</code> (месяц и год), <code>08 03 46</code> (день, месяц, год).</p>
+<pre>void search_by_date(Worker **idx, int n) {
+  fgets(line, sizeof(line), stdin);
+  int parts = sscanf(line, "%d %d %d", &v1, &v2, &v3);
+
+  if (parts == 1) { year=v1; month=-1; day=-1; }
+  else if (parts == 2) { month=v1; year=v2; day=-1; }
+  else if (parts == 3) { day=v1; month=v2; year=v3; }
+  else { ...; return; }
+
+  int pos = binary_search_year(idx, n, year);
+  if (pos == -1) { ...; return; }
+
+  int first = pos;
+  while (first &gt; 0 && get_year(idx[first-1]-&gt;birth) == year) first--;
+  int last = pos;
+  while (last &lt; n-1 && get_year(idx[last+1]-&gt;birth) == year) last++;
+
+  Queue q;
+  queue_init(&q);
+  for (i = first; i &lt;= last; i++) {
+    if (month != -1 && get_month(idx[i]-&gt;birth) != month) continue;
+    if (day != -1 && get_day(idx[i]-&gt;birth) != day) continue;
+    queue_push(&q, idx[i]);
+  }
+
+  <span style="color:#888">/* формируем title по parts */</span>
+  show_queue_result(&q, title, "Записей с такой датой рождения не найдено.");
+}</pre>
+<table>
+<tr><th>Строка</th><th>Что делает</th></tr>
+<tr><td>fgets + sscanf("%d %d %d", ...)</td><td>читаем всю строку и пытаемся распознать до трёх чисел; <code>parts</code> — сколько реально распознали</td></tr>
+<tr><td>if/else if/else по parts</td><td>раскладываем введённые числа по смыслу: 1 число — год, 2 — месяц+год, 3 — день+месяц+год; <code>-1</code> означает «не уточнено»</td></tr>
+<tr><td>pos = binary_search_year(...)</td><td>быстро находим любую запись с нужным годом (группа ПОИСК → вызов другой функции той же группы)</td></tr>
+<tr><td>if (pos == -1) { ...; return; }</td><td>такого года в базе нет вообще</td></tr>
+<tr><td>first--/last++ циклы</td><td>расширяем границы влево/вправо, пока год совпадает — находим весь диапазон этого года</td></tr>
+<tr><td>Queue q; queue_init(&amp;q)</td><td>создаём пустую очередь (группа ОЧЕРЕДЬ)</td></tr>
+<tr><td>for (i=first;i&lt;=last;i++) {...}</td><td>проходим ТОЛЬКО по найденному диапазону года (а не по всей базе)</td></tr>
+<tr><td>if (month!=-1 && ...) continue</td><td>если месяц уточнён и не совпадает — пропускаем запись</td></tr>
+<tr><td>if (day!=-1 && ...) continue</td><td>то же для дня</td></tr>
+<tr><td>queue_push(&amp;q, idx[i])</td><td>запись подошла — в очередь</td></tr>
+<tr><td>show_queue_result(&amp;q, title, ...)</td><td>отдаём очередь группе ОЧЕРЕДЬ/ВЫВОД для показа и освобождения памяти</td></tr>
+</table>
+<p>Почему для месяца/дня достаточно простого перебора, а не ещё одного двоичного поиска: диапазон одного года маленький (в среднем ~60 записей из 4000), и внутри года записи уже отсортированы по месяцу/дню — перебор по такому маленькому куску практически мгновенный.</p>
+
+<h3 id="f23">search_by_fio <span class="tag tag-search">поиск</span></h3>
+<pre>void search_by_fio(Worker **idx, int n) {
+  fgets(line, sizeof(line), stdin);           <span style="color:#888">// строка целиком, с пробелами</span>
+  <span style="color:#888">// обрезаем '\n' в конце</span>
+  utf8_to_cp866(line, query_cp866, ...);       <span style="color:#888">// группа КОДИРОВКА</span>
+
+  Queue q;
+  queue_init(&q);
+  for (i = 0; i &lt; n; i++)
+    if (my_strstr(idx[i]-&gt;fio, query_cp866) != -1)   <span style="color:#888">// группа СРАВНЕНИЕ</span>
+      queue_push(&q, idx[i]);
+
+  show_queue_result(&q, title, not_found);
+}</pre>
+<table>
+<tr><th>Шаг</th><th>Какая группа отвечает</th></tr>
+<tr><td><code>fgets</code> вместо <code>scanf("%s")</code></td><td>chтение ввода — позволяет ввести «Иванов Иван» с пробелом (<code>scanf("%s")</code> остановился бы на первом пробеле)</td></tr>
+<tr><td><code>utf8_to_cp866</code></td><td><span class="tag tag-enc">КОДИРОВКА</span> — переводим то, что набрали в терминале, в кодировку базы</td></tr>
+<tr><td><code>for (i=0;i&lt;n;i++)</code></td><td>перебор ВСЕЙ базы — не двоичный поиск, потому что база отсортирована по дате, а не по ФИО</td></tr>
+<tr><td><code>my_strstr(idx[i]-&gt;fio, query_cp866)</code></td><td><span class="tag tag-cmp">СРАВНЕНИЕ</span> — проверяем, встречается ли запрос внутри ФИО</td></tr>
+<tr><td><code>queue_push</code></td><td><span class="tag tag-queue">ОЧЕРЕДЬ</span> — подходящая запись складывается в очередь</td></tr>
+<tr><td><code>show_queue_result</code></td><td><span class="tag tag-queue">ОЧЕРЕДЬ</span> → <span class="tag tag-out">ВЫВОД</span> — показ итога</td></tr>
+</table>
+
+<h3 id="f25">search_by_position <span class="tag tag-search">поиск</span></h3>
+<pre>void search_by_position(Worker **idx, int n) {
+  fgets(line, sizeof(line), stdin);
+  utf8_to_cp866(line, query_cp866, ...);
+
+  Queue q;
+  queue_init(&q);
+  for (i = 0; i &lt; n; i++)
+    if (my_strstr(idx[i]-&gt;position, query_cp866) != -1)
+      queue_push(&q, idx[i]);
+
+  show_queue_result(&q, title, not_found);
+}</pre>
+<div class="box">
+<b>Новая функция.</b> Устроена буквально как <code>search_by_fio</code>,
+только <code>my_strstr</code> сравнивает поле <code>idx[i]-&gt;position</code>
+(должность) вместо <code>idx[i]-&gt;fio</code>. Все остальные шаги —
+перекодировка ввода, перебор базы, очередь, показ — те же самые.
+Пример ввода: «инженер» или «начальник» (часть должности тоже подходит).
+</div>
+
+<h3 id="f26">search_by_dept <span class="tag tag-search">поиск</span></h3>
+<pre>void search_by_dept(Worker **idx, int n) {
+  fgets(line, sizeof(line), stdin);
+
+  int dept;
+  if (sscanf(line, "%d", &dept) != 1) {
+    printf("Не понял ввод - нужно ввести число.\n");
+    return;
+  }
+
+  Queue q;
+  queue_init(&q);
+  for (i = 0; i &lt; n; i++)
+    if (idx[i]-&gt;dept == dept)
+      queue_push(&q, idx[i]);
+
+  show_queue_result(&q, title, not_found);
+}</pre>
+<table>
+<tr><th>Строка</th><th>Что делает</th></tr>
+<tr><td>sscanf(line, "%d", &amp;dept)</td><td>пытаемся прочитать из введённой строки одно целое число — номер отдела</td></tr>
+<tr><td>if (... != 1) { ...; return; }</td><td>не ввели число (например, пустая строка или буквы) — сообщаем и выходим</td></tr>
+<tr><td>if (idx[i]-&gt;dept == dept)</td><td>сравнение ЧИСЕЛ напрямую («==»), а не <code>my_strstr</code> — отдел хранится как <code>short</code>, не как текст, поэтому перекодировка CP866/UTF-8 тут вообще не нужна</td></tr>
+<tr><td>queue_push(&amp;q, idx[i])</td><td>номер отдела совпал — запись в очередь</td></tr>
+</table>
+<div class="box">
+<b>Новая функция.</b> Единственный поиск из пяти, где не нужны ни
+<code>utf8_to_cp866</code>, ни <code>my_strstr</code> — потому что
+отдел это число, а не текст, сравнивается обычным <code>==</code>.
+Точное совпадение (а не «часть номера», в отличие от ФИО/должности) —
+логично: искать «часть» числа 130 не имеет смысла.
+</div>
+
+<h2 class="cat-main">main — всё вместе</h2>
+<pre>int main(void) {
+  Worker *db = load_database(DB_FILE, &n);              <span style="color:#888">// группа ЧТЕНИЕ ФАЙЛА</span>
+  if (db == NULL) { ...; return 1; }
+
+  Worker **idx_orig = malloc(...);                        <span style="color:#888">// никогда не сортируется</span>
+  Worker **idx_sorted = malloc(...);                       <span style="color:#888">// сортируется лениво</span>
+  for (i = 0; i &lt; n; i++) { idx_orig[i]=&db[i]; idx_sorted[i]=&db[i]; }
+
+  int sorted = 0;
+
+  while (1) {
+    printf(меню с пунктами 0-6);
+    choice = getchar(); flush_stdin();
+
+    if (choice=='0'||EOF) break;
+    if (choice=='1') view_pages(idx_orig, ...);                      <span style="color:#888">// ВЫВОД</span>
+    else if (choice=='2') { если нужно quick_sort_hoare(...); view_pages(idx_sorted,...); } <span style="color:#888">// СОРТИРОВКА + ВЫВОД</span>
+    else if (choice=='3') { если нужно quick_sort_hoare(...); search_by_date(...); }        <span style="color:#888">// СОРТИРОВКА + ПОИСК</span>
+    else if (choice=='4') search_by_fio(idx_sorted, n);                                      <span style="color:#888">// ПОИСК</span>
+    else if (choice=='5') search_by_position(idx_sorted, n);                                  <span style="color:#888">// ПОИСК</span>
+    else if (choice=='6') search_by_dept(idx_sorted, n);                                      <span style="color:#888">// ПОИСК</span>
+  }
+
+  free(idx_orig); free(idx_sorted); free(db);
+  return 0;
+}</pre>
+<table>
+<tr><th>Строка</th><th>Что делает</th></tr>
+<tr><td>db = load_database(...)</td><td>единственный вызов группы ЧТЕНИЕ ФАЙЛА за всю программу</td></tr>
+<tr><td>idx_orig / idx_sorted — два массива</td><td>idx_orig никогда не трогаем (пункт 1 всегда показывает настоящий исходный порядок), idx_sorted сортируем один раз лениво</td></tr>
+<tr><td>int sorted = 0</td><td>флаг «уже отсортировали idx_sorted или ещё нет»</td></tr>
+<tr><td>while (1) { меню }</td><td>главный цикл — показывается заново после каждого действия, пока не выберут 0</td></tr>
+<tr><td>пункт 1</td><td>только группа ВЫВОД — показывает idx_orig</td></tr>
+<tr><td>пункт 2</td><td>группа СОРТИРОВКА (лениво, один раз) + группа ВЫВОД</td></tr>
+<tr><td>пункт 3</td><td>группа СОРТИРОВКА (та же сортировка, что и для пункта 2 — используется один и тот же idx_sorted и флаг sorted) + группа ПОИСК (search_by_date)</td></tr>
+<tr><td>пункты 4, 5, 6</td><td>только группа ПОИСК — сортировка им не нужна, это линейный перебор по ФИО/должности/отделу</td></tr>
+<tr><td>free(idx_orig); free(idx_sorted); free(db)</td><td>освобождаем всю память, выделенную за время работы программы</td></tr>
+</table>
+
+
+<h2 style="background:#444; color:#fff;">ДБД — двоичное Б-дерево (вариант 74, D=2)</h2>
+<p>Дерево строится по псевдокоду «Добавление в ДБ-дерево» из методички (стр. 69–70).
+Ключ дерева — <b>год рождения</b> (К по варианту). Он отличается от ключа сортировки
+(полная дата), поэтому дерево не совпадает с сортировкой. Записи с равным годом идут вправо.</p>
+<table>
+<tr><th>Пункт</th><th>Что сделано</th></tr>
+<tr><td>7 в меню</td><td>поиск по ФИО → очередь записей → дерево по году → обход слева направо (по 20 строк) → поиск по году в дереве через очередь</td></tr>
+<tr><td>8 в меню</td><td>задание 3.7 методички: 100 случайных записей базы → дерево → обход и характеристики</td></tr>
+<tr><td>отчёт</td><td>размер, контрольная сумма (сумма лет), высота (вершин в самой длинной ветви, корень = 1), средняя высота (сумма длин путей от корня / размер, два знака)</td></tr>
+</table>
+<p><b>Сравнение ключей</b> в <code>tree_add</code> (строка 628): ключ нового элемента сравнивается только по году.</p>
+<pre>} else if (get_year(rec-&gt;birth) &lt; get_year((*p)-&gt;rec-&gt;birth)) {
+  tree_add(rec, &amp;(*p)-&gt;Left);        <span style="color:#888">// новый год меньше - влево</span>
+  ...
+} else {
+  tree_add(rec, &amp;(*p)-&gt;Right);       <span style="color:#888">// новый год больше или равен - вправо</span>
+  ...</pre>
+<div class="box">
+<b>Единственное отступление от псевдокода.</b> В методичке ветка «p→Date &lt; D» стоит отдельно, а для равных ключей
+ничего не сказано. Так как записей с одним годом много, равный ключ идёт вправо (<code>else</code>).
+Остальная логика (VR, HR, Balance, четыре поворота) без изменений.
+</div>
+<div class="box">
+<b>Опечатка в методичке.</b> В правом повороте написано <code>p→Left := p</code>. Это приводило бы к ссылке узла на самого себя.
+Используется <code>q→Left := p</code>, что совпадает с рисунком 56.
+</div>
+
+<h3>Поиск по году в дереве (<code>tree_find_year</code>)</h3>
+<pre>void tree_find_year(TNode *p, int year, Queue *q) {
+  if (p == NULL) return;
+  int y = get_year(p-&gt;rec-&gt;birth);
+  if (y &gt; year) { tree_find_year(p-&gt;Left, year, q); return; }   <span style="color:#888">// правее все годы больше искомого</span>
+  if (y &lt; year) { tree_find_year(p-&gt;Right, year, q); return; }  <span style="color:#888">// левее все годы меньше искомого</span>
+  tree_find_year(p-&gt;Left, year, q);
+  queue_push(q, p-&gt;rec);
+  tree_find_year(p-&gt;Right, year, q);
+}</pre>
+<p>Найденные записи попадают в очередь в порядке обхода, затем показываются через <code>show_queue_result</code>.</p>
+
+<h3>Характеристики дерева (<code>tree_stats</code>, <code>tree_print_report</code>)</h3>
+<p>Обход складывает размер, сумму лет, максимальную глубину и сумму глубин. Глубина корня равна 1.
+Средняя высота = сумма глубин / размер.</p>
+
+<h2 style="background:#444; color:#fff;">Как собрать и запустить</h2>
+<pre>clang++ main.cpp -o app -liconv
+./app</pre>
+<p>Флаг <code>-liconv</code> обязателен — функции <code>iconv_open</code>/<code>iconv</code>/<code>iconv_close</code> (группа КОДИРОВКА) лежат в отдельной библиотеке, а не в стандартной <code>stdio</code>.</p>
+
+</body>
+</html>

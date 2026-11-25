@@ -8,6 +8,7 @@
 ![C++](https://img.shields.io/badge/C++-00599C?style=for-the-badge&logo=cplusplus&logoColor=white)
 ![SFML](https://img.shields.io/badge/SFML%203-8CC445?style=for-the-badge&logo=sfml&logoColor=white)
 ![Labs](https://img.shields.io/badge/лабораторных-25-blueviolet?style=for-the-badge)
+![Coursework](https://img.shields.io/badge/курсовая-вариант%2074-orange?style=for-the-badge)
 
 </div>
 
@@ -25,10 +26,11 @@
 
 ## 🗂 Семестры
 
-| Семестр | Что внутри | Работ | Открыть |
+| Раздел | Что внутри | Работ | Открыть |
 |---|---|---|---|
 | **1 семестр** | Сортировки, поиск, линейные списки, хеширование | 15 | [1семестр/README.md](1семестр/README.md) |
 | **2 семестр** | Деревья: ДОП, A1 и A2, ИСДП, АВЛ, СДП, удаление из деревьев, поиск подстроки | 10 | [2семестр/README.md](2семестр/README.md) |
+| **Курсовая** | Вариант 74: база данных, сортировка Хоара, четыре вида поиска, ДБД по ФИО | 1 | [Курсовая/README.md](Курсовая/README.md) |
 
 Сайт-витрина проекта: [index.html](index.html). Откройте файл в браузере.
 
@@ -38,6 +40,7 @@
 Saod_1course.sem2/
 ├── 1семестр/          лабораторные 01–15 (сортировки, поиск, списки, хеширование)
 ├── 2семестр/          лабораторные 01–10 (деревья и поиск) + Пособие_СиАОД.pdf
+├── Курсовая/          курсовая работа, вариант 74 (myproject + задания в PDF)
 ├── index.html         витрина проекта
 ├── style.css          оформление витрины
 ├── .clang-format      правила форматирования кода
