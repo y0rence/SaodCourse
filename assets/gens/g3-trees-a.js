@@ -33,6 +33,7 @@
   function psum(n, lvl) { return n ? lvl + psum(n.l, lvl + 1) + psum(n.r, lvl + 1) : 0; }
   function avgH(n) { var s = sz(n); return s ? psum(n, 1) / s : 0; }
   function f2(x) { return (Math.round(x * 100) / 100).toFixed(2); }
+  function nb(x) { return String(x).replace('-', '−'); }
   function minH(n) { return Math.ceil(Math.log(sz(n) + 1) / Math.log(2)); }
 
   function walk(n, fn) { if (n) { fn(n); walk(n.l, fn); walk(n.r, fn); } }
@@ -131,7 +132,7 @@
   function balPhrase(ev) {
     if (!ev.length) return 'балансы не изменились';
     return ev.map(function (x) {
-      return '<b>' + e(x.v) + '</b>: ' + x.f + ' → ' + x.t;
+      return '<b>' + e(x.v) + '</b>: ' + nb(x.f) + ' → ' + nb(x.t);
     }).join(', ');
   }
 
@@ -576,7 +577,7 @@
             text: type === 'R'
               ? 'Вставка ушла влево, а баланс вершины <b>' + e(p.v) + '</b> равен 0 — страница переполнилась: ' +
                 'левый сын поднимается на уровень выше (правый поворот). <code>VR := ЛОЖЬ</code>, <code>HR := ИСТИНА</code>.'
-              : 'Вставка ушла вправо при <code>HR = ИСТИНА</code> и балансе <b>' + e(p.v) + '</b> = ' + p.bal +
+              : 'Вставка ушла вправо при <code>HR = ИСТИНА</code> и балансе <b>' + e(p.v) + '</b> = ' + nb(p.bal) +
                 ': правый сын поднимается вверх (левый поворот), балансы обнуляются. ' +
                 '<code>VR := ИСТИНА</code>, <code>HR := ЛОЖЬ</code>.',
             tags: [type === 'R' ? 'dbdrotr' : 'dbdrotl'],
@@ -603,10 +604,10 @@
         before: function (type, p, q) {
           steps.push({
             title: 'АВЛ: нарушение баланса в вершине ' + p.v,
-            text: 'Подъём вверх по пути вставки: у вершины <b>' + e(p.v) + '</b> баланс ' + p.bal +
+            text: 'Подъём вверх по пути вставки: у вершины <b>' + e(p.v) + '</b> баланс ' + nb(p.bal) +
               ', выросла ' + (type.charAt(0) === 'L' ? 'левая' : 'правая') + ' ветвь — стал бы ' +
               (type.charAt(0) === 'L' ? '−2' : '+2') + '. У сына <b>' + (q ? e(q.v) : '—') + '</b> баланс ' +
-              (q ? q.bal : 0) + ' → ' + ((type === 'LL' || type === 'RR') ? 'малый' : 'двойной') +
+              nb(q ? q.bal : 0) + ' → ' + ((type === 'LL' || type === 'RR') ? 'малый' : 'двойной') +
               ' поворот ' + type + '.',
             tags: ['avlwalk'],
             stage: pairDraw(dH.root, aH.root, {
@@ -787,11 +788,11 @@
         bal: function (p, f, t) { if (f !== t) balEv.push({ v: p.v, f: f, t: t }); },
         before: function (type, p, q) {
           warnStage = draw(H.root, { lab: 'bal', scope: p, marks: [{ n: p, hl: 'warn' }] });
-          rotInfo = { type: type, p: p, q: q };
+          rotInfo = { type: type, p: p, q: q, balP: p.bal, balQ: q ? q.bal : 0 };
         },
-        after: function (type, nr, p, q) {
+        after: function (type, nr) {
           rotStage = draw(H.root, { lab: 'bal', marks: [{ n: nr, hl: 'ok', edge: 'hl' }] });
-          rotInfo = { type: type, p: p, q: q, nr: nr };
+          rotInfo.nr = nr;
         }
       });
 
@@ -799,9 +800,9 @@
         steps.push({
           title: 'Вставка ' + k + ': нарушение баланса в вершине ' + rotInfo.p.v,
           text: pathPhrase(ins.path, k) + '. Поднимаемся вверх: у вершины <b>' + e(rotInfo.p.v) + '</b> баланс ' +
-            rotInfo.p.bal + ', выросла ' + (rotInfo.type.charAt(0) === 'L' ? 'левая' : 'правая') +
+            nb(rotInfo.balP) + ', выросла ' + (rotInfo.type.charAt(0) === 'L' ? 'левая' : 'правая') +
             ' ветвь — стал бы ' + (rotInfo.type.charAt(0) === 'L' ? '−2' : '+2') + '. ' +
-            'У сына <b>' + e(rotInfo.q.v) + '</b> баланс ' + rotInfo.q.bal + ' → ' +
+            'У сына <b>' + e(rotInfo.q.v) + '</b> баланс ' + nb(rotInfo.balQ) + ' → ' +
             ((rotInfo.type === 'LL' || rotInfo.type === 'RR') ? 'малый' : 'двойной') + ' поворот ' + rotInfo.type + '.',
           tags: ['leaf', 'walk'],
           stage: warnStage,
@@ -948,7 +949,7 @@
           used[proc === 'BL' ? 'bl' : 'br'] = true;
           rots.push({
             warn: draw(H.root, { lab: 'bal', scope: p, marks: [{ n: p, hl: 'warn' }] }),
-            type: type, p: p, q: q, proc: proc
+            type: type, p: p, q: q, proc: proc, balP: p.bal, balQ: q ? q.bal : 0
           });
         },
         after: function (type, nr, p, umen, proc) {
@@ -977,9 +978,9 @@
             : (removal.kind === 'one' ? 'Удаление ' + removal.oldV + ': один потомок' : 'Удаление ' + removal.oldV + ': лист'),
           text: removal.kind === 'two'
             ? 'Данные предшественника <b>' + e(removal.newV) + '</b> перенесены в вершину <b>' +
-              e(removal.target.v) + '</b>, физически удалена вершина <b>' + e(removal.newV) +
-              '</b> (она была листом или имела одного потомка). <code>Уменьшение := ИСТИНА</code> — ' +
-              'поднимемся вверх, восстанавливая баланс.'
+              e(removal.oldV) + '</b> (теперь в ней <b>' + e(removal.newV) + '</b>), физически удалён ' +
+              'узел предшественника — он был листом или имел одного потомка. ' +
+              '<code>Уменьшение := ИСТИНА</code> — поднимемся вверх, восстанавливая баланс.'
             : removal.child
               ? 'У вершины только одно поддерево: указатель родителя перенаправлен на <b>' +
                 e(removal.child.v) + '</b> (<code>p := q→Left/Right</code>). ' +
@@ -996,10 +997,10 @@
       rots.forEach(function (r) {
         steps.push({
           title: 'Баланс нарушен в вершине ' + r.p.v + ' (поворот ' + r.type + ')',
-          text: 'При подъёме к корню у вершины <b>' + e(r.p.v) + '</b> баланс ' + r.p.bal +
+          text: 'При подъёме к корню у вершины <b>' + e(r.p.v) + '</b> баланс ' + nb(r.balP) +
             ' — ' + (r.proc === 'BL' ? 'уменьшилось левое' : 'уменьшилось правое') +
             ' поддерево, стал бы ' + (r.proc === 'BL' ? '+2' : '−2') + '. ' +
-            'У сына <b>' + (r.q ? e(r.q.v) : '—') + '</b> баланс ' + (r.q ? r.q.bal : 0) +
+            'У сына <b>' + (r.q ? e(r.q.v) : '—') + '</b> баланс ' + (r.q ? nb(r.balQ) : 0) +
             ' → ' + (r.type === 'LR' || r.type === 'RL' ? 'двойной' : 'одинарный') + ' поворот ' + r.type + '.',
           tags: [r.proc === 'BL' ? 'bl' : 'br'],
           stage: r.warn,
