@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>14 · Хеширование: прямое связывание — лабораторная работа</title>
+  <meta name="description" content="Пошаговый разбор метода прямого связывания: задание, псевдокод и исходный код с подсветкой текущей строки.">
+  <link rel="stylesheet" href="../../../assets/lab.css">
+</head>
+<body>
+<script>
+window.LAB = {
+  base: '../../../',
+  num: '14',
+  title: 'Хеширование: прямое связывание',
+  algo: 'HashChaining',
+  crumb: '1 семестр · Хеширование',
+  lead: 'Хеш-функция <code>H(k) = k mod m</code> отображает ключ в индекс таблицы; при совпадении индексов ключи складываются в список — прямое связывание. Счётчик <b>Кф</b> фиксирует каждую коллизию.',
+  task: [
+    'Для 12 первых неповторяющихся символов ФИО выполнить хеширование вручную методом прямого связывания при размере таблицы 5.',
+    'Реализовать метод прямого связывания; подобрать размер таблицы так, чтобы поиск был быстрее двоичного; считать <code>Кф</code> и вывести построенные списки.',
+    'Исследовать зависимость количества коллизий от размера таблицы: взять десять простых чисел от 11 до 101 и построить таблицу.',
+    '4*. Организовать поиск элемента с заданным ключом, выводя номер списка и позицию элемента в нём.'
+  ],
+  chips: [{ t: 'O(n) худший', cls: 'plain' }, { t: 'средн. C = n/2m', cls: 'plain' }, { t: 'm — простое', cls: 'm' }],
+  hint: 'Ключи — числа через пробел (до 16); m — простое число (7, 11, 13, 17, 19, 29): при простом m метод деления распределяет ключи равномерно.',
+  max: 16,
+  inputs: [
+    { id: 'keys', label: 'Ключи', value: '12 45 7 90 33 58 61 20', example: '12 45 7 90 33 58 61 20', placeholder: '12 45 7 90 33' },
+    { id: 'm', label: 'Размер таблицы m', value: '7', example: '7', placeholder: '7' }
+  ],
+  parse: function (v) {
+    var keys = Lab.parseDefault(v.keys) || [];
+    keys = keys.filter(function (x) { return typeof x === 'number' && !isNaN(x); });
+    if (keys.length > 16) keys = keys.slice(0, 16);
+    var m = parseInt(v.m, 10);
+    if (!m || m < 2) m = 7;
+    if (m > 101) m = 101;
+    return { keys: keys, m: m };
+  },
+  pseudo: [
+    ['H(k) = k mod m   (метод деления, m — простое)', 'sig hash'],
+    ['h ← 0;  DO i = 1 … t:  h ← (h·256 + Sᵢ) mod m  OD', 'hash'],
+    ['Включение:  i ← H(k); <добавить k в конец i-го списка>', 'insert'],
+    ['IF ключ k уже есть в списке → выход (дубликатов не бывает)', 'insert'],
+    ['иначе: last->next ← новый узел;  Кф := Кф + 1', 'insert'],
+    ['Поиск:  i ← H(k); <последовательный просмотр i-го списка>', 'insert'],
+    ['после вставки: список корзины готов', 'done'],
+    ['итог: длины списков, Кф, средняя n/m', 'stats']
+  ],
+  file: {
+    name: 'hash_chaining.cpp',
+    url: 'hash_chaining.cpp',
+    lines: [
+      ['void insert(HashTable *table, const char *key, int m) {', 'sig'],
+      ['    int index = hash_string(key, m);', 'hash'],
+      ['    Node_char *current = table->buckets[index]->front;', 'hash'],
+      ['    Node_char *last = NULL;', ''],
+      ['', ''],
+      ['    while (current != NULL) {', 'insert'],
+      ['        if (strcmp(current->data, key) == 0) {', ''],
+      ['            return;', ''],
+      ['        }', ''],
+      ['        last = current;', 'insert'],
+      ['        current = current->next;', ''],
+      ['    }', ''],
+      ['', ''],
+      ['    Node_char *new_node = (Node_char *)malloc(sizeof(Node_char));', ''],
+      ['    strcpy(new_node->data, key);', ''],
+      ['    new_node->next = NULL;', ''],
+      ['', ''],
+      ['    if (last == NULL) {', 'insert'],
+      ['        table->buckets[index]->front = new_node;', ''],
+      ['    } else {', ''],
+      ['        table->collisions++;', 'insert'],
+      ['        last->next = new_node;', ''],
+      ['    }', ''],
+      ['', ''],
+      ['    table->count++;', 'done'],
+      ['}', ''],
+      ['    printf("Фактическое количество коллизий (Кф): %d | Всего элементов: %d\\n\\n", table->collisions,', 'stats'],
+      ['           table->count);', 'stats']
+    ]
+  },
+  details: [
+    { s: 'Трудоёмкость', h: '<p>Средняя длина списка <code>n / m</code>, среднее число сравнений при поиске <code>C_ср = n / 2m</code>, дополнительная память <code>m + n</code> указателей. Худший случай — <code>O(n)</code> (все ключи попали в один список). Прямое связывание выгоднее дерева поиска, когда <code>n / 2m &lt; log n</code>, то есть <code>m &gt; n / (2·log n)</code>. От порядка добавления ключей не зависит.</p>' },
+    { s: 'Проверка правильности', h: '<p>Построенные списки выводятся на экран целиком; <code>Кф</code> считается при вставке и сравнивается для десяти простых размеров таблицы. Поиск проверяется на существующем ключе: печатается номер списка и позиция элемента в нём.</p>' }
+  ],
+  links: [
+    { href: 'README.md', label: 'README' },
+    { href: 'hash_chaining.cpp', label: 'Исходный код' },
+    { href: '../../../1семестр/README.md', label: 'Все работы 1 семестра' }
+  ],
+  dockTitle: 'HashChaining',
+  dockDesc: 'Псевдокод из пособия и настоящий hash_chaining.cpp — переключайтесь вкладками',
+  steps: function (data) { return Lab.gen.hashChaining(data); }
+};
+</script>
+<script src="../../../assets/lab.js"></script>
+</body>
+</html>

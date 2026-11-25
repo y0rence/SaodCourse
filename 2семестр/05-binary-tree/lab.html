@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>05 · Бинарное дерево: обходы — лабораторная работа</title>
+  <meta name="description" content="Построение двоичного дерева по ключам и пошаговые обходы: прямой (сверху вниз), симметричный (слева направо) и обратный (снизу вверх).">
+  <link rel="stylesheet" href="../../assets/lab.css">
+</head>
+<body>
+<script src="../../assets/gens/g3-trees-a.js"></script>
+<script>
+window.LAB = {
+  base: '../../',
+  num: '05',
+  title: 'Бинарное дерево: обходы и характеристики',
+  algo: 'BinaryTree',
+  crumb: '2 семестр · Деревья поиска',
+  lead: 'Строим двоичное дерево по ключам и выполняем три обхода: <b>прямой</b> (сверху вниз), <b>симметричный</b> (слева направо) и <b>обратный</b> (снизу вверх). На каждом шаге видна растущая последовательность обхода.',
+  task: [
+    'Построить дерево варианта 20 из шести вершин A–F и напечатать три обхода: сверху вниз, слева направо и снизу вверх.',
+    'Вычислить размер, контрольную сумму, высоту и среднюю высоту дерева.',
+    'Ответить на вопросы по деревьям (файл <code>Деревья_вопросы_и_ответы_СиАОД.docx</code>) и объяснить различия трёх обходов.'
+  ],
+  chips: [{ t: 'обходы O(n)', cls: 'plain' }, { t: 'размер/высота O(n)', cls: 'plain' }, { t: 'симметричный → по возрастанию', cls: 'plain' }],
+  hint: 'До 16 ключей — числа через пробел (50 30 70 20 40 60 80).',
+  inputs: [{ id: 'data', label: 'Ключи', value: '50 30 70 20 40 60 80', example: '50 30 70 20 40 60 80', placeholder: '50 30 70 20 40 60 80' }],
+  kind: 'numbers',
+  max: 16,
+  example: true,
+  pseudo: [
+    ['Обход сверху вниз (p: pVertex)', 'pre'],
+    ['IF (p ≠ NIL)', 'pre'],
+    ['    Печать (p→Data)', 'vpre'],
+    ['    Обход сверху вниз (p→Left)', 'pre'],
+    ['    Обход сверху вниз (p→Right)', 'pre'],
+    ['FI', ''],
+    ['Обход слева направо (p: pVertex)', 'in'],
+    ['IF (p ≠ NIL)', 'in'],
+    ['    Обход слева направо (p→Left)', 'in'],
+    ['    Печать (p→Data)', 'vin'],
+    ['    Обход слева направо (p→Right)', 'in'],
+    ['FI', ''],
+    ['Обход снизу вверх (p: pVertex)', 'out'],
+    ['IF (p ≠ NIL)', 'out'],
+    ['    Обход снизу вверх (p→Left)', 'out'],
+    ['    Обход снизу вверх (p→Right)', 'out'],
+    ['    Печать (p→Data)', 'vout'],
+    ['FI', ''],
+    ['Размер(p) = 1 + Размер(p→Left) + Размер(p→Right)', 'stats'],
+    ['Высота(p) = 1 + max(Высота(p→Left), Высота(p→Right))', 'stats'],
+    ['hср := СДП(Root, 1) / Размер(Root)', 'stats']
+  ],
+  file: {
+    name: 'binary_tree.cpp',
+    url: 'binary_tree.cpp',
+    lines: [
+      ['struct Vertex *buildTree20() {', 'build'],
+      ['    a->left = b;', 'build'],
+      ['    a->right = c;', 'build'],
+      ['    b->left = d;', 'build'],
+      ['    d->left = e;', 'build'],
+      ['    d->right = f;', 'build'],
+      ['void topDown(struct Vertex *p) {', 'pre'],
+      ['    if (p != NULL) {', 'pre'],
+      ['        cout << p->data << " ";', 'vpre'],
+      ['        topDown(p->left);', 'pre'],
+      ['        topDown(p->right);', 'pre'],
+      ['void leftRight(struct Vertex *p) {', 'in'],
+      ['        leftRight(p->left);', 'in'],
+      ['        cout << p->data << " ";', 'vin'],
+      ['        leftRight(p->right);', 'in'],
+      ['void bottomUp(struct Vertex *p) {', 'out'],
+      ['        bottomUp(p->left);', 'out'],
+      ['        bottomUp(p->right);', 'out'],
+      ['        cout << p->data << " ";', 'vout'],
+      ['int treeSize(struct Vertex *p) {', 'stats'],
+      ['    return 1 + treeSize(p->left) + treeSize(p->right);', 'stats'],
+      ['int treeHeight(struct Vertex *p) {', 'stats'],
+      ['    return 1 + hRight;', 'stats'],
+      ['double averageHeight(struct Vertex *root) {', 'stats'],
+      ['    return (double)sumOfPaths(root, 1) / treeSize(root);', 'stats']
+    ]
+  },
+  details: [
+    { s: 'Трудоёмкость', h: '<p>Каждый обход посещает каждую вершину ровно один раз — <code>O(n)</code>. Размер, контрольная сумма, высота и средняя высота тоже считаются за один обход дерева — <code>O(n)</code>.</p>' },
+    { s: 'Проверка правильности', h: '<p>Для дерева варианта 20 (A — корень; B, C — его потомки; D — левый потомок B; E и F — потомки D): размер <b>6</b>, высота <b>4</b>, сумма уровней 1+2+2+3+4+4 = <b>16</b>, средняя высота 16/6 ≈ <b>2.67</b>. Для дерева поиска <b>симметричный</b> обход печатает ключи по возрастанию — так проверяется правильность построения.</p>' },
+    { s: 'Порядки обходов', h: '<p><b>Прямой</b> (сверху вниз): корень → левое → правое. <b>Симметричный</b> (слева направо): левое → корень → правое. <b>Обратный</b> (снизу вверх): левое → правое → корень. В программе это функции <code>topDown</code>, <code>leftRight</code> и <code>bottomUp</code>.</p>' }
+  ],
+  links: [
+    { href: 'README.md', label: 'README' },
+    { href: 'binary_tree.cpp', label: 'Исходный код' },
+    { href: 'THEORY.md', label: 'Теория' },
+    { href: '../../2семестр/README.md', label: 'Все работы 2 семестра' }
+  ],
+  dockTitle: 'BinaryTree',
+  dockDesc: 'Псевдокод обходов (п. 9.2–9.3) и настоящий binary_tree.cpp — переключайтесь вкладками',
+  steps: function (data) { return Lab.gen.binary(data); }
+};
+</script>
+<script src="../../assets/lab.js"></script>
+</body>
+</html>

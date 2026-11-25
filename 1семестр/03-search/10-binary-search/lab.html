@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>10 · Быстрый двоичный поиск — лабораторная работа</title>
+  <meta name="description" content="Пошаговый разбор двоичного поиска по упорядоченному массиву: окно L..R, середина m, число сравнений C. Задание, псевдокод обеих версий и исходный код с подсветкой текущей строки.">
+  <link rel="stylesheet" href="../../../assets/lab.css">
+</head>
+<body>
+<script src="../../../assets/gens/g1-mid.js"></script>
+<script>
+window.LAB = {
+  base: '../../../',
+  num: '10',
+  title: 'Быстрый двоичный поиск',
+  algo: 'BinarySearch',
+  crumb: '1 семестр · Поиск и записи',
+  lead: 'Каждое сравнение отбрасывает половину окна <code>[L, R]</code>, поэтому поиск стоит <code>O(log n)</code>. Показана <b>версия 1</b> из <code>binary_search.c</code> — два сравнения на итерацию; версия 2 (в псевдокоде) обходится одним и находит самый левый из равных.',
+  task: [
+    'Для 12 первых символов ФИО выполнить вручную быстрый поиск двумя версиями для самой частой буквы.',
+    'Написать две версии двоичного поиска элемента в упорядоченном массиве; проверить на первом элементе, последнем и отсутствующем; считать <code>Сф</code>.',
+    'Сравнить трудоёмкость двух версий, построить таблицу для <code>N = 100 … 1000</code>.',
+    '4*. Написать поиск всех элементов с заданным ключом (<code>BSearchAll1</code> и <code>BSearchAll2</code>) с подсчётом <code>Сф</code>.',
+    '5*. Построить графики зависимости <code>Сф</code> от <code>n</code> для обеих версий.'
+  ],
+  chips: [{ t: 'O(log n)', cls: 'plain' }, { t: 'массив отсортирован', cls: 'plain' }],
+  hint: 'Массив обязан быть отсортирован по возрастанию. Пример ищет 23 — он есть в массиве.',
+  example: true,
+  max: 16,
+  inputs: [
+    {
+      id: 'arr',
+      label: 'Отсортированный массив',
+      value: '2 5 8 12 16 23 38 56 72 91',
+      example: '2 5 8 12 16 23 38 56 72 91',
+      placeholder: '2 5 8 12 16 23 38 56 72 91'
+    },
+    { id: 'x', label: 'Искомое X', value: '23', example: '23', placeholder: '23' }
+  ],
+  parse: function (vals) {
+    var arr = Lab.parseDefault(vals.arr);
+    if (!Array.isArray(arr) || !arr.length) return null;
+    var raw = String(vals.x == null ? '' : vals.x).trim();
+    if (!raw) return null;
+    var x = Number(raw);
+    if (isNaN(x)) return null;
+    return { arr: arr, x: x };
+  },
+  pseudo: [
+    ['/* Версия 1 — два сравнения на итерацию, найдёт любой из равных */', ''],
+    ['L ← 1,  R ← n', 'sig'],
+    ['DO пока L ≤ R', 'loop'],
+    ['    m ← ⌊(L+R)/2⌋', 'mid'],
+    ['    IF aₘ = X THEN найден, выход', 'found'],
+    ['    IF aₘ < X THEN L ← m+1 ELSE R ← m−1 FI', 'goRight goLeft'],
+    ['OD', 'loop'],
+    ['', ''],
+    ['/* Версия 2 — одно сравнение, самый левый из равных */', ''],
+    ['L ← 1,  R ← n', 'sig'],
+    ['DO пока L < R', 'loop'],
+    ['    m ← ⌊(L+R)/2⌋', 'mid'],
+    ['    IF aₘ < X THEN L ← m+1 ELSE R ← m FI', 'goRight goLeft'],
+    ['OD', 'loop'],
+    ['найден ⇔ a_R = X', 'found']
+  ],
+  file: {
+    name: 'binary_search.c',
+    url: '1семестр/03-search/10-binary-search/binary_search.c',
+    lines: [
+      ['int binarySearch1(int *a, int n, int X) {', 'sig'],
+      ['    C = 0;', 'sig'],
+      ['    int L = 0;', 'sig'],
+      ['    int R = n - 1;', 'sig'],
+      ['', ''],
+      ['    while (L <= R) {', 'loop'],
+      ['        int m = (L + R) / 2;', 'mid'],
+      ['', ''],
+      ['        C++;', 'mid'],
+      ['        if (a[m] == X) {', 'found'],
+      ['            return m;', 'found'],
+      ['        }', 'found'],
+      ['', ''],
+      ['        C++;', 'loop'],
+      ['        if (a[m] < X) {', 'goRight'],
+      ['            L = m + 1;', 'goRight'],
+      ['        } else {', 'goLeft'],
+      ['            R = m - 1;', 'goLeft'],
+      ['        }', 'goLeft'],
+      ['    }', 'loop'],
+      ['    return -1;', ''],
+      ['}', '']
+    ]
+  },
+  details: [
+    { s: 'Трудоёмкость', h: '<p><b>Версия 1:</b> два сравнения на итерацию, <code>C ≤ 2·⌈log₂ n⌉</code>. <b>Версия 2:</b> одно сравнение на итерацию, <code>C ≤ ⌈log₂ n⌉ + 1</code>, найден ⇔ <code>a[R] = X</code>. Обе версии — <code>O(log n)</code>; для сравнения линейный поиск стоит <code>O(n)</code>. Требование к данным: массив должен быть отсортирован.</p>' },
+    { s: 'Проверка правильности', h: '<p>Поиск первого элемента массива, последнего и заведомо отсутствующего. Фактическое число сравнений <code>Сф</code> сравнивается с оценкой <code>log₂ N</code>. Все элементы с одинаковым ключом версия 2 находит просмотром вправо от найденного, версия 1 — просмотром в обе стороны.</p>' }
+  ],
+  links: [
+    { href: 'README.md', label: 'README' },
+    { href: 'binary_search.c', label: 'Исходный код' },
+    { href: '../../../1семестр/README.md', label: 'Все работы 1 семестра' }
+  ],
+  dockTitle: 'BinarySearch',
+  dockDesc: 'Двоичный поиск: версия 1 из binary_search.c и обе версии из README',
+  steps: function (data) { return Lab.gen.binarySearch(data); }
+};
+</script>
+<script src="../../../assets/lab.js"></script>
+</body>
+</html>

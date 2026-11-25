@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>07 · Быстрая сортировка, метод Хоара — лабораторная работа</title>
+  <meta name="description" content="Пошаговый разбор быстрой сортировки метода Хоара: задание, псевдокод и исходный код с подсветкой текущей строки.">
+  <link rel="stylesheet" href="../../../assets/lab.css">
+</head>
+<body>
+<script>
+/* Копия Lab.gen.quick с рекурсией из псевдокода версии 1:
+   Сортировка(L, j) и Сортировка(i, R). Встроенный генератор зацикливается,
+   когда опорный элемент оказывается строгим минимумом окна (qs(j+1, R)
+   совпадает с текущим окном), поэтому steps() сначала пробует
+   Lab.gen.quick, а при сбое — эту копию. */
+function quickSteps(a) {
+  var st = { C: 0, M: 0 }, steps = [];
+  var range = Lab.range, esc = Lab.esc, cells = Lab.cells;
+  steps.push({
+    title: 'Исходный массив',
+    text: 'Опорный элемент <code>x = a[L]</code>. Указатели <code>i</code> и <code>j</code> идут навстречу друг другу.',
+    tags: ['sig'], stage: cells(a, {}), cap: 'n = ' + a.length, C: 0, M: 0
+  });
+  function qs(L, R) {
+    if (L >= R) return;
+    var x = a[L], i = L, j = R;
+    steps.push({
+      title: 'Разделение [' + L + ', ' + R + ']',
+      text: 'Опорный элемент <code>x = «<b>' + esc(x) + '</b>»</code> (позиция ' + L + ').',
+      tags: ['part'],
+      stage: cells(a, {
+        box: [L],
+        dim: range(0, L - 1).concat(range(R + 1, a.length - 1)),
+        ptrs: (function () { var p = {}; p[i] = 'i'; p[j] = p[j] === 'i' ? 'i, j' : 'j'; return p; })()
+      }),
+      cap: 'окно [' + L + ', ' + R + ']', C: st.C, M: st.M
+    });
+    while (i <= j) {
+      while (i <= R) {
+        st.C++;
+        if (!(a[i] < x)) break;
+        i++;
+        steps.push({
+          title: 'i → вправо',
+          text: '<code>a[i] = «<b>' + esc(a[i - 1]) + '</b>» &lt; x</code> — <code>i++</code>.',
+          tags: ['scan', 'scani'],
+          stage: cells(a, { box: [L], dim: range(0, L - 1).concat(range(R + 1, a.length - 1)), hl: [i - 1], ptrs: (function () { var p = {}; p[i] = 'i'; p[j] = 'j'; return p; })() }),
+          cap: 'i = ' + i, C: st.C, M: st.M
+        });
+      }
+      while (j >= L) {
+        st.C++;
+        if (!(a[j] > x)) break;
+        j--;
+        steps.push({
+          title: 'j → влево',
+          text: '<code>a[j] = «<b>' + esc(a[j + 1]) + '</b>» &gt; x</code> — <code>j--</code>.',
+          tags: ['scan', 'scanj'],
+          stage: cells(a, { box: [L], dim: range(0, L - 1).concat(range(R + 1, a.length - 1)), hl: [j + 1], ptrs: (function () { var p = {}; p[i] = 'i'; p[j] = 'j'; return p; })() }),
+          cap: 'j = ' + j, C: st.C, M: st.M
+        });
+      }
+      if (i <= j) {
+        st.M += 3;
+        var vi = a[i], vj = a[j];
+        var t = a[i]; a[i] = a[j]; a[j] = t;
+        steps.push({
+          title: 'Обмен a[' + i + '] ↔ a[' + j + ']',
+          text: '«<b>' + esc(vj) + '</b>» уходит влево, «<b>' + esc(vi) + '</b>» — вправо (3 пересылки).',
+          tags: ['swap'],
+          stage: cells(a, { box: [L], dim: range(0, L - 1).concat(range(R + 1, a.length - 1)), hl: [i, j], ptrs: (function () { var p = {}; p[i] = 'i'; p[j] = 'j'; return p; })() }),
+          cap: 'i = ' + i + ', j = ' + j, C: st.C, M: st.M
+        });
+        i++; j--;
+      }
+    }
+    steps.push({
+      title: 'Граница разделения: j = ' + j,
+      text: 'Слева — не больше x, справа — не меньше. Рекурсивно сортируем обе части.',
+      tags: ['recL', 'recR'],
+      stage: cells(a, { box: j >= 0 && j < a.length ? [j] : [], dim: range(0, L - 1).concat(range(R + 1, a.length - 1)) }),
+      cap: 'части [' + L + ', ' + j + '] и [' + i + ', ' + R + ']', C: st.C, M: st.M
+    });
+    if (L < j) qs(L, j);
+    if (i < R) qs(i, R);
+  }
+  qs(0, a.length - 1);
+  steps.push(Lab.finish(a, st, null, 'QuickSort'));
+  return steps;
+}
+
+window.LAB = {
+  base: '../../../',
+  num: '07',
+  title: 'Быстрая сортировка, метод Хоара',
+  algo: 'QuickSort',
+  crumb: '1 семестр · Быстрые сортировки массивов',
+  lead: 'Опорный элемент <code>x = a[L]</code> и два указателя <code>i</code> и <code>j</code> идут навстречу друг другу: слева — не больше опорного, справа — не меньше; затем рекурсия для обеих частей. Счётчики <b>C</b> и <b>M</b> обновляются на каждом шаге.',
+  task: [
+    'Для 12 первых символов ФИО выполнить сортировку методом Хоара вручную.',
+    'Написать первую версию QuickSort; проверить контрольной суммой и числом серий, считать <code>Мф</code> и <code>Сф</code>.',
+    'Исследовать трудоёмкость на убывающих, возрастающих и случайных массивах, составить таблицу для <code>N = 100 … 500</code>.',
+    '4*. Сравнить две версии метода по глубине рекурсии (не путать глубину с количеством рекурсивных вызовов).',
+    '5*. Построить графики <code>Мф + Сф</code> для HeapSort, ShellSort и QuickSort.'
+  ],
+  chips: [{ t: 'O(n log n) в среднем', cls: 'plain' }, { t: 'O(n²) в худшем', cls: 'plain' }, { t: 'неустойчивая', cls: 'plain' }],
+  hint: 'До 16 элементов: буквы подряд (KDBACFGE) или числа через пробел (12 5 99).',
+  inputs: [{ id: 'data', label: 'Массив', value: 'KDBACFGE', example: 'KDBACFGE', placeholder: 'KDBACFGE или 12 5 99' }],
+  pseudo: [
+    ['x ← a_L,  i ← L,  j ← R', 'sig part'],
+    ['DO пока i ≤ j', 'part'],
+    ['    DO пока aᵢ < x:  i ← i+1  OD', 'scan scani'],
+    ['    DO пока aⱼ > x:  j ← j−1  OD', 'scan scanj'],
+    ['    IF i ≤ j THEN aᵢ ↔ aⱼ,  i ← i+1,  j ← j−1', 'swap'],
+    ['OD', ''],
+    ['IF L < j THEN Сортировка(L, j)', 'recL'],
+    ['IF i < R THEN Сортировка(i, R)', 'recR']
+  ],
+  file: {
+    name: 'quick_sort.cpp',
+    url: 'quick_sort.cpp',
+    lines: [
+      ['void quick_sort_v1(int a[], int L, int R, Stats *st) {', 'sig'],
+      ['    int x, i, j, t;', ''],
+      ['    x = a[L];', 'part'],
+      ['    i = L;', 'part'],
+      ['    j = R;', 'part'],
+      ['    do {', 'part'],
+      ['        while (st->cmp++, a[i] < x)', 'scan scani'],
+      ['            i++;', 'scan scani'],
+      ['        while (st->cmp++, a[j] > x)', 'scan scanj'],
+      ['            j--;', 'scan scanj'],
+      ['        if (i <= j) {', 'swap'],
+      ['            t = a[i];', 'swap'],
+      ['            a[i] = a[j];', 'swap'],
+      ['            a[j] = t;', 'swap'],
+      ['            st->mov += 3;', 'swap'],
+      ['            i++;', 'swap'],
+      ['            j--;', 'swap'],
+      ['        }', ''],
+      ['    } while (i <= j);', 'part'],
+      ['    if (L < j)', 'recL'],
+      ['        quick_sort_v1(a, L, j, st);', 'recL'],
+      ['    if (i < R)', 'recR'],
+      ['        quick_sort_v1(a, i, R, st);', 'recR'],
+      ['}', 'done']
+    ]
+  },
+  details: [
+    { s: 'Трудоёмкость', h: '<p>Худший случай (упорядоченный массив): <code>M = 3(n − 1)</code>, <code>C = (n² + 5n + 4)/2</code> → <code>O(n²)</code>. Лучший (ведущий элемент — медиана): <code>C = (n+1)·log(n+1) − (n+1)</code>. В среднем <code>C</code> и <code>M = O(n log n)</code>. <b>Зависимость от упорядоченности сильная</b> — упорядоченный массив является худшим случаем. <b>Неустойчивая.</b></p>' },
+    { s: 'Глубина рекурсии и проверка', h: '<p>У версии 1 на упорядоченном массиве глубина рекурсии достигает <code>n</code>, у версии 2 (рекурсия только для меньшей части) не превышает <code>log₂ n</code>: каждый вызов занимает кадр стека. Проверка: <b>контрольная сумма</b> до и после должна совпасть, <b>число серий</b> у массива, упорядоченного по возрастанию, равно 1, <code>Мф</code> и <code>Сф</code> сравниваются с теорией.</p>' }
+  ],
+  links: [
+    { href: 'README.md', label: 'README' },
+    { href: 'quick_sort.cpp', label: 'Исходный код' },
+    { href: '../../../1семестр/README.md', label: 'Все работы 1 семестра' }
+  ],
+  dockTitle: 'QuickSort',
+  dockDesc: 'Псевдокод из пособия и настоящий исходник — переключайтесь вкладками',
+  steps: function (data) {
+    /* gen.quick мутирует массив и зацикливается на части входов —
+       даём ему копию, при сбое строим шаги локальной копией */
+    try { return Lab.gen.quick(data.slice()); }
+    catch (e) { return quickSteps(data); }
+  }
+};
+</script>
+<script src="../../../assets/lab.js"></script>
+</body>
+</html>

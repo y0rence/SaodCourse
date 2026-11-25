@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>08 · Дерево поиска (СДП) и ИСДП — лабораторная работа</title>
+  <meta name="description" content="Пошаговая вставка ключей в случайное дерево поиска, сравнение с идеально сбалансированным деревом (ИСДП), обходы и характеристики.">
+  <link rel="stylesheet" href="../../assets/lab.css">
+</head>
+<body>
+<script src="../../assets/gens/g4-trees-b.js"></script>
+<script>
+window.LAB = {
+  base: '../../',
+  num: '08',
+  title: 'Дерево поиска (СДП) и ИСДП',
+  algo: 'AddSDP · ISDP',
+  crumb: '2 семестр · Деревья поиска',
+  lead: 'Ключи вставляются по одному: меньше текущего — влево, больше — вправо. Из тех же ключей, отсортированных, строится ИСДП — сравним формы, обходы и характеристики.',
+  task: [
+    'Построить СДП из 12 букв ФИО (номера букв в алфавите) двумя способами — двойной косвенностью и рекурсией; вывести обход слева направо, размер, контрольную сумму, высоту и среднюю высоту.',
+    'Вставить 100 различных случайных чисел в СДП (оба способа) и отдельно построить ИСДП из отсортированной копии тех же чисел.',
+    'Составить таблицу характеристик ИСДП, СДП1 и СДП2 для n = 100 и сделать выводы о сравнении деревьев.'
+  ],
+  chips: [{ t: 'Cср = O(log n)', cls: 'plain' }, { t: 'высота зависит от порядка вставки', cls: 'plain' }, { t: 'СДП vs ИСДП', cls: 'plain' }],
+  hint: 'До 16 ключей, числа через пробел. Попробуйте отсортированный вход — дерево выродится в список.',
+  inputs: [{ id: 'data', label: 'Ключи', value: '50 30 70 20 40 60 80 25 90 95 99', example: '50 30 70 20 40 60 80 25 90 95 99', placeholder: '50 30 70 20 40 60 80' }],
+  example: true,
+  max: 16,
+  pseudo: [
+    ['Добавление в СДП (D, *Root) — п. 11.2, с. 48', 'sig'],
+    ['p := @Root', 'sig'],
+    ['DO (*p ≠ NIL)', 'loop'],
+    ['    IF (D < (*p)→Data) p := @((*p)→Left)', 'left'],
+    ['    ELSEIF (D > (*p)→Data) p := @((*p)→Right)', 'right'],
+    ['    ELSE OD   {данные с ключом D уже есть в дереве}', 'loop'],
+    ['OD', 'loop'],
+    ['IF (*p = NIL)', 'ins'],
+    ['    new(*p), (*p)→Data := D,', 'ins'],
+    ['    (*p)→Left := NIL, (*p)→Right := NIL', 'ins'],
+    ['FI', 'ins'],
+    ['ИСДП (L, R) — п. 10.2, с. 46', 'isdp'],
+    ['IF (L > R) ИСДП := NIL', 'isdp'],
+    ['ELSE m := [(L+R)/2]; p→Data := A[m]', 'isdp'],
+    ['    p→Left := ИСДП(L, m−1); p→Right := ИСДП(m+1, R)', 'isdp'],
+    ['Обход(p): IF (p ≠ NIL) { Обход(p→Left); вывести p→Data; Обход(p→Right) }', 'trav'],
+    ['Size(p) = 1 + Size(p→Left) + Size(p→Right)', 'stat'],
+    ['Height(p) = 1 + MAX(Height(p→Left), Height(p→Right))', 'stat'],
+    ['AvgHeight = SumPath(p, 1) / Size(p)', 'stat']
+  ],
+  file: {
+    name: 'sdp.cpp',
+    url: '2семестр/08-sdp/sdp.cpp',
+    lines: [
+      ['void AddSDP(int D, Vertex **Root) {', 'sig'],
+      ['    Vertex **p = Root;', 'sig'],
+      ['    while (*p != NULL) {', 'loop'],
+      ['        if (D < (*p)->Data)', 'left'],
+      ['            p = &((*p)->Left);', 'left'],
+      ['        else if (D > (*p)->Data)', 'right'],
+      ['            p = &((*p)->Right);', 'right'],
+      ['        else', 'loop'],
+      ['            break;', 'loop'],
+      ['    }', 'loop'],
+      ['    if (*p == NULL) {', 'ins'],
+      ['        *p = (Vertex *)malloc(sizeof(Vertex));', 'ins'],
+      ['        (*p)->Data = D;', 'ins'],
+      ['        (*p)->Left = NULL;', 'ins'],
+      ['        (*p)->Right = NULL;', 'ins'],
+      ['    }', 'ins'],
+      ['}', 'sig'],
+      ['Vertex *ISDP(int L, int R) {', 'isdp'],
+      ['    if (L > R)', 'isdp'],
+      ['        return NULL;', 'isdp'],
+      ['    int m = (L + R + 1) / 2;', 'isdp'],
+      ['    Vertex *p = (Vertex *)malloc(sizeof(Vertex));', 'isdp'],
+      ['    p->Data = B[m];', 'isdp'],
+      ['    p->Left = ISDP(L, m - 1);', 'isdp'],
+      ['    p->Right = ISDP(m + 1, R);', 'isdp'],
+      ['    return p;', 'isdp'],
+      ['}', 'isdp']
+    ]
+  },
+  details: [
+    { s: 'Трудоёмкость', h: '<p>Добавление: <code>Cср = O(log n)</code> — вставка ищет место вдоль того же пути, что и поиск. Высота СДП зависит от порядка: при случайном порядке <code>h = O(log n)</code>, при отсортированном дерево вырождается в список высоты n.</p><p>Средняя высота СДП больше средней высоты ИСДП примерно на 39 %: предел отношения — <code>2·ln 2 ≈ 1,386</code> (в пособии п. 12.1 говорится о 40 %).</p>' },
+    { s: 'ИСДП', h: '<p>Строится из отсортированного массива: корень — средний элемент <code>m = (L+R+1)/2</code>, рекурсивно левое и правое поддерево. Имеет минимально возможную высоту <code>⌊log₂ n⌋ + 1</code>; после сортировки строится за <code>O(n)</code>.</p>' },
+    { s: 'Проверка правильности', h: '<p>Обход слева направо выдаёт ключи по возрастанию — это подтверждает свойство дерева поиска. Размер равен числу вставленных ключей, контрольная сумма СДП и ИСДП совпадает. СДП1 (двойная косвенность) и СДП2 (рекурсия) дают одно и то же дерево.</p>' }
+  ],
+  links: [
+    { href: 'README.md', label: 'README' },
+    { href: 'sdp.cpp', label: 'Исходный код' },
+    { href: 'THEORY.md', label: 'Теория' },
+    { href: '../../2семестр/README.md', label: 'Все работы 2 семестра' }
+  ],
+  dockTitle: 'AddSDP · ISDP',
+  dockDesc: 'Псевдокод из пособия и настоящий исходник — переключайтесь вкладками',
+  steps: function (data) { return Lab.gen.sdpBuild(data); }
+};
+</script>
+<script src="../../assets/lab.js"></script>
+</body>
+</html>

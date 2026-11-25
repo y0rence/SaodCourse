@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>06 · Пирамидальная сортировка — лабораторная работа</title>
+  <meta name="description" content="Пошаговый разбор пирамидальной сортировки: задание, псевдокод и исходный код с подсветкой текущей строки.">
+  <link rel="stylesheet" href="../../../assets/lab.css">
+</head>
+<body>
+<script>
+window.LAB = {
+  base: '../../../',
+  num: '06',
+  title: 'Пирамидальная сортировка',
+  algo: 'HeapSort',
+  crumb: '1 семестр · Быстрые сортировки массивов',
+  lead: 'Строим пирамиду (min-heap), затем многократно меняем корень с последним элементом и восстанавливаем пирамиду. Как в пособии, результат получается <b>по убыванию</b>. Счётчики <b>C</b> и <b>M</b> обновляются на каждом шаге.',
+  task: [
+    'Для 12 первых символов ФИО выполнить пирамидальную сортировку вручную.',
+    'Написать построение пирамиды из массива целых чисел; считать <code>Мф</code> и <code>Сф</code> и сравнить с теоретическими оценками, составить таблицу для <code>N = 100 … 500</code>.',
+    'Написать пирамидальную сортировку; проверить контрольной суммой и числом серий, считать <code>Мф</code> и <code>Сф</code>.',
+    'Исследовать метод на убывающих, возрастающих и случайных массивах и сделать вывод о зависимости от упорядоченности.',
+    '5*. Построить графики <code>Мф + Сф</code> для HeapSort и ShellSort.'
+  ],
+  chips: [{ t: 'O(n log n)', cls: 'plain' }, { t: 'неустойчивая', cls: 'plain' }],
+  hint: 'До 16 элементов: буквы подряд (KDBACFGE) или числа через пробел (12 5 99).',
+  inputs: [{ id: 'data', label: 'Массив', value: 'KDBACFGE', example: 'KDBACFGE', placeholder: 'KDBACFGE или 12 5 99' }],
+  pseudo: [
+    ['x ← a_L,  i ← L', 'x'],
+    ['DO', ''],
+    ['    j ← 2i', ''],
+    ['    IF j > R              THEN выход', ''],
+    ['    IF j < R и aⱼ₊₁ ≤ aⱼ  THEN j ← j+1', ''],
+    ['    IF x ≤ aⱼ             THEN выход', ''],
+    ['    aᵢ ← aⱼ,  i ← j', 'kid move'],
+    ['OD', ''],
+    ['aᵢ ← x', 'place'],
+    ['L ← ⌊n/2⌋', 'sig'],
+    ['DO пока L > 0:  <построение (L, n)-пирамиды>,  L ← L−1  OD', 'stage1'],
+    ['R ← n', ''],
+    ['DO пока R > 1', ''],
+    ['    a₁ ↔ a_R,  R ← R−1', 'stage2 swap'],
+    ['    <построение (1, R)-пирамиды>', ''],
+    ['OD', '']
+  ],
+  file: {
+    name: 'heap_sort.cpp',
+    url: 'heap_sort.cpp',
+    lines: [
+      ['void build_heap_part(int a[], int L, int R, Count *total) {', 'sig'],
+      ['    int x = a[L];', 'x'],
+      ['    int i = L;', 'x'],
+      ['    (*total)++;', 'x'],
+      ['    while (1) {', ''],
+      ['        int j = 2 * i;', ''],
+      ['        if (j > R) {', ''],
+      ['            break;', ''],
+      ['        }', ''],
+      ['        if (j < R) {', ''],
+      ['            (*total)++;', ''],
+      ['            if (a[j + 1] <= a[j]) {', ''],
+      ['                j++;', ''],
+      ['            }', ''],
+      ['        }', ''],
+      ['        (*total)++;', ''],
+      ['        if (x <= a[j]) {', ''],
+      ['            break;', ''],
+      ['        }', ''],
+      ['        a[i] = a[j];', 'kid move'],
+      ['        (*total)++;', 'kid move'],
+      ['        i = j;', 'kid move'],
+      ['    }', ''],
+      ['    a[i] = x;', 'place'],
+      ['    (*total)++;', 'place'],
+      ['}', 'done']
+    ]
+  },
+  details: [
+    { s: 'Трудоёмкость', h: '<p>Построение <code>(L, R)</code>: <code>C ≤ 2·log(R/L)</code>, <code>M ≤ log(R/L) + 2</code>. Вся сортировка: <code>C ≤ 2n·log n + n + 2</code>, <code>M ≤ n·log n + 6.5n − 4</code>, итого <code>M + C ≤ 3n·log n + 7.5n − 2</code> — <code>O(n log n)</code> в любом случае, без дополнительной памяти. <b>От упорядоченности не зависит. Неустойчивая.</b></p>' },
+    { s: 'Особенность и проверка', h: '<p>Пирамида из пособия минимальная (min-heap), поэтому результат получается <b>упорядоченным по убыванию</b>. <b>Контрольная сумма</b> до и после сортировки должна совпасть, иначе элементы потерялись; <b>число серий</b> считается на трёх видах массивов (серия — неубывающий участок), <code>Мф</code> и <code>Сф</code> сравниваются с теоретическими оценками.</p>' }
+  ],
+  links: [
+    { href: 'README.md', label: 'README' },
+    { href: 'heap_sort.cpp', label: 'Исходный код' },
+    { href: '../../../1семестр/README.md', label: 'Все работы 1 семестра' }
+  ],
+  dockTitle: 'HeapSort',
+  dockDesc: 'Псевдокод из пособия и настоящий исходник — переключайтесь вкладками',
+  steps: function (data) {
+    /* gen.heap отдаёт шаги с деревом-объектом в stage — рендерим его в SVG */
+    return Lab.gen.heap(data).map(function (s) {
+      if (s.stage && typeof s.stage === 'object') s.stage = Lab.tree(s.stage);
+      return s;
+    });
+  }
+};
+</script>
+<script src="../../../assets/lab.js"></script>
+</body>
+</html>

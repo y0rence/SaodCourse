@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>01 · Поиск подстроки — лабораторная работа</title>
+  <meta name="description" content="Пошаговый разбор поиска подстроки: прямой перебор и метод Рабина–Карпа с подсветкой сравниваемых символов.">
+  <link rel="stylesheet" href="../../assets/lab.css">
+</head>
+<body>
+<script src="../../assets/gens/g2-substr.js"></script>
+<script>
+window.LAB = {
+  base: '../../',
+  num: '01',
+  title: 'Поиск подстроки',
+  algo: 'SubstringSearch',
+  crumb: '2 семестр · Поиск подстроки',
+  lead: 'Два метода из исходника: <b>прямой перебор</b> (<code>bruteForce</code>) и <b>метод Рабина–Карпа</b> (<code>rabinKarp</code>, хеш по модулю 101). Программа считает числа сравнений символов для каждого метода.',
+  task: [
+    'Прочитать <code>text.txt</code> и вывести текст на экран.',
+    'Запросить слово для поиска; найти его прямым перебором, вывести индекс первого вхождения (или −1) и число сравнений.',
+    'Найти слово методом Рабина–Карпа (хеш по модулю 101) и сравнить число сравнений с прямым перебором.',
+    'Проверить граничные случаи: пустое слово и слово длиннее текста — программа сообщает об этом и завершается.'
+  ],
+  chips: [{ t: 'прямой перебор O(n·m)', cls: 'plain' }, { t: 'Рабина–Карп', cls: 'plain' }, { t: 'хеш mod 101', cls: 'm' }],
+  hint: 'Текст и слово — любые символы (приводятся к верхнему регистру), пробелы в тексте сохраняются. Слово не должно быть длиннее текста.',
+  inputs: [
+    { id: 'text', label: 'Текст', value: 'АБРАКАДАБРА ДАБРА', example: 'АБРАКАДАБРА ДАБРА', placeholder: 'текст для поиска' },
+    { id: 'word', label: 'Слово', value: 'ДАБРА', example: 'ДАБРА', placeholder: 'искомое слово' }
+  ],
+  parse: function (v) {
+    return {
+      text: String(v.text || '').toUpperCase(),
+      word: String(v.word || '').toUpperCase()
+    };
+  },
+  pseudo: [
+    ['Прямой перебор (bruteForce):', 'sig bf'],
+    ['DO i = 0 … n − m', 'bf loop'],
+    ['    j ← 0', 'bf loop'],
+    ['    WHILE j < m:  C ← C + 1;  IF T[i+j] ≠ W[j] THEN EXIT;  j ← j + 1', 'bf cmp'],
+    ['    IF j = m THEN RETURN i', 'bf found'],
+    ['OD;  ни одно i не подошло → RETURN −1', 'bf done'],
+    ['Рабина–Карп (rabinKarp):', 'sig rk'],
+    ['hW ← H(W);  hT ← H(T[0…m−1]);  H: (h·256 + байт) mod 101', 'rk hash'],
+    ['DO i = 0 … n − m', 'rk hash'],
+    ['    IF hT = hW  THEN  — хеши совпали, нужна проверка символов', 'rk hash'],
+    ['        WHILE j < m:  C ← C + 1;  IF T[i+j] ≠ W[j] THEN EXIT;  j ← j + 1', 'rk cmp'],
+    ['        IF j = m THEN RETURN i', 'rk found'],
+    ['    hT ← H(T[i+1 … i+m])', 'rk hash'],
+    ['OD;  не найдено → RETURN −1', 'rk done']
+  ],
+  file: {
+    name: 'substring_search.cpp',
+    url: 'substring_search.cpp',
+    lines: [
+      ['int bruteForce(char *haystack, char *needle) {', 'bf'],
+      ['    for (int i = 0; i <= n - m; i++) {', 'bf loop'],
+      ['        int j = 0;', ''],
+      ['        while (j < m) {', 'bf cmp'],
+      ['            c++;', 'bf cmp'],
+      ['            if (haystack[i + j] != needle[j]) {', 'bf cmp'],
+      ['                break;', ''],
+      ['            }', ''],
+      ['            j++;', ''],
+      ['        }', ''],
+      ['        if (j == m)', 'bf found'],
+      ['            return i;', ''],
+      ['    }', ''],
+      ['    return -1;', 'bf done'],
+      ['}', ''],
+      ['int hashFunc(char *str, int len) {', 'hash'],
+      ['    int h = 0;', 'hash'],
+      ['    for (int i = 0; i < len; i++) {', 'hash'],
+      ['        h = (h * 256 + (unsigned char)str[i]) % M;', 'hash'],
+      ['    }', ''],
+      ['    return h;', ''],
+      ['}', '']
+    ]
+  },
+  details: [
+    { s: 'Трудоёмкость', h: '<p>Прямой перебор: до <code>(n − m + 1)·m</code> сравнений символов, в худшем <code>O(n·m)</code>. Рабина–Карп: в исходнике хеш окна пересчитывается целиком на каждом сдвиге (<code>hashFunc(haystack + i + 1, m)</code>), а символьные сравнения выполняются только при совпадении хешей <code>mod 101</code> — это и даёт выигрыс в <b>C</b>.</p>' },
+    { s: 'Проверка правильности', h: '<p>Программа печатает индекс первого вхождения и число сравнений <code>c</code> для каждого метода (счётчик обнуляется между методами). Пустое слово и слово длиннее текста обрабатываются отдельно. Оба метода должны вернуть одинаковый индекс.</p>' }
+  ],
+  links: [
+    { href: 'README.md', label: 'README' },
+    { href: 'substring_search.cpp', label: 'Исходник' },
+    { href: '../../2семестр/README.md', label: 'Все работы 2 семестра' }
+  ],
+  dockTitle: 'SubstringSearch',
+  dockDesc: 'Псевдокод и настоящий substring_search.cpp — переключайтесь вкладками',
+  steps: function (data) { return Lab.gen.substring(data); }
+};
+</script>
+<script src="../../assets/lab.js"></script>
+</body>
+</html>

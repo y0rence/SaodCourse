@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>12 · Сортировка прямого слияния — лабораторная работа</title>
+  <meta name="description" content="Пошаговый разбор сортировки прямым слиянием: расщепление через один элемент, слияние серий в очереди c0 и c1, длина серии p = 1, 2, 4…">
+  <link rel="stylesheet" href="../../../assets/lab.css">
+</head>
+<body>
+<script src="../../../assets/gens/g1-mid.js"></script>
+<script>
+window.LAB = {
+  base: '../../../',
+  num: '12',
+  title: 'Сортировка прямого слияния',
+  algo: 'MergeSort',
+  crumb: '1 семестр · Линейные списки',
+  lead: 'Список <b>расщепляется через один элемент</b> на <code>a</code> и <code>b</code>, затем серии сливаются в очереди <code>c0</code> и <code>c1</code>; длина серии удваивается (<code>p = 1, 2, 4 …</code>). Счётчики честные: <b>Cf</b> — сравнения в <code>mergeSeries</code>, <b>Mf</b> — пересылки в очередь.',
+  task: [
+    'Для 12 первых символов ФИО выполнить сортировку прямого слияния вручную.',
+    'Написать расщепление списка (<code>n ≥ 20</code>) на два списка через один элемент и вывести оба списка с количеством элементов.',
+    'Написать слияние серий; вывести число серий и контрольную сумму, считать <code>Сф</code> и <code>Мф</code> (перемещения из стека в очередь).',
+    'Написать сортировку списка методом прямого слияния с подсчётом <code>Сф</code> и <code>Мф</code>.',
+    'Сравнить работу метода на убывающих, возрастающих и случайных списках, составить таблицу для <code>N = 100 … 500</code>.',
+    '6*. Построить графики зависимости <code>Мф + Сф</code> от размера для HeapSort, QuickSort и MergeSort.'
+  ],
+  chips: [{ t: 'O(n log n)', cls: 'plain' }, { t: 'устойчивая', cls: 'plain' }],
+  hint: 'До 16 элементов: буквы подряд (KDBACFGE) или числа через пробел (12 5 99).',
+  example: true,
+  max: 16,
+  inputs: [{ id: 'data', label: 'Список S', value: 'KDBACFGE', example: 'KDBACFGE', placeholder: 'KDBACFGE или 12 5 99' }],
+  pseudo: [
+    ['Расщепление списка:', ''],
+    ['a ← S,  b ← S→Next,  n ← 1', 'split'],
+    ['k ← a,  p ← b', 'split'],
+    ['DO пока p ≠ NIL', 'split'],
+    ['    n ← n+1', 'split'],
+    ['    k→Next ← p→Next', 'split'],
+    ['    k ← p,  p ← p→Next', 'split'],
+    ['OD', 'split'],
+    ['', ''],
+    ['Слияние q-серии из a и r-серии из b в очередь c:', ''],
+    ['DO пока q ≠ 0 и r ≠ 0', 'cmp'],
+    ['    IF a→Data ≤ b→Data THEN <переместить элемент из a в c>, q ← q−1', 'cmp move'],
+    ['               ELSE <переместить элемент из b в c>, r ← r−1', 'move'],
+    ['    FI', 'cmp move'],
+    ['OD', 'cmp'],
+    ['DO пока q > 0: <переместить из a в c>, q ← q−1 OD', 'move'],
+    ['DO пока r > 0: <переместить из b в c>, r ← r−1 OD', 'move'],
+    ['', ''],
+    ['Сортировка:', ''],
+    ['<Расщепление(S, a, b, n)>', 'split'],
+    ['p ← 1', 'pass'],
+    ['DO пока p < n', 'pass'],
+    ['    <инициализация очередей c₀, c₁>;  i ← 0;  m ← n', 'pass'],
+    ['    DO пока m > 0', ''],
+    ['        q ← min(p, m);  m ← m − q', ''],
+    ['        r ← min(p, m);  m ← m − r', ''],
+    ['        <Слияние(a, q, b, r, cᵢ)>;  i ← 1 − i', 'cmp move'],
+    ['    OD', 'pass'],
+    ['    a ← c₀.Head,  b ← c₁.Head,  p ← 2p', 'pass'],
+    ['OD', 'pass'],
+    ['c₀.Tail→Next ← NIL;  S ← c₀.Head', 'done']
+  ],
+  file: {
+    name: 'merge_sort.cpp',
+    url: '1семестр/04-lists/12-merge-sort/merge_sort.cpp',
+    lines: [
+      ['Node *mergeSort(Node *S) {', 'sig'],
+      ['    Node *a = NULL;', 'sig'],
+      ['    Node *b = NULL;', 'sig'],
+      ['    int n = splitList(S, &a, &b);', 'split'],
+      ['    if (n <= 1)', ''],
+      ['        return S;', ''],
+      ['    int p = 1;', 'pass'],
+      ['    while (p < n) {', 'pass'],
+      ['        Queue c[2];', 'pass'],
+      ['        initQueue(&c[0]);', 'pass'],
+      ['        initQueue(&c[1]);', 'pass'],
+      ['        int i = 0;', 'pass'],
+      ['        int m = n;', 'pass'],
+      ['        while (m > 0) {', 'pass'],
+      ['            int q = (m >= p) ? p : m;', ''],
+      ['            m = m - q;', ''],
+      ['            int r = (m >= p) ? p : m;', ''],
+      ['            m = m - r;', ''],
+      ['            mergeSeries(&a, q, &b, r, &c[i]);', 'cmp move'],
+      ['            i = 1 - i;', 'pass'],
+      ['        }', 'pass'],
+      ['        if (c[0].tail != NULL)', ''],
+      ['            c[0].tail->next = NULL;', ''],
+      ['        if (c[1].tail != NULL)', ''],
+      ['            c[1].tail->next = NULL;', ''],
+      ['        a = c[0].head;', 'pass'],
+      ['        b = c[1].head;', 'pass'],
+      ['        p = 2 * p;', 'pass'],
+      ['    }', 'pass'],
+      ['    return a;', 'done'],
+      ['}', '']
+    ]
+  },
+  details: [
+    { s: 'Трудоёмкость', h: '<p>Слияние двух серий: <code>min(q, r) ≤ C ≤ q + r − 1</code>, <code>M = q + r</code>. Всего сравнений <code>C &lt; n·⌈log₂ n⌉</code>, пересылок <code>M = n·⌈log₂ n⌉ + n</code> (дополнительные <code>n</code> — расщепление), асимптотика <code>O(n log n)</code>. Устойчивая. Зависимость от упорядоченности: <b>M не зависит</b>, C зависит слабо — на упорядоченных данных слияние заканчивается раньше. При работе со списками дополнительная память не нужна, для массивов понадобился бы второй массив такого же размера.</p>' },
+    { s: 'Визуализация', h: '<p>Сцена показывает массив-аналог списков <code>a</code>, <code>b</code> и очередей <code>c0</code>, <code>c1</code>: так же честно (те же операции <code>takeFirst</code>/<code>enqueue</code>), но нагляднее, чем цепочки указателей. В подписи под сценой отмечается, что каждая ячейка — узел списка, а <code>сдвиг головы</code> — это перестановка указателей без копирования данных. Счётчики — из <code>merge_sort.cpp</code>: <code>Cf++</code> на сравнение, <code>Mf++</code> на каждую пересылку в очередь.</p>' },
+    { s: 'Проверка правильности', h: '<p>Контрольная сумма списка до и после сортировки. Число серий после сортировки равно 1. Количество элементов после расщепления и слияния совпадает с исходным.</p>' }
+  ],
+  links: [
+    { href: 'README.md', label: 'README' },
+    { href: 'merge_sort.cpp', label: 'Исходный код' },
+    { href: '../../../1семестр/README.md', label: 'Все работы 1 семестра' }
+  ],
+  dockTitle: 'MergeSort',
+  dockDesc: 'Расщепление, слияние серий и проходы p = 1, 2, 4… — псевдокод и merge_sort.cpp',
+  steps: function (data) { return Lab.gen.mergeSort(data); }
+};
+</script>
+<script src="../../../assets/lab.js"></script>
+</body>
+</html>

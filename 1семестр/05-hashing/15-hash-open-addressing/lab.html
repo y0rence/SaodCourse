@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>15 · Хеширование: открытая адресация — лабораторная работа</title>
+  <meta name="description" content="Пошаговый разбор открытой адресации с линейными и квадратичными пробами: задание, псевдокод и исходный код с подсветкой текущей строки.">
+  <link rel="stylesheet" href="../../../assets/lab.css">
+</head>
+<body>
+<script>
+window.LAB = {
+  base: '../../../',
+  num: '15',
+  title: 'Хеширование: открытая адресация',
+  algo: 'HashOpenAddressing',
+  crumb: '1 семестр · Хеширование',
+  lead: 'Списков нет: при коллизии ключ ищет свободную ячейку по цепочке проб <code>h(i) = (h(x) + i) mod m</code>. Смотрим, как растёт <b>Кф</b> и сколько проб требуется при вставке.',
+  task: [
+    'Для 12 первых неповторяющихся символов ФИО выполнить хеширование вручную линейными и квадратичными пробами при размере таблицы 11.',
+    'Реализовать открытую адресацию двумя способами разрешения коллизий (линейные и квадратичные пробы), считать <code>Кф</code> и вывести обе таблицы.',
+    'Сравнить количество коллизий при линейных и квадратичных пробах для десяти простых размеров таблицы от 11 до 101.',
+    '4*. Организовать поиск элемента с заданным ключом для обоих способов проб, выводя позицию элемента.'
+  ],
+  chips: [{ t: 'O(m) худший', cls: 'plain' }, { t: 'O(1) в среднем', cls: 'plain' }, { t: 'линейные пробы', cls: 'm' }],
+  hint: 'Ключи — числа через пробел (до 16); m — простое (11, 13, 17, 19, 23, 29). Нужно n < m: если ключей не меньше m, m увеличивается до простого — таблица не переполняется.',
+  max: 16,
+  inputs: [
+    { id: 'keys', label: 'Ключи', value: '12 45 7 90 33 58 61 20', example: '12 45 7 90 33 58 61 20', placeholder: '12 45 7 90 33' },
+    { id: 'm', label: 'Размер таблицы m', value: '11', example: '11', placeholder: '11' }
+  ],
+  parse: function (v) {
+    var keys = Lab.parseDefault(v.keys) || [];
+    keys = keys.filter(function (x) { return typeof x === 'number' && !isNaN(x); });
+    if (keys.length > 16) keys = keys.slice(0, 16);
+    var m = parseInt(v.m, 10);
+    if (!m || m < 2) m = 11;
+    if (m > 101) m = 101;
+    function nextPrime(x) {
+      for (;;) {
+        x++;
+        var ok = true;
+        for (var d = 2; d * d <= x; d++) if (x % d === 0) { ok = false; break; }
+        if (ok) return x;
+      }
+    }
+    while (keys.length >= m) m = nextPrime(m);
+    return { keys: keys, m: m };
+  },
+  pseudo: [
+    ['hᵢ = (h(x) + g(i)) mod m — вторичные хеш-функции', 'sig'],
+    ['h ← x mod m', 'hash'],
+    ['DO', 'insert'],
+    ['    IF a_h = x  THEN элемент найден, выход', 'insert'],
+    ['    IF a_h = 0  THEN ячейка пуста: a_h ← x, выход', 'insert'],
+    ['    (линейные пробы) h ← h + 1;  IF h ≥ m THEN h ← h − m FI', 'probe'],
+    ['OD', 'insert'],
+    ['(квадратичные пробы: d := 1; h ← h + d; d ← d + 2)', 'probe'],
+    ['после вставки: ячейка занята, таблица обновлена', 'done'],
+    ['итог: Кф, занятые ячейки, число проб', 'stats']
+  ],
+  file: {
+    name: 'hash_open_addressing.cpp',
+    url: 'hash_open_addressing.cpp',
+    lines: [
+      ['int hashFunc(char k, int m) {', 'hash'],
+      ['    return (unsigned char)k % m;', 'hash'],
+      ['}', ''],
+      ['int insertLinear(char *table, int m, char key, int &collisions) {', 'sig'],
+      ['    int h = hashFunc(key, m);', 'hash'],
+      ['', ''],
+      ['    for (int i = 0; i < m; i++) {', 'probe'],
+      ['        if (table[h] == key) {', 'insert'],
+      ['            return h;', ''],
+      ['        }', ''],
+      ['        if (table[h] == 0) {', 'insert'],
+      ['            table[h] = key;', ''],
+      ['            return h;', ''],
+      ['        }', ''],
+      ['        collisions++;', 'probe'],
+      ['        h++;', 'probe'],
+      ['        if (h >= m) {', ''],
+      ['            h -= m;', ''],
+      ['        }', ''],
+      ['    }', ''],
+      ['    return -1;', ''],
+      ['}', '']
+    ]
+  },
+  details: [
+    { s: 'Трудоёмкость', h: '<p>Линейные пробы <code>g(i) = i</code>: просматривается вся таблица, ключи группируются в кластеры. Квадратичные <code>g(i) = i²</code>: хорошее рассеивание, но используется не вся таблица. Поиск при незаполненной таблице <code>O(1)</code>, худший случай <code>O(m)</code>; дополнительная память — только сама таблица из <code>m</code> ячеек, списков нет. От порядка добавления ключей не зависит.</p>' },
+    { s: 'Проверка правильности', h: '<p><b>Утверждение:</b> если <code>m</code> — простое число, при квадратичных пробах просматривается не меньше половины хеш-таблицы. Обе заполненные таблицы выводятся по ячейкам, <code>Кф</code> сравнивается для цепочек, линейных и квадратичных проб на десяти простых размерах, поиск печатает всю последовательность просмотренных позиций.</p>' }
+  ],
+  links: [
+    { href: 'README.md', label: 'README' },
+    { href: 'hash_open_addressing.cpp', label: 'Исходный код' },
+    { href: '../../../1семестр/README.md', label: 'Все работы 1 семестра' }
+  ],
+  dockTitle: 'HashOpenAddressing',
+  dockDesc: 'Псевдокод из пособия и настоящий hash_open_addressing.cpp — переключайтесь вкладками',
+  steps: function (data) { return Lab.gen.hashOpen(data); }
+};
+</script>
+<script src="../../../assets/lab.js"></script>
+</body>
+</html>

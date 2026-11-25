@@ -1,37 +1,63 @@
+/* Страницы документации — строгий монохромный стиль в духе lab.css:
+   графит/белый, волосяные границы, один акцент, без градиентов и цвета.
+   Статусы pass/fail передаются контрастом и штриховкой, а не цветом. */
+
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap");
+
 :root {
-  --bg: #f5f6fb;
+  --bg: #f7f7f8;
   --surface: #ffffff;
-  --text: #1c2030;
-  --muted: #5d6478;
-  --border: #e2e5ef;
-  --accent: #5b5bd6;
-  --accent-2: #14b8a6;
-  --accent-soft: #eceefe;
-  --ok: #16a34a;
-  --ok-soft: #e7f8ee;
-  --bad: #dc2626;
-  --bad-soft: #fdecec;
-  --code: #eef0f7;
-  --shadow: 0 10px 28px -18px rgba(28, 32, 48, 0.35);
+  --text: #0d0d0f;
+  --muted: #6f6f78;
+  --border: rgba(13, 13, 15, .12);
+  --border-strong: rgba(13, 13, 15, .32);
+  --accent: #0d0d0f;
+  --on-accent: #ffffff;
+  --accent-soft: rgba(13, 13, 15, .06);
+  --ok: #0d0d0f;
+  --ok-soft: rgba(13, 13, 15, .05);
+  --bad: #0d0d0f;
+  --bad-soft: transparent;
+  --code: #f1f1f3;
+  --shadow: 0 1px 2px rgba(13, 13, 15, .05), 0 12px 32px -20px rgba(13, 13, 15, .3);
 }
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --bg: #0f1219;
-    --surface: #171b26;
-    --text: #e8ebf5;
-    --muted: #9aa3bb;
-    --border: #262c3d;
-    --accent: #8b8bff;
-    --accent-2: #2dd4bf;
-    --accent-soft: #232845;
-    --ok: #4ade80;
-    --ok-soft: #14291d;
-    --bad: #f87171;
-    --bad-soft: #2d1616;
-    --code: #1f2433;
-    --shadow: 0 10px 28px -18px rgba(0, 0, 0, 0.7);
+    --bg: #0a0a0b;
+    --surface: #131316;
+    --text: #f0f0f2;
+    --muted: #8b8b95;
+    --border: rgba(240, 240, 242, .12);
+    --border-strong: rgba(240, 240, 242, .32);
+    --accent: #f0f0f2;
+    --on-accent: #0a0a0b;
+    --accent-soft: rgba(240, 240, 242, .08);
+    --ok: #f0f0f2;
+    --ok-soft: rgba(240, 240, 242, .05);
+    --bad: #f0f0f2;
+    --bad-soft: transparent;
+    --code: #1c1c21;
+    --shadow: 0 1px 2px rgba(0, 0, 0, .4), 0 16px 40px -24px rgba(0, 0, 0, .9);
   }
+}
+
+:root[data-theme="dark"] {
+  --bg: #0a0a0b;
+  --surface: #131316;
+  --text: #f0f0f2;
+  --muted: #8b8b95;
+  --border: rgba(240, 240, 242, .12);
+  --border-strong: rgba(240, 240, 242, .32);
+  --accent: #f0f0f2;
+  --on-accent: #0a0a0b;
+  --accent-soft: rgba(240, 240, 242, .08);
+  --ok: #f0f0f2;
+  --ok-soft: rgba(240, 240, 242, .05);
+  --bad: #f0f0f2;
+  --bad-soft: transparent;
+  --code: #1c1c21;
+  --shadow: 0 1px 2px rgba(0, 0, 0, .4), 0 16px 40px -24px rgba(0, 0, 0, .9);
 }
 
 * { box-sizing: border-box; }
@@ -42,10 +68,11 @@ body {
   line-height: 1.65;
   color: var(--text);
   background: var(--bg);
+  -webkit-font-smoothing: antialiased;
 }
 
-a { color: var(--accent); text-decoration: none; }
-a:hover { text-decoration: underline; }
+a { color: var(--text); text-decoration: none; }
+a:hover { text-decoration: underline; text-underline-offset: 3px; }
 
 code, pre {
   font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
@@ -56,6 +83,7 @@ code {
   padding: 0.1em 0.4em;
   border-radius: 6px;
   font-size: 0.92em;
+  border: 1px solid var(--border);
 }
 
 .wrap {
@@ -64,29 +92,35 @@ code {
 }
 
 .doc-hero {
-  padding: 48px 0 36px;
-  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 100%);
-  color: #fff;
+  padding: 56px 0 40px;
+  border-bottom: 1px solid var(--border);
+  background:
+    linear-gradient(var(--border) 1px, transparent 1px),
+    linear-gradient(90deg, var(--border) 1px, transparent 1px);
+  background-size: 56px 56px;
 }
 
 .doc-hero .crumbs {
-  font-size: 0.9rem;
-  opacity: 0.9;
-  margin-bottom: 12px;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 0.78rem;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 14px;
 }
-
-.doc-hero .crumbs a { color: #fff; }
 
 .doc-hero h1 {
   font-size: clamp(1.8rem, 4vw, 2.6rem);
+  font-weight: 800;
+  letter-spacing: -.03em;
   margin: 0 0 10px;
-  line-height: 1.2;
+  line-height: 1.15;
 }
 
 .doc-hero p {
   margin: 0;
   max-width: 720px;
-  opacity: 0.95;
+  color: var(--muted);
 }
 
 main.wrap { padding: 32px 0 64px; }
@@ -103,25 +137,29 @@ main.wrap { padding: 32px 0 64px; }
   padding: 7px 14px;
   border-radius: 999px;
   font-size: 0.9rem;
+  font-weight: 600;
   border: 1px solid var(--border);
   background: var(--surface);
   color: var(--text);
   cursor: pointer;
+  transition: border-color .15s;
 }
 
-.pill:hover { border-color: var(--accent); color: var(--accent); text-decoration: none; }
+.pill:hover { border-color: var(--border-strong); text-decoration: none; }
 
 h2.group {
-  margin: 36px 0 14px;
-  font-size: 1.35rem;
-  padding-bottom: 8px;
-  border-bottom: 2px solid var(--accent-soft);
+  margin: 40px 0 16px;
+  font-size: 1.3rem;
+  font-weight: 700;
+  letter-spacing: -.02em;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border);
 }
 
 .qa {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 14px;
+  border-radius: var(--radius, 14px);
   padding: 18px 20px;
   margin: 0 0 14px;
   box-shadow: var(--shadow);
@@ -130,30 +168,28 @@ h2.group {
 .qa .num {
   display: inline-block;
   min-width: 2rem;
-  font-weight: 700;
-  color: var(--accent);
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-weight: 500;
+  color: var(--muted);
 }
 
 .qa .q {
-  font-weight: 650;
+  font-weight: 600;
   margin: 0 0 8px;
+  letter-spacing: -.01em;
 }
 
-.qa .a {
-  margin: 0;
-  color: var(--text);
-}
-
+.qa .a { margin: 0; }
 .qa .a p { margin: 0 0 8px; }
 .qa .a p:last-child { margin-bottom: 0; }
 
 .qa .src {
   margin-top: 10px;
-  font-size: 0.82rem;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 0.78rem;
+  letter-spacing: .04em;
   color: var(--muted);
 }
-
-.qa .src::before { content: "📖 "; }
 
 .step {
   background: var(--surface);
@@ -163,12 +199,13 @@ h2.group {
   margin: 0 0 14px;
 }
 
-.step h3 { margin: 0 0 8px; font-size: 1.05rem; }
+.step h3 { margin: 0 0 8px; font-size: 1.05rem; letter-spacing: -.01em; }
 
 pre {
   background: var(--code);
   padding: 14px 16px;
   border-radius: 10px;
+  border: 1px solid var(--border);
   overflow-x: auto;
   font-size: 0.88rem;
   line-height: 1.5;
@@ -190,40 +227,52 @@ pre {
   box-shadow: var(--shadow);
 }
 
-.stat strong { display: block; font-size: 1.6rem; color: var(--accent); }
+.stat strong {
+  display: block;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 1.5rem;
+  letter-spacing: -.03em;
+  color: var(--text);
+}
+
 .stat span { font-size: 0.88rem; color: var(--muted); }
 
+/* pass — сплошная рамка и инверсный бейдж; fail — пунктирная рамка */
 .test {
   display: flex;
   gap: 14px;
   align-items: flex-start;
   background: var(--surface);
   border: 1px solid var(--border);
-  border-left: 5px solid var(--border);
+  border-left: 3px solid var(--border-strong);
   border-radius: 12px;
   padding: 14px 16px;
   margin: 0 0 12px;
 }
 
-.test.pass { border-left-color: var(--ok); background: var(--ok-soft); }
-.test.fail { border-left-color: var(--bad); background: var(--bad-soft); }
+.test.pass { border-left-color: var(--accent); }
+.test.fail { border-left-style: dashed; border-left-color: var(--border-strong); }
 
 .test .badge {
   flex: none;
-  font-size: 0.78rem;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 0.74rem;
   font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
   padding: 4px 10px;
   border-radius: 999px;
   background: var(--code);
+  border: 1px solid var(--border);
   color: var(--muted);
   min-width: 64px;
   text-align: center;
 }
 
-.test.pass .badge { background: var(--ok); color: #fff; }
-.test.fail .badge { background: var(--bad); color: #fff; }
+.test.pass .badge { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
+.test.fail .badge { background: transparent; border-style: dashed; color: var(--text); }
 
-.test .name { font-weight: 650; margin: 0 0 4px; }
+.test .name { font-weight: 600; margin: 0 0 4px; }
 .test .detail { margin: 0; font-size: 0.9rem; color: var(--muted); word-break: break-word; }
 
 .banner {
@@ -232,11 +281,12 @@ pre {
   margin: 0 0 22px;
   font-weight: 600;
   background: var(--accent-soft);
-  color: var(--accent);
+  border: 1px solid var(--border);
+  color: var(--text);
 }
 
-.banner.ok { background: var(--ok-soft); color: var(--ok); }
-.banner.bad { background: var(--bad-soft); color: var(--bad); }
+.banner.ok { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
+.banner.bad { background: transparent; border: 1px dashed var(--border-strong); color: var(--text); }
 
 table.grid {
   width: 100%;
@@ -244,6 +294,7 @@ table.grid {
   background: var(--surface);
   border-radius: 12px;
   overflow: hidden;
+  border: 1px solid var(--border);
   box-shadow: var(--shadow);
   font-size: 0.92rem;
 }
@@ -255,7 +306,13 @@ table.grid th, table.grid td {
   vertical-align: top;
 }
 
-table.grid th { background: var(--accent-soft); color: var(--accent); }
+table.grid th {
+  font-size: 0.76rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  color: var(--muted);
+}
 
 footer.doc-foot {
   text-align: center;
@@ -267,7 +324,7 @@ footer.doc-foot {
 
 @media (max-width: 560px) {
   .test { flex-direction: column; }
-  .doc-hero { padding: 36px 0 28px; }
+  .doc-hero { padding: 40px 0 30px; }
 }
 
 .opts { display: grid; gap: 8px; margin: 10px 0 0; }
@@ -275,11 +332,12 @@ footer.doc-foot {
   display: flex; gap: 10px; align-items: flex-start;
   padding: 9px 12px; border: 1px solid var(--border); border-radius: 10px;
   cursor: pointer; background: var(--bg);
+  transition: border-color .15s;
 }
-.opt:hover { border-color: var(--accent); }
+.opt:hover { border-color: var(--border-strong); }
 .opt input { margin-top: 5px; }
-.opt.right { border-color: var(--ok); background: var(--ok-soft); }
-.opt.wrong { border-color: var(--bad); background: var(--bad-soft); }
-.quiz.pass { border-left: 5px solid var(--ok); }
-.quiz.fail { border-left: 5px solid var(--bad); }
+.opt.right { border: 1.5px solid var(--accent); background: var(--accent-soft); font-weight: 600; }
+.opt.wrong { border-style: dashed; border-color: var(--border-strong); }
+.quiz.pass { border-left: 3px solid var(--accent); }
+.quiz.fail { border-left: 3px dashed var(--border-strong); }
 .quiz .result { min-height: 1em; }
