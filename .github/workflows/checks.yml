@@ -1,4 +1,4 @@
-name: Проверки страниц лаб
+name: "Проверки страниц лаб"
 
 on:
   push:
@@ -16,19 +16,19 @@ jobs:
         with:
           node-version: 20
 
-      - name: Синтаксис движка и генераторов
+      - name: "Синтаксис движка и генераторов"
         run: |
           node --check assets/lab.js
           for f in assets/gens/*.js scripts/*.js; do node --check "$f"; done
 
-      - name: Страницы: конфиг, ссылки, теги
+      - name: "Страницы: конфиг, ссылки, теги"
         run: node scripts/check-lab.js $(find . -name lab.html | sort)
 
-      - name: Страницы: прогон шагов
+      - name: "Страницы: прогон шагов"
         run: node scripts/run-steps.js $(find . -name lab.html | sort)
 
-      - name: README в монохромном стиле (без эмодзи и цветных бейджей)
+      - name: "README в монохромном стиле"
         run: python3 scripts/readme-monochrome.py
 
-      - name: README не изменён чисткой (стиль соблюдён)
+      - name: "README не изменён чисткой"
         run: git diff --exit-code -- '**/README*.md'
