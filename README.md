@@ -51,6 +51,12 @@ Saod_1course.sem2/
 └── .gitignore         исключения: бинарники, скриншоты, служебные файлы
 ```
 
+## Как вносить изменения
+
+Отдельная ветка на задачу, pull request даже для небольших улучшений,
+обязательные проверки перед слиянием — см. [CONTRIBUTING.md](CONTRIBUTING.md).
+Автоматически проверки запускает CI: [.github/workflows/checks.yml](.github/workflows/checks.yml).
+
 ## Как запустить
 
 Подробная установка компиляторов и SFML для Windows, macOS и Linux — [INSTALL.html](INSTALL.html) (текстовая версия: [INSTALL.md](INSTALL.md)).
