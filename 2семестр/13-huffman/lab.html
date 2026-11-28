@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <link rel="icon" href="../../assets/favicon.svg" type="image/svg+xml">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>13 · Код Хаффмана — лабораторная работа</title>
+  <meta name="description" content="Пошаговый разбор оптимального кода Хаффмана: слияние двух наименьших вероятностей, функции Up и Down, дерево кодов, неравенство Крафта, энтропия и сравнение со средними длинами кодов Шеннона и Фано.">
+  <link rel="stylesheet" href="../../assets/lab.css">
+</head>
+<body>
+<script src="../../assets/gens/g7-huffman.js"></script>
+<script>
+window.LAB = {
+  base: '../../',
+  num: '13',
+  title: 'Код Хаффмана',
+  algo: 'Huffman',
+  crumb: '2 семестр · Кодирование',
+  lead: 'Оптимальный побуквенный код Хаффмана: две наименьшие вероятности складываются, сумма вставляется на своё место (<code>Up</code>), а на обратном ходе рекурсии <code>Down</code> достраивает кодовые слова. Средняя длина такого кода минимальна среди всех префиксных.',
+  task: [
+    'Реализовать алгоритм построения оптимального побуквенного кода Хаффмана для русского текста: оценить вероятности по файлу не менее 10 КБ и вывести кодовую таблицу (символ, вероятность, кодовое слово, длина).',
+    'Проверить неравенство Крафта, сравнить среднюю длину кодового слова с энтропией исходного файла, определить избыточность кода Хаффмана и сравнить её со средней длиной построенных ранее кодов Шеннона и Фано.',
+    'Закодировать русский текст из 100 символов, вывести закодированную последовательность, вычислить её длину и оценить коэффициент сжатия данных.'
+  ],
+  chips: [
+    { t: 'оптимальный код', cls: '' },
+    { t: 'Lcp ≥ H', cls: 'plain' },
+    { t: 'префиксный код', cls: 'm' }
+  ],
+  hint: 'Русский текст в кодировке UTF-8: буквы, пробелы и знаки препинания — например: АБРАКАДАБРА ДАБРА.',
+  inputs: [
+    { id: 'text', label: 'Текст', value: 'АБРАКАДАБРА ДАБРА', example: 'АБРАКАДАБРА ДАБРА', placeholder: 'русский текст' }
+  ],
+  example: true,
+  parse: function (v) {
+    var t = String(v.text || '').trim();
+    if (!t) return null;
+    return { text: t };
+  },
+  pseudo: [
+    ['Huffman(n, P)', 'sig'],
+    ['  IF (n = 2):  C[1,1] := 0, L[1] := 1;  C[2,1] := 1, L[2] := 1', 'code'],
+    ['  ELSE  q := P[n−1] + P[n]', 'merge'],
+    ['    j := Up(n, q)   <поиск и вставка суммы>', 'up'],
+    ['    Huffman(n−1, P)', 'merge'],
+    ['    Down(n, j)      <достраивание кодов>', 'down'],
+    ['  FI', ''],
+    ['Up(n, q): сдвинуть элементы ≤ q вниз и поставить P[j] := q', 'up'],
+    ['Down(n, j): S := C[j,*]; сдвиг строк вверх; C[n−1,*] := S+0, C[n,*] := S+1', 'down'],
+    ['DO по всем символам:  n_i ← n_i + 1', 'cnt'],
+    ['OD', ''],
+    ['P_i ← n_i / N', 'prob'],
+    ['Сортировать P по убыванию (пузырьком)', 'sort'],
+    ['Крафт: Σ 2^(−L_i) ≤ 1;   H = −Σ P_i·log₂ P_i', 'stats'],
+    ['Lcp = Σ P_i·L_i;   R = Lcp − H', 'stats'],
+    ['Сравнить средние длины: Хаффман ≤ Фано ≤ Шеннон', 'compare'],
+    ['Кодировать: вместо символа i — код C_i', 'encode']
+  ],
+  file: {
+    name: 'Huffman.cpp',
+    url: 'Huffman.cpp',
+    lines: [
+      ['    const char *path = (argc > 1) ? argv[1] : "proizvedenie_11kb.txt";', 'sig'],
+      ['    while (read_utf8(f, &cp, ch)) {', 'cnt'],
+      ['        total++; // N — общее число символов в файле', 'cnt'],
+      ['        Prob[i + 1] = (double)alpha[i].count / total;', 'prob'],
+      ['            if (Prob[j] < Prob[j + 1]) {', 'sort'],
+      ['        double q = P[n - 1] + P[n]; // q := P[n-1] + P[n] — две наименьшие', 'merge'],
+      ['        int j = Up(n, q);           // j := Up(n,q) — поиск и вставка суммы', 'up'],
+      ['        Huffman(n - 1);             // рекурсия для n-1 элементов', 'merge'],
+      ['        Down(n, j);                 // Down(n,j) — достраивание кодов', 'down'],
+      ['        if (P[i - 1] <= q) {', 'up'],
+      ['    memcpy(S, C[j], sizeof(S)); // S := C[j,*] — запоминание j-й строки', 'down'],
+      ['    C[n - 1][lj + 1] = 0; // первому сыну — ноль', 'down'],
+      ['        kraft = kraft + pow(2.0, -L[i]);', 'stats'],
+      ['        H = H - Prob[i] * log2(Prob[i]);', 'stats'],
+      ['        Lcp = Lcp + Prob[i] * L[i];', 'stats'],
+      ['        LcpH = LcpH + Prob[i] * L[i]; // средняя длина кода Хаффмана', 'compare'],
+      ['        LcpS = LcpS + Prob[i] * ceil(-log2(Prob[i])); // длины кода Шеннона', 'compare'],
+      ['        LcpF = LcpF + Prob[i] * FL[i]; // средняя длина кода Фано', 'compare'],
+      ["            bits[len++] = C[row][j] ? '1' : '0';", 'encode']
+    ]
+  },
+  details: [
+    { s: 'Трудоёмкость', h: '<p>Подсчёт частот — <code>O(N·n)</code> с линейным поиском по алфавиту, сортировка — <code>O(n²)</code>. Каждое слияние <code>Up</code> вставляет сумму за <code>O(n)</code>, всего слияний <code>n − 2</code>, затем <code>n</code> вызовов <code>Down</code>. Итого <code>O(n²)</code> — при <code>n ≤ 512</code> пренебрежимо.</p>' },
+    { s: 'Проверка правильности', h: '<p>Проверяется неравенство Крафта <code>Σ 2<sup>−L</sup> ≤ 1</code>, префиксность кодов и соотношение <code>H ≤ Lcp</code> с небольшой избыточностью. Средняя длина не больше, чем у кодов Фано и Шеннона, построенных для тех же вероятностей. На тексте из 11 КБ: <code>H = 4.780912</code>, <code>Lcp = 4.809089</code>.</p>' }
+  ],
+  links: [
+    { href: 'README.md', label: 'README' },
+    { href: 'THEORY.md', label: 'Теория' },
+    { href: 'Huffman.cpp', label: 'Исходник' },
+    { href: '../../2семестр/README.md', label: 'Все работы 2 семестра' }
+  ],
+  dockTitle: 'Huffman',
+  dockDesc: 'Псевдокод из пособия и настоящий Huffman.cpp — переключайтесь вкладками',
+  steps: function (data) { return Lab.gen.huffman(data.text); }
+};
+</script>
+<script src="../../assets/lab.js"></script>
+</body>
+</html>

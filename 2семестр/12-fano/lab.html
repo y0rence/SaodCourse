@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <link rel="icon" href="../../assets/favicon.svg" type="image/svg+xml">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>12 · Код Фано — лабораторная работа</title>
+  <meta name="description" content="Пошаговый разбор кода Фано: медиана, рекурсивное деление отрезка, кодовая таблица, неравенство Крафта, энтропия и вариант с медианой алгоритма А2.">
+  <link rel="stylesheet" href="../../assets/lab.css">
+</head>
+<body>
+<script src="../../assets/gens/g6-fano.js"></script>
+<script>
+window.LAB = {
+  base: '../../',
+  num: '12',
+  title: 'Код Фано',
+  algo: 'Fano',
+  crumb: '2 семестр · Кодирование',
+  lead: 'Побуквенный код Фано: отсортированный по убыванию вероятностей список рекурсивно делится на две части с максимально близкими суммами — первая получает бит 0, вторая 1. Точку разбиения находит функция <code>Med(L,R)</code> — медиана массива.',
+  task: [
+    'Реализовать алгоритм построения побуквенного статического кода Фано для русского текста: оценить вероятности по файлу не менее 10 КБ и вывести кодовую таблицу (символ, вероятность, кодовое слово, длина).',
+    'Проверить неравенство Крафта, сравнить среднюю длину кодового слова с энтропией исходного файла, определить избыточность кода Фано.',
+    'Реализовать вариант кода Фано, используя для вычисления медианы функцию из алгоритма А2 построения почти оптимального дерева поиска, и вывести таблицы п.2 и п.3 для этого варианта.'
+  ],
+  chips: [
+    { t: 'Lcp < H + 1', cls: 'plain' },
+    { t: 'Крафт ≤ 1', cls: 'plain' },
+    { t: 'префиксный код', cls: 'm' }
+  ],
+  hint: 'Русский текст в кодировке UTF-8: буквы, пробелы и знаки препинания — например: АБРАКАДАБРА ДАБРА.',
+  inputs: [
+    { id: 'text', label: 'Текст', value: 'АБРАКАДАБРА ДАБРА', example: 'АБРАКАДАБРА ДАБРА', placeholder: 'русский текст' }
+  ],
+  example: true,
+  parse: function (v) {
+    var t = String(v.text || '').trim();
+    if (!t) return null;
+    return { text: t };
+  },
+  pseudo: [
+    ['Fano(L, R, k):  IF (L < R)', 'sig'],
+    ['  k := k + 1', 'split'],
+    ['  m := Med(L, R)', 'med'],
+    ['  DO i = L … R:  IF i ≤ m → C[i,k] := 0   ELSE   C[i,k] := 1', 'split'],
+    ['  Fano(L, m, k);   Fano(m+1, R, k)', 'split'],
+    ['Med(L, R): m — индекс с минимумом |Σ(L..m) P − Σ(m+1..R) P|', 'med'],
+    ['DO по всем символам:  n_i ← n_i + 1', 'cnt'],
+    ['OD', ''],
+    ['P_i ← n_i / N', 'prob'],
+    ['Сортировать P по убыванию (пузырьком)', 'sort'],
+    ['MedA2(L, R): wes ← Σ P[L..R];  m — первый: summa < wes/2 ≤ summa + P[m]', 'a2'],
+    ['Крафт: Σ 2^(−L_i) ≤ 1;   H = −Σ P_i·log₂ P_i', 'stats'],
+    ['Lcp = Σ P_i·L_i;   R = Lcp − H', 'stats']
+  ],
+  file: {
+    name: 'Fano.cpp',
+    url: 'Fano.cpp',
+    lines: [
+      ['    const char *path = (argc > 1) ? argv[1] : "proizvedenie_11kb.txt";', 'sig'],
+      ['    while (read_utf8(f, &cp, ch)) {', 'cnt'],
+      ['        total++; // N — общее число символов в файле', 'cnt'],
+      ['        P[i + 1] = (double)alpha[i].count / total;', 'prob'],
+      ['            if (P[j] < P[j + 1]) {', 'sort'],
+      ['        int m = med(L, R); // m := Med(L,R) — точка разбиения отрезка', 'med'],
+      ['            if (i <= m) { // буквам первой части приписывается 0', 'split'],
+      ['        Fano(L, m, k, med);     // рекурсия по левой части', 'split'],
+      ['    Fano(1, n, 0, Med);', 'split'],
+      ['        kraft = kraft + pow(2.0, -Length[i]);', 'stats'],
+      ['        H = H - P[i] * log2(P[i]);', 'stats'],
+      ['        Lcp = Lcp + P[i] * L[i];', 'stats'],
+      ['    double wes = 0.0;   // wes — сумма весов (вероятностей) рабочей части', 'a2'],
+      ['        if (summa < wes / 2.0 && summa + P[i] >= wes / 2.0) {', 'a2'],
+      ['    Fano(1, n, 0, MedA2);', 'a2']
+    ]
+  },
+  details: [
+    { s: 'Трудоёмкость', h: '<p>Подсчёт частот — один проход по файлу, но поиск символа в алфавите линейный: <code>O(N·n)</code>. Сортировка вероятностей — пузырьком, <code>O(n²)</code>. Функция <code>Med</code> перебирает точки разреза и заново суммирует вероятности — <code>O(k²)</code> для отрезка из <code>k</code> символов; всего разбиений <code>n − 1</code>. При <code>n ≤ 512</code> всё работает мгновенно.</p>' },
+    { s: 'Проверка правильности', h: '<p>После построения проверяется неравенство Крафта <code>Σ 2<sup>−L</sup> ≤ 1</code> (для кода Фано оно выполняется как равенство — дерево полное), коды префиксные, а средняя длина <code>Lcp</code> лежит между энтропией и <code>H + 1</code>. На примере из пособия (0.36, 0.18, 0.18, 0.12, 0.09, 0.07) программа даёт <code>Lcp = 2.44</code> — как в Таблице 12.</p>' }
+  ],
+  links: [
+    { href: 'README.md', label: 'README' },
+    { href: 'THEORY.md', label: 'Теория' },
+    { href: 'Fano.cpp', label: 'Исходник' },
+    { href: '../../2семестр/README.md', label: 'Все работы 2 семестра' }
+  ],
+  dockTitle: 'Fano',
+  dockDesc: 'Псевдокод из пособия и настоящий Fano.cpp — переключайтесь вкладками',
+  steps: function (data) { return Lab.gen.fano(data.text); }
+};
+</script>
+<script src="../../assets/lab.js"></script>
+</body>
+</html>

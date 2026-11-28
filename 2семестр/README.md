@@ -16,10 +16,10 @@
 | 08 | Дерево поиска (СДП) и ИСДП | `sdp.cpp` | [README](08-sdp/README.md) · [страница](08-sdp/lab.html) | [THEORY](08-sdp/THEORY.md) |
 | 09 | Удаление из СДП | `sdp_delete.cpp` | [README](09-sdp-delete/README.md) · [страница](09-sdp-delete/lab.html) | [THEORY](09-sdp-delete/THEORY.md) |
 | 10 | Приближённые алгоритмы A1 и A2 | `a1_a2.cpp` | [README](10-a1-a2/README.md) · [страница](10-a1-a2/lab.html) | [THEORY](10-a1-a2/THEORY.md) |
-| 11 | Код Шеннона | `Shennon.cpp` | [README](11-shannon/README.md) · [страница](11-shannon/lab.html) | — |
-| 12 | Код Фано (задания 2–4) | `Fano.cpp` | [README](12-fano/README.md) | — |
-| 13 | Код Хаффмана (задания 2–4) | `Huffman.cpp` | [README](13-huffman/README.md) | — |
-| 14 | Код Гилберта-Мура (задания 2–4) | `GilbertMoore.cpp` | [README](14-gilbert-moore/README.md) | — |
+| 11 | Код Шеннона | `Shennon.cpp` | [README](11-shannon/README.md) · [страница](11-shannon/lab.html) | [THEORY](11-shannon/THEORY.md) |
+| 12 | Код Фано (задания 2–4) | `Fano.cpp` | [README](12-fano/README.md) · [страница](12-fano/lab.html) | [THEORY](12-fano/THEORY.md) |
+| 13 | Код Хаффмана (задания 2–4) | `Huffman.cpp` | [README](13-huffman/README.md) · [страница](13-huffman/lab.html) | [THEORY](13-huffman/THEORY.md) |
+| 14 | Код Гилберта-Мура (задания 2–4) | `GilbertMoore.cpp` | [README](14-gilbert-moore/README.md) · [страница](14-gilbert-moore/lab.html) | [THEORY](14-gilbert-moore/THEORY.md) |
 
 У каждой работы есть **интерактивная страница** `lab.html`: задание, пошаговый проигрыватель и «листочек» с кодом (псевдокод ↔ исходный файл).
 
