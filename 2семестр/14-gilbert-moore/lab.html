@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <link rel="icon" href="../../assets/favicon.svg" type="image/svg+xml">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>14 · Код Гилберта-Мура — лабораторная работа</title>
+  <meta name="description" content="Пошаговый разбор алфавитного кода Гилберта-Мура: суммы Q_i, длины L_i = ⌈−log2 p⌉ + 1, разряды двоичной дроби Q_i, неравенство Крафта, энтропия и сравнение со средними длинами других кодов.">
+  <link rel="stylesheet" href="../../assets/lab.css">
+</head>
+<body>
+<script src="../../assets/gens/g8-gilbert.js"></script>
+<script>
+window.LAB = {
+  base: '../../',
+  num: '14',
+  title: 'Код Гилберта-Мура',
+  algo: 'Gilbert–Moore',
+  crumb: '2 семестр · Кодирование',
+  lead: 'Алфавитный код Гилберта-Мура: кодовые слова идут в том же порядке, что и символы. Для каждого символа берётся середина его интервала <code>Q<sub>i</sub> = p<sub>1</sub> + … + p<sub>i−1</sub> + p<sub>i</sub>/2</code>, а код — первые <code>⌈−log<sub>2</sub> p<sub>i</sub>⌉ + 1</code> бит двоичной записи <code>Q<sub>i</sub></code>.',
+  task: [
+    'Реализовать алгоритм построения алфавитного кода Гилберта-Мура для русского текста: оценить вероятности по файлу не менее 10 КБ и вывести кодовую таблицу (символ, вероятность, кодовое слово, длина).',
+    'Проверить неравенство Крафта, сравнить среднюю длину кодового слова с энтропией исходного файла, определить избыточность кода Гилберта-Мура и сравнить её со средней длиной построенных ранее кодов Шеннона, Фано и Хаффмана.',
+    'Закодировать русский текст из 100 символов, вывести закодированную последовательность, вычислить её длину и оценить коэффициент сжатия данных.'
+  ],
+  chips: [
+    { t: 'Lcp < H + 2', cls: 'plain' },
+    { t: 'алфавитный код', cls: '' },
+    { t: 'префиксный код', cls: 'm' }
+  ],
+  hint: 'Русский текст в кодировке UTF-8: буквы, пробелы и знаки препинания — например: АБРАКАДАБРА ДАБРА.',
+  inputs: [
+    { id: 'text', label: 'Текст', value: 'АБРАКАДАБРА ДАБРА', example: 'АБРАКАДАБРА ДАБРА', placeholder: 'русский текст' }
+  ],
+  example: true,
+  parse: function (v) {
+    var t = String(v.text || '').trim();
+    if (!t) return null;
+    return { text: t };
+  },
+  pseudo: [
+    ['GilbertMoore(): шаги 1–3 пособия', 'sig'],
+    ['DO по всем символам:  n_i ← n_i + 1', 'cnt'],
+    ['OD', ''],
+    ['P_i ← n_i / N', 'prob'],
+    ['Сортировать P по убыванию (пузырьком)', 'sort'],
+    ['1) Q_i ← p1 + … + p_{i−1} + p_i/2', 'q'],
+    ['2) X ← Q_i;  DO j = 1 … L_i:  X ← 2·X;  бит ← ⌊X⌋;  X ← X − бит', 'bits'],
+    ['3) L_i ← ⌈−log₂ p_i⌉ + 1', 'len'],
+    ['Кодовое слово_i — первые L_i бит дробной части Q_i', 'code'],
+    ['Крафт: Σ 2^(−L_i) ≤ 1;   H = −Σ P_i·log₂ P_i', 'stats'],
+    ['Lcp = Σ P_i·L_i;   R = Lcp − H  (< H + 2)', 'stats'],
+    ['Сравнить средние длины: Гилберт-Мур, Шеннон, Фано, Хаффман', 'compare'],
+    ['Кодировать: вместо символа i — код C_i', 'encode']
+  ],
+  file: {
+    name: 'GilbertMoore.cpp',
+    url: 'GilbertMoore.cpp',
+    lines: [
+      ['    const char *path = (argc > 1) ? argv[1] : "proizvedenie_11kb.txt";', 'sig'],
+      ['    while (read_utf8(f, &cp, ch)) {', 'cnt'],
+      ['        total++; // N — общее число символов в файле', 'cnt'],
+      ['        Prob[i + 1] = (double)alpha[i].count / total;', 'prob'],
+      ['            if (Prob[j] < Prob[j + 1]) {', 'sort'],
+      ['        Q[i] = sum + Prob[i] / 2.0; // шаг 1: половина вероятности плюс сумма предыдущих', 'q'],
+      ['        sum = sum + Prob[i];', 'q'],
+      ['        L[i] = (int)ceil(-log2(Prob[i])) + 1; // шаг 3: длина кодового слова', 'len'],
+      ['            x = x * 2.0;', 'bits'],
+      ['            C[i][k] = (x >= 1.0) ? 1 : 0;', 'bits'],
+      ['    buildGilbertMoore();', 'code'],
+      ['        kraft = kraft + pow(2.0, -L[i]);', 'stats'],
+      ['        H = H - Prob[i] * log2(Prob[i]);', 'stats'],
+      ['        Lcp = Lcp + Prob[i] * L[i];', 'stats'],
+      ['        LcpG = LcpG + Prob[i] * L[i]; // средняя длина кода Гилберта-Мура', 'compare'],
+      ['        LcpS = LcpS + Prob[i] * ceil(-log2(Prob[i])); // длины кода Шеннона', 'compare'],
+      ['        LcpF = LcpF + Prob[i] * FL[i]; // средняя длина кода Фано', 'compare'],
+      ['        LcpH = LcpH + Prob[i] * HL[i]; // средняя длина кода Хаффмана', 'compare'],
+      ["            bits[len++] = C[row][j] ? '1' : '0';", 'encode']
+    ]
+  },
+  details: [
+    { s: 'Трудоёмкость', h: '<p>Подсчёт частот — <code>O(N·n)</code>, сортировка — <code>O(n²)</code>. Суммы <code>Q<sub>i</sub></code> считаются одним проходом, разряды каждого кода — за <code>O(L)</code>, где <code>L ≤ 64</code>. Никаких деревьев и рекурсии — код назначается напрямую по формулам.</p>' },
+    { s: 'Проверка правильности', h: '<p>Проверяется неравенство Крафта <code>Σ 2<sup>−L</sup> ≤ 1</code> (для этого кода сумма заметно меньше единицы — около 0.34), префиксность и лексикографический порядок кодовых слов. Средняя длина удовлетворяет границе <code>Lcp &lt; H + 2</code>. На тексте из 11 КБ: <code>H = 4.780912</code>, <code>Lcp = 6.379372</code>.</p>' }
+  ],
+  links: [
+    { href: 'README.md', label: 'README' },
+    { href: 'THEORY.md', label: 'Теория' },
+    { href: 'GilbertMoore.cpp', label: 'Исходник' },
+    { href: '../../2семестр/README.md', label: 'Все работы 2 семестра' }
+  ],
+  dockTitle: 'Gilbert–Moore',
+  dockDesc: 'Псевдокод из пособия и настоящий GilbertMoore.cpp — переключайтесь вкладками',
+  steps: function (data) { return Lab.gen.gilbertMoore(data.text); }
+};
+</script>
+<script src="../../assets/lab.js"></script>
+</body>
+</html>
