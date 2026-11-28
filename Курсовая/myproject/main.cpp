@@ -6,17 +6,17 @@
 
 #include "db.h"
 
-#define FANO_MAX_SYMBOLS 256
-#define FANO_CODE_MAX 300
-#define FANO_PACKED_FILE "testBase2.fano"
+#define SHANNON_MAX_SYMBOLS 256
+#define SHANNON_CODE_MAX 64
+#define SHANNON_PACKED_FILE "testBase2.shannon"
 
 typedef struct {
     unsigned char sym;
     long long count;
     double prob;
-    char code[FANO_CODE_MAX];
+    char code[SHANNON_CODE_MAX];
     int len;
-} FanoSymbol;
+} ShannonSymbol;
 
 #define PAGE_SIZE 20 /* сколько записей показывать на одной странице */
 #define FIO_COL 32   /* ширина колонки ФИО в выводе */
@@ -908,8 +908,8 @@ long read_whole_file(const char *filename, unsigned char **out) {
     return size;
 }
 
-void fano_count_symbols(const unsigned char *buf, long size, FanoSymbol *tab, int *count) {
-    long long freq[FANO_MAX_SYMBOLS];
+void shannon_count_symbols(const unsigned char *buf, long size, ShannonSymbol *tab, int *count) {
+    long long freq[SHANNON_MAX_SYMBOLS];
     memset(freq, 0, sizeof(freq));
     long i;
     for (i = 0; i < size; i++) {
@@ -917,7 +917,7 @@ void fano_count_symbols(const unsigned char *buf, long size, FanoSymbol *tab, in
     }
     int k = 0;
     int s;
-    for (s = 0; s < FANO_MAX_SYMBOLS; s++) {
+    for (s = 0; s < SHANNON_MAX_SYMBOLS; s++) {
         if (freq[s] > 0) {
             tab[k].sym = (unsigned char)s;
             tab[k].count = freq[s];
@@ -930,9 +930,9 @@ void fano_count_symbols(const unsigned char *buf, long size, FanoSymbol *tab, in
     *count = k;
 }
 
-int fano_compare(const void *a, const void *b) {
-    const FanoSymbol *x = (const FanoSymbol *)a;
-    const FanoSymbol *y = (const FanoSymbol *)b;
+int shannon_compare(const void *a, const void *b) {
+    const ShannonSymbol *x = (const ShannonSymbol *)a;
+    const ShannonSymbol *y = (const ShannonSymbol *)b;
     if (x->prob < y->prob) {
         return 1;
     }
@@ -942,43 +942,38 @@ int fano_compare(const void *a, const void *b) {
     return (int)x->sym - (int)y->sym;
 }
 
-void fano_assign(FanoSymbol *tab, int lo, int hi) {
-    if (lo >= hi) {
-        return;
-    }
-    double sum = 0.0;
+void shannon_build_codes(ShannonSymbol *tab, int count) {
+    double q = 0.0;
     int i;
-    for (i = lo; i <= hi; i++) {
-        sum += tab[i].prob;
-    }
-    double acc = 0.0;
-    int split = lo;
-    for (i = lo; i < hi; i++) {
-        acc += tab[i].prob;
-        if (acc >= sum / 2.0) {
-            break;
+    for (i = 0; i < count; i++) {
+        int len = (int)ceil(-log(tab[i].prob) / log(2.0));
+        if (len < 1) {
+            len = 1;
         }
-        split = i + 1;
+        if (len >= SHANNON_CODE_MAX) {
+            len = SHANNON_CODE_MAX - 1;
+        }
+        long long code = (long long)(q * pow(2.0, len));
+        long long limit = 1LL << len;
+        if (code >= limit) {
+            code = limit - 1;
+        }
+        int b;
+        for (b = 0; b < len; b++) {
+            tab[i].code[b] = ((code >> (len - 1 - b)) & 1) ? '1' : '0';
+        }
+        tab[i].code[len] = '\0';
+        tab[i].len = len;
+        q += tab[i].prob;
     }
-    if (split >= hi) {
-        split = hi - 1;
-    }
-    for (i = lo; i <= split; i++) {
-        tab[i].code[tab[i].len] = '0';
-        tab[i].len++;
-        tab[i].code[tab[i].len] = '\0';
-    }
-    for (i = split + 1; i <= hi; i++) {
-        tab[i].code[tab[i].len] = '1';
-        tab[i].len++;
-        tab[i].code[tab[i].len] = '\0';
-    }
-    fano_assign(tab, lo, split);
-    fano_assign(tab, split + 1, hi);
 }
 
-void fano_symbol_text(unsigned char sym, char *out, int out_size) {
-    if (sym >= 32 && sym < 127) {
+void shannon_symbol_text(unsigned char sym, char *out, int out_size) {
+    if (sym < 32 || sym == 32 || sym == 127) {
+        snprintf(out, out_size, "0x%02X", sym);
+        return;
+    }
+    if (sym < 127) {
         snprintf(out, out_size, "%c", sym);
         return;
     }
@@ -991,17 +986,17 @@ void fano_symbol_text(unsigned char sym, char *out, int out_size) {
     }
 }
 
-void fano_print_table(const FanoSymbol *tab, int count) {
+void shannon_print_table(const ShannonSymbol *tab, int count) {
     printf("%-10s %-16s %-14s %s\n", "Символ", "Вероятность", "Кодовое слово", "Длина");
     int i;
     for (i = 0; i < count; i++) {
         char text[16];
-        fano_symbol_text(tab[i].sym, text, (int)sizeof(text));
+        shannon_symbol_text(tab[i].sym, text, (int)sizeof(text));
         printf("%-10s %-16.8f %-14s %d\n", text, tab[i].prob, tab[i].code, tab[i].len);
     }
 }
 
-double fano_entropy(const FanoSymbol *tab, int count) {
+double shannon_entropy(const ShannonSymbol *tab, int count) {
     double h = 0.0;
     int i;
     for (i = 0; i < count; i++) {
@@ -1012,7 +1007,7 @@ double fano_entropy(const FanoSymbol *tab, int count) {
     return h;
 }
 
-double fano_avg_length(const FanoSymbol *tab, int count) {
+double shannon_avg_length(const ShannonSymbol *tab, int count) {
     double len = 0.0;
     int i;
     for (i = 0; i < count; i++) {
@@ -1021,7 +1016,7 @@ double fano_avg_length(const FanoSymbol *tab, int count) {
     return len;
 }
 
-double fano_kraft_sum(const FanoSymbol *tab, int count) {
+double shannon_kraft_sum(const ShannonSymbol *tab, int count) {
     double kraft = 0.0;
     int i;
     for (i = 0; i < count; i++) {
@@ -1030,11 +1025,11 @@ double fano_kraft_sum(const FanoSymbol *tab, int count) {
     return kraft;
 }
 
-long fano_encode(const unsigned char *buf, long size, const FanoSymbol *tab, int count,
-                 const char *outname) {
-    int index[FANO_MAX_SYMBOLS];
+long shannon_encode(const unsigned char *buf, long size, const ShannonSymbol *tab, int count,
+                    const char *outname) {
+    int index[SHANNON_MAX_SYMBOLS];
     int i;
-    for (i = 0; i < FANO_MAX_SYMBOLS; i++) {
+    for (i = 0; i < SHANNON_MAX_SYMBOLS; i++) {
         index[i] = -1;
     }
     for (i = 0; i < count; i++) {
@@ -1062,7 +1057,7 @@ long fano_encode(const unsigned char *buf, long size, const FanoSymbol *tab, int
         if (k < 0) {
             continue;
         }
-        const FanoSymbol *s = &tab[k];
+        const ShannonSymbol *s = &tab[k];
         for (i = 0; i < s->len; i++) {
             acc = (unsigned char)((acc << 1) | (s->code[i] - '0'));
             nbits++;
@@ -1089,29 +1084,29 @@ long fano_encode(const unsigned char *buf, long size, const FanoSymbol *tab, int
     return out_pos;
 }
 
-void run_fano_encoding(const char *filename, const char *outname) {
+void run_shannon_encoding(const char *filename, const char *outname) {
     unsigned char *buf = NULL;
     long size = read_whole_file(filename, &buf);
     if (size < 0) {
         printf("Файл %s не прочитан.\n", filename);
         return;
     }
-    FanoSymbol *tab = (FanoSymbol *)malloc(sizeof(FanoSymbol) * FANO_MAX_SYMBOLS);
+    ShannonSymbol *tab = (ShannonSymbol *)malloc(sizeof(ShannonSymbol) * SHANNON_MAX_SYMBOLS);
     if (tab == NULL) {
         free(buf);
         return;
     }
     int count = 0;
-    fano_count_symbols(buf, size, tab, &count);
-    qsort(tab, (size_t)count, sizeof(FanoSymbol), fano_compare);
-    fano_assign(tab, 0, count - 1);
+    shannon_count_symbols(buf, size, tab, &count);
+    qsort(tab, (size_t)count, sizeof(ShannonSymbol), shannon_compare);
+    shannon_build_codes(tab, count);
 
-    printf("\nКод Фано: %s, %ld байт, уникальных символов: %d\n", filename, size, count);
-    fano_print_table(tab, count);
+    printf("\nКод Шеннона: %s, %ld байт, уникальных символов: %d\n", filename, size, count);
+    shannon_print_table(tab, count);
 
-    double kraft = fano_kraft_sum(tab, count);
-    double entropy = fano_entropy(tab, count);
-    double avg = fano_avg_length(tab, count);
+    double kraft = shannon_kraft_sum(tab, count);
+    double entropy = shannon_entropy(tab, count);
+    double avg = shannon_avg_length(tab, count);
     double redundancy = avg > 0.0 && entropy > 0.0 ? (avg - entropy) / entropy : 0.0;
 
     printf("\nНеравенство Крафта: сумма 2^-l = %.10f %s\n", kraft,
@@ -1120,7 +1115,7 @@ void run_fano_encoding(const char *filename, const char *outname) {
     printf("Средняя длина кодового слова: L = %.6f бит/символ\n", avg);
     printf("Избыточность кода: R = (L - H) / H = %.6f\n", redundancy);
 
-    long packed = fano_encode(buf, size, tab, count, outname);
+    long packed = shannon_encode(buf, size, tab, count, outname);
     if (packed < 0) {
         printf("Файл %s не записан.\n", outname);
     } else {
@@ -1170,7 +1165,7 @@ int main(void) {
         printf("5 - поиск по должности (или части должности)\n");
         printf("6 - поиск по номеру отдела\n");
         printf("7 - ДБД: дерево по ФИО из записей поиска по ФИО\n");
-        printf("8 - кодирование базы: код Фано (E=2)\n");
+        printf("8 - кодирование базы: код Шеннона (E=2)\n");
         printf("0 - выход\n");
         printf("Выбор: ");
 
@@ -1206,7 +1201,7 @@ int main(void) {
         } else if (choice == '7') {
             build_tree_by_fio(idx_sorted, n);
         } else if (choice == '8') {
-            run_fano_encoding(DB_FILE, FANO_PACKED_FILE);
+            run_shannon_encoding(DB_FILE, SHANNON_PACKED_FILE);
         }
     }
 
