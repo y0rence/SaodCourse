@@ -37,7 +37,7 @@ node scripts/run-steps.js $(find . -name lab.html | sort)
 python3 scripts/readme-monochrome.py   # README без изменений = стиль соблюдён
 ```
 
-Все 25 страниц `lab.html` должны дать `✓` в обоих скриптах: `run-steps.js`
+Все 26 страниц `lab.html` должны дать `✓` в обоих скриптах: `run-steps.js`
 помимо прогона шагов сверяет теги строк кода с тегами шагов — если вы
 добавили шаг с новым тегом, промаркируйте строку в `pseudo` или `file.lines`.
 
