@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <link rel="icon" href="../../assets/favicon.svg" type="image/svg+xml">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>11 · Код Шеннона — лабораторная работа</title>
+  <meta name="description" content="Пошаговый разбор кода Шеннона: частоты символов, вероятности, длины кодовых слов, неравенство Крафта, энтропия и кодирование текста.">
+  <link rel="stylesheet" href="../../assets/lab.css">
+</head>
+<body>
+<script src="../../assets/gens/g5-shannon.js"></script>
+<script>
+window.LAB = {
+  base: '../../',
+  num: '11',
+  title: 'Код Шеннона',
+  algo: 'Shannon',
+  crumb: '2 семестр · Кодирование',
+  lead: 'Побуквенный статический код Шеннона: <code>P<sub>i</sub> = n<sub>i</sub>/N</code>, длина <code>L<sub>i</sub> = ⌈−log<sub>2</sub> P<sub>i</sub>⌉</code>, а разряды кода берутся из накопленной вероятности предыдущих символов. Средняя длина при этом меньше энтропии не более чем на единицу.',
+  task: [
+    'Для 10 первых неповторяющихся символов ФИО построить код Шеннона вручную, вероятности оценить по всей ФИО с точностью до двух знаков.',
+    'Реализовать побуквенный статический код Шеннона для русского текста: оценить вероятности по файлу не менее 10 КБ и вывести кодовую таблицу (символ, вероятность, кодовое слово, длина).',
+    'Проверить неравенство Крафта, сравнить среднюю длину кодового слова с энтропией исходного файла, определить избыточность кода.',
+    'Закодировать первыми 100 символами русский текст, измерить длину закодированной последовательности и оценить коэффициент сжатия.'
+  ],
+  chips: [
+    { t: 'Lcp < H + 1', cls: 'plain' },
+    { t: '0 ≤ R < 1', cls: 'plain' },
+    { t: 'префиксный код', cls: 'm' }
+  ],
+  hint: 'Русский текст в кодировке UTF-8: буквы, пробелы и знаки препинания — например: АБРАКАДАБРА ДАБРА.',
+  inputs: [
+    { id: 'text', label: 'Текст', value: 'АБРАКАДАБРА ДАБРА', example: 'АБРАКАДАБРА ДАБРА', placeholder: 'русский текст' }
+  ],
+  example: true,
+  parse: function (v) {
+    var t = String(v.text || '').trim();
+    if (!t) return null;
+    return { text: t };
+  },
+  pseudo: [
+    ['Вход: текст, N — всего символов', 'sig'],
+    ['DO по всем символам:  n_i ← n_i + 1', 'cnt'],
+    ['OD', ''],
+    ['P_i ← n_i / N', 'prob'],
+    ['Сортировать P по убыванию (пузырьком)', 'sort'],
+    ['Q_0 ← 0', 'q'],
+    ['DO i = 1 … n:  Q_i ← Q_{i−1} + P_i', 'q'],
+    ['OD', ''],
+    ['DO i = 1 … n:  L_i ← наименьшее L:  2^(−L) ≤ P_i < 2^(−L+1)', 'len'],
+    ['OD', ''],
+    ['DO i = 1 … n:  X ← Q_{i−1}', 'bits'],
+    ['    DO j = 1 … L_i:  X ← 2·X;  бит ← ⌊X⌋;  X ← X − бит', 'bits'],
+    ['    OD', 'bits'],
+    ['OD', ''],
+    ['Крафт: Σ 2^(−L_i) ≤ 1;   H = −Σ P_i·log₂ P_i', 'stats'],
+    ['Lcp = Σ P_i·L_i;   R = Lcp − H', 'stats'],
+    ['Кодировать: вместо символа i — код C_i', 'encode']
+  ],
+  file: {
+    name: 'Shennon.cpp',
+    url: 'Shennon.cpp',
+    lines: [
+      ['    const char *path = (argc > 1) ? argv[1] : "proizvedenie_11kb.txt";', 'sig'],
+      ['    while (read_utf8(f, cp, ch)) {', 'cnt'],
+      ['            alpha[idx].count++;', 'cnt'],
+      ['        P[i + 1] = (double)alpha[i].count / total;', 'prob'],
+      ['            if (P[j] < P[j + 1]) {', 'sort'],
+      ['        Q[i] = Q[i - 1] + P[i];', 'q'],
+      ['        while (P[i] < pow(2.0, -len_i)) {', 'len'],
+      ['            Q[i - 1] = Q[i - 1] * 2.0;', 'bits'],
+      ['            C[i][j] = (int)floor(Q[i - 1]);', 'bits'],
+      ['    double sumP = 0, kraft = 0, H = 0, L_avg = 0;', 'stats'],
+      ['        kraft += pow(2.0, -L[i]);', 'stats'],
+      ['        H += -P[i] * log2(P[i]);', 'stats'],
+      ['        L_avg += P[i] * L[i];', 'stats'],
+      ['                encoded += codes[i];', 'encode']
+    ]
+  },
+  details: [
+    { s: 'Трудоёмкость', h: '<p>Подсчёт частот — один проход по файлу, но поиск символа в алфавите линейный: <code>O(N·n)</code> по символам текста (в программе <code>N</code> до 100 000, <code>n</code> — не больше 512). Сортировка вероятностей — пузырьком, <code>O(n²)</code>. Разряды кода считаются за <code>O(n·L)</code>, где <code>L ≤ 64</code>.</p>' },
+    { s: 'Проверка правильности', h: '<p>Скрипт <code>verify.py</code> прогоняет три текста и проверяет инварианты: <code>Σn<sub>i</sub> = N</code> и <code>ΣP<sub>i</sub> = 1</code>, <code>L<sub>i</sub> = ⌈−log<sub>2</sub> P<sub>i</sub>⌉</code>, Крафт ≤ 1, совпадение <code>H</code>, <code>Lcp</code> и <code>R</code> с выводом программы, <code>Lcp &lt; H + 1</code> и <code>0 ≤ R &lt; 1</code>, префиксность и уникальность кодов, а также обратное декодирование первых 100 символов.</p>' }
+  ],
+  links: [
+    { href: 'README.md', label: 'README' },
+    { href: 'Shennon.cpp', label: 'Исходник' },
+    { href: '../../2семестр/README.md', label: 'Все работы 2 семестра' }
+  ],
+  dockTitle: 'Shannon',
+  dockDesc: 'Псевдокод из пособия и настоящий Shennon.cpp — переключайтесь вкладками',
+  steps: function (data) { return Lab.gen.shannon(data.text); }
+};
+</script>
+<script src="../../assets/lab.js"></script>
+</body>
+</html>
